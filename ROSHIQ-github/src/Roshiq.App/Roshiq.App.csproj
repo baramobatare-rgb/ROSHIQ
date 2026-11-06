@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>Roshiq</AssemblyName>
+    <RootNamespace>Roshiq.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\roshiq.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Roshiq.Core\Roshiq.Core.csproj" />
+    <ProjectReference Include="..\Roshiq.Data\Roshiq.Data.csproj" />
+    <ProjectReference Include="..\Roshiq.Draft\Roshiq.Draft.csproj" />
+    <ProjectReference Include="..\Roshiq.Recommendations\Roshiq.Recommendations.csproj" />
+    <ProjectReference Include="..\Roshiq.Vision\Roshiq.Vision.csproj" />
+    <ProjectReference Include="..\Roshiq.GSI\Roshiq.GSI.csproj" />
+    <ProjectReference Include="..\Roshiq.Overlay\Roshiq.Overlay.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\roshiq.ico" />
+    <Resource Include="Assets\Brand\**\*.ico;Assets\Brand\**\*.png" />
+    <EmbeddedResource Include="Assets\Portraits.zip" />
+    <!-- Иконки предметов: собирает tools\fetch-item-icons.ps1 (вызывается из build.ps1) -->
+    <EmbeddedResource Include="Assets\ItemIcons.zip" Condition="Exists('Assets\ItemIcons.zip')" />
+    <SplashScreen Include="Assets\Brand\splash.jpg" />
+  </ItemGroup>
+</Project>

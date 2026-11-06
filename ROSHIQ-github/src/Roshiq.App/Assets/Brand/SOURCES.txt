@@ -1,0 +1,9 @@
+Иконки приложения — набор ROSHIQ Theme Collection (green / red), предоставлен автором проекта.
+green  -> тема Lime, red -> тема Crimson.
+violet -> сгенерирован из green сдвигом оттенка (+149°) для темы Violet; силуэты те же.
+app.ico  = Adaptive.ico (16–256 px): иконка окна и панели задач.
+logo.png = Compact 128 px: логотип в верхней панели и превью темы в настройках.
+mark.png = Minimal 64 px: маленький знак в заголовке оверлея и уведомлениях.
+Assets/roshiq.ico = green Adaptive.ico, встраивается в Roshiq.exe при сборке.
+splash.jpg = заставка green Splash, уменьшена до 800×450; показывается при запуске.
+Иконки — фанатская стилизация, не официальные ассеты Valve.

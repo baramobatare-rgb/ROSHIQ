@@ -1,0 +1,90 @@
+# Выпуск ROSHIQ: подпись и релизы
+
+## Как выпустить новую версию
+
+1. Поменять `<Version>` в `Directory.Build.props` (только там — установщик и build.ps1 берут версию оттуда).
+2. Добавить в README.md раздел `## Версия X.Y.Z — …` — он станет описанием релиза.
+3. Закоммитить и поставить тег:
+   ```
+   git commit -am "ROSHIQ 0.7.0"
+   git tag v0.7.0
+   git push && git push --tags
+   ```
+4. GitHub Actions (`.github/workflows/release.yml`) соберёт программу, прогонит тесты и опубликует в Releases:
+   - `Roshiq-Setup-X.Y.Z.exe` — установщик;
+   - `Roshiq-Portable-X.Y.Z.zip` — без установки;
+   - `SHA256SUMS.txt` — контрольные суммы.
+5. У пользователей: вкладка «Обновления» → репозиторий `ваш-логин/ROSHIQ` → программа найдёт новую версию,
+   скачает установщик, сверит контрольную сумму (и подпись, если программа подписана) и предложит установить.
+
+Важно: проверка обновлений работает без входа в GitHub, поэтому **репозиторий с релизами должен быть публичным**.
+
+Локальная сборка того же набора файлов — `build.cmd` (результат в папке `dist`).
+
+## Первый раз: репозиторий на GitHub
+
+1. Создать репозиторий `ROSHIQ` на github.com (без README — он уже есть).
+2. В папке проекта:
+   ```
+   git init
+   git add .
+   git commit -m "ROSHIQ 0.7.0"
+   git branch -M main
+   git remote add origin https://github.com/ваш-логин/ROSHIQ.git
+   git push -u origin main
+   ```
+3. Settings → Actions → General → Workflow permissions: «Read and write permissions» (нужно для публикации релиза).
+
+## Подпись
+
+Подпись (Authenticode) делает так, что вместо «Неизвестный издатель» Windows показывает имя издателя.
+Предупреждение SmartScreen у новых издателей сначала всё равно бывает — оно пропадает по мере того, как
+подписанные версии скачивают. Без сертификата всё собирается и работает, просто без подписи.
+
+### Локально (USB-токен или сертификат в хранилище Windows)
+
+```
+$env:ROSHIQ_SIGN_THUMBPRINT = 'ОТПЕЧАТОК_СЕРТИФИКАТА'
+.\build.ps1 -Sign
+```
+или с файлом .pfx:
+```
+$env:ROSHIQ_SIGN_PFX = 'C:\путь\cert.pfx'
+$env:ROSHIQ_SIGN_PFX_PASSWORD = 'пароль'
+.\build.ps1 -Sign
+```
+Нужен `signtool.exe` из Windows SDK (компонент «Signing Tools for Desktop Apps»).
+Подписываются `Roshiq.exe`, установщик и деинсталлятор; ставится метка времени, чтобы подпись оставалась
+действительной после окончания срока сертификата.
+
+### В GitHub Actions
+
+Settings → Secrets and variables → Actions:
+- `SIGN_PFX_BASE64` — сертификат .pfx в base64: `[Convert]::ToBase64String([IO.File]::ReadAllBytes('cert.pfx')) | Set-Clipboard`
+- `SIGN_PFX_PASSWORD` — пароль.
+
+С 2023 года ключи публичных сертификатов выдаются только на токене или в облачном HSM, поэтому .pfx
+обычно бывает только у облачных сервисов подписи. Для USB-токена подписывайте локально (`build.ps1 -Sign`)
+и загружайте файлы в релиз вручную, либо подключите облачную подпись своего удостоверяющего центра.
+
+### Бесплатно для открытых проектов: SignPath Foundation
+
+Условия (https://signpath.org/terms): открытая лицензия OSI для всего кода, публичный репозиторий,
+сборка только через CI из этого репозитория, ручное подтверждение каждого релиза, двухфакторная
+аутентификация, страница «Code signing policy» на сайте/в репозитории (шаблон — `docs/code-signing-policy.md`).
+
+Шаги:
+1. Выбрать лицензию (например MIT), положить `LICENSE`, сделать репозиторий публичным.
+2. Подать заявку на signpath.org.
+3. После одобрения добавить в release.yml шаг `signpath/github-action-submit-signing-request`
+   (подписывает собранный артефакт; параметры — organization-id, project-slug, signing-policy-slug и
+   секрет `SIGNPATH_API_TOKEN` выдаёт SignPath).
+
+### Проверить, что подпись работает (тестовый сертификат)
+
+```
+powershell -ExecutionPolicy Bypass -File .\tools\new-test-cert.ps1 -Trust
+$env:ROSHIQ_SIGN_THUMBPRINT = 'отпечаток из вывода'
+.\build.ps1 -Sign
+```
+Такой сертификат доверен только на вашем компьютере — для раздачи другим он не годится.

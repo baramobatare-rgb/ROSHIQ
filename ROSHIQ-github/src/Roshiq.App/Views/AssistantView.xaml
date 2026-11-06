@@ -1,0 +1,50 @@
+<UserControl x:Class="Roshiq.App.Views.AssistantView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="clr-namespace:Roshiq.App"
+             xmlns:views="clr-namespace:Roshiq.App.Views">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,6,20">
+            <!-- Вкладки: роль и сборка / напоминания саппорту / таймеры и подсказки -->
+            <WrapPanel Margin="0,0,0,14">
+                <RadioButton x:Name="TabRole" Style="{StaticResource Segment}" GroupName="AsstTabs" IsChecked="True" Content="{app:T asst_tab_role, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabReminders" Style="{StaticResource Segment}" GroupName="AsstTabs" Content="{app:T asst_tab_reminders, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabMatch" Style="{StaticResource Segment}" GroupName="AsstTabs" Content="{app:T asst_tab_match, Upper=True}" Checked="Tab_Checked" />
+            </WrapPanel>
+            <Grid x:Name="RoleSection">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- 01 Подсказки для роли -->
+                <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                    <StackPanel>
+                        <DockPanel>
+                            <ComboBox x:Name="PositionBox" DockPanel.Dock="Right" Width="200" Margin="12,-6,0,0" SelectionChanged="Position_Changed" />
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T asst_role_tips, Upper=True}" /></TextBlock>
+                        </DockPanel>
+                        <TextBlock x:Name="RoleTitle" Style="{StaticResource H1}" Margin="0,4,0,10" />
+                        <StackPanel x:Name="RoleTips" />
+                    </StackPanel>
+                </Border>
+
+                <!-- 02 Игровые ситуации -->
+                <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T asst_situations, Upper=True}" /></TextBlock>
+                        <TextBlock x:Name="SituationTitle" Style="{StaticResource H1}" Margin="0,4,0,4" />
+                        <TextBlock x:Name="SituationNote" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                        <StackPanel x:Name="Situations" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 03 Напоминания -->
+            <views:NotificationsView x:Name="Reminders" Visibility="Collapsed" />
+
+            <!-- 05–07 Таймеры, Рошан, ситуативные подсказки -->
+            <views:MatchToolsView x:Name="MatchTools" Visibility="Collapsed" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
