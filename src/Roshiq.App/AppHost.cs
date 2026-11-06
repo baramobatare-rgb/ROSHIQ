@@ -77,6 +77,7 @@ public sealed class AppHost : IDisposable
         PlayerHeroes = new PlayerHeroStatsCache(Path.Combine(AppPaths.Cache, "player_heroes.json"));
         Reviews = new MatchReviewStore(Path.Combine(AppPaths.Cache, "reviews"));
         ItemNorms = new ItemTimingNormCache(Path.Combine(AppPaths.Cache, "item_timings.json"));
+        MetaBuilds = new MetaBuildCache(Path.Combine(AppPaths.Cache, "meta_builds.json"));
         Patch = new PatchInfoCache(Path.Combine(AppPaths.Cache, "patch.json"));
         PatchNotes = PatchDigest.Load(PatchNotesPath);
         History = new MatchHistoryStore(AppPaths.Matches);
@@ -116,6 +117,7 @@ public sealed class AppHost : IDisposable
     /// <summary>Разборы матчей через OpenDota.</summary>
     public MatchReviewStore Reviews { get; }
     public ItemTimingNormCache ItemNorms { get; }
+    public MetaBuildCache MetaBuilds { get; }
     /// <summary>Изменилась привязка Steam или профиль.</summary>
     public event EventHandler? SteamChanged;
     public PatchInfoCache Patch { get; }
@@ -227,6 +229,9 @@ public sealed class AppHost : IDisposable
             _timerAnnouncer.Reset();
             Roshan.Clear();
             _roleDetector.Reset();
+            _spikesShown.Clear();
+            _spikeItems.Clear();
+            _spikeSeeded = false;
         }
         if (string.Equals(snap.TeamName, "dire", StringComparison.OrdinalIgnoreCase)) MySide = Side.Dire;
         else if (string.Equals(snap.TeamName, "radiant", StringComparison.OrdinalIgnoreCase)) MySide = Side.Radiant;
@@ -237,6 +242,7 @@ public sealed class AppHost : IDisposable
         if (hero != null && hero.Id != CurrentHero?.Id) SelectHero(hero);
         TryLinkFromGsi(snap);
         TickRoleDetection(snap);
+        TickGameInsights(snap);
         RaiseChanged();
     }
 
@@ -311,6 +317,7 @@ public sealed class AppHost : IDisposable
 
     public void SetDraft(IReadOnlyList<Hero> allies, IReadOnlyList<Hero> enemies)
     {
+        _draftMatchId = LastGsi?.MatchId;
         Draft = new DraftState(allies, enemies, Settings.Current.Position);
         LastDraftAnalysis = Analyzer.Analyze(Draft);
         RecomputeBuild();
@@ -481,6 +488,11 @@ public sealed class AppHost : IDisposable
                 vm.Section2Title = L.Get("brief_title");
                 rows = BriefingRows().Select(r => new OverlayRow(r.Title, r.Text)).ToList();
             }
+            else if (LanePhase && LaneRows() is { Count: > 0 } laneRows)
+            {
+                vm.Section2Title = L.Get("lane_title");
+                rows = laneRows;
+            }
             vm.ReplaceRows(vm.Section2, rows);
         }
         else
@@ -506,6 +518,133 @@ public sealed class AppHost : IDisposable
         vm.HideHint = (s.Overlay.ToggleHotkey + " " + L.Get("ov_key_hide")).ToUpperInvariant();
         vm.DetailsHint = vm.DraftMode ? "CTRL+SHIFT+R · " + L.Get("auto_role_key").ToUpperInvariant() : (s.Overlay.DetailsHotkey + " " + L.Get(s.Overlay.Mode == OverlayMode.Expanded ? "ov_key_less" : "ov_key_more")).ToUpperInvariant();
     }
+
+    // ------------------------------------------------------------------ линия, пики силы, мета-сборки
+
+    private string? _draftMatchId;
+    private readonly HashSet<string> _spikesShown = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _spikeItems = new(StringComparer.OrdinalIgnoreCase);
+    private bool _spikeSeeded;
+    private IReadOnlyDictionary<int, string>? _itemIdMap;
+
+    /// <summary>Драфт относится к текущему матчу (а не остался от прошлого).</summary>
+    private bool DraftIsCurrent => LastGsi?.MatchId == null || _draftMatchId == LastGsi.MatchId;
+
+    /// <summary>Советы на линию против вероятных соперников (от трёх видимых врагов).</summary>
+    public IReadOnlyList<LaneOpponentAdvice> LaneAdvice =>
+        CurrentBriefing is { } b && DraftIsCurrent
+            ? LaneAdvisor.Advise(b.LaneOpponents, Database.LaneTips, Analyzer.PersonalAgainst)
+            : Array.Empty<LaneOpponentAdvice>();
+
+    /// <summary>Сравнение составов по фазам (нужно хотя бы 3 союзника и 3 врага).</summary>
+    public TeamTiming? CurrentTiming
+    {
+        get
+        {
+            if (!DraftIsCurrent) return null;
+            var allies = Draft.Allies.Concat(CurrentHero != null && !Draft.Allies.Any(h => h.Id == CurrentHero.Id) ? new[] { CurrentHero } : Array.Empty<Hero>()).ToList();
+            var enemies = BriefingEnemies;
+            return allies.Count >= 3 && enemies.Count >= 3 ? PowerSpikes.Compare(allies, enemies) : null;
+        }
+    }
+
+    /// <summary>Первые 8 минут игры — время советов на линию.</summary>
+    private bool LanePhase => Settings.Current.Automation.LaneTips && GsiFresh && LastGsi!.IsInProgress && LastGsi.ClockTime is int c && c is >= -90 and < 480;
+
+    private List<OverlayRow> LaneRows()
+    {
+        var L = Loc.Instance;
+        var rows = new List<OverlayRow>();
+        foreach (var a in LaneAdvice)
+        {
+            var parts = a.Tips.Select(t => L.Language == Language.Russian ? t.Ru : t.En).ToList();
+            if (a.Personal(L.Language) is { Length: > 0 } personal) parts.Add(personal);
+            if (NoteFor(a.Hero) is string note) parts.Insert(0, Short(note, 100));
+            if (parts.Count > 0) rows.Add(new OverlayRow(a.Hero.DisplayName(L.Language), string.Join(" ", parts.Take(2))) { Icon = HeroArt.Portrait(a.Hero.Key) });
+        }
+        return rows;
+    }
+
+    /// <summary>Уведомления: совет на линию на старте, подсказки по фазам составов и пики силы по предметам.</summary>
+    private void TickGameInsights(GameStateSnapshot snap)
+    {
+        if (!snap.IsInProgress || snap.ClockTime is not int clock) return;
+        var a = Settings.Current.Automation;
+        var L = Loc.Instance;
+
+        if (a.LaneTips && clock is >= 0 and < 40 && _spikesShown.Add("lane_start"))
+        {
+            var advice = LaneAdvice.Where(x => x.Tips.Count > 0).Take(2).ToList();
+            if (advice.Count > 0)
+            {
+                _lastEventToastUtc = DateTime.MinValue;
+                ShowEventToast(L.Get("lane_title").ToUpperInvariant(), string.Join("  ", advice.Select(x =>
+                    x.Hero.DisplayName(L.Language) + ": " + (L.Language == Language.Russian ? x.Tips[0].Ru : x.Tips[0].En))));
+            }
+        }
+
+        if (!a.PowerSpikes) return;
+        if (CurrentTiming is { } timing && PowerSpikes.ClockReminder(timing, clock) is { } r && _spikesShown.Add(r.Key))
+        {
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast(L.Get("spike_header").ToUpperInvariant(), L.Language == Language.Russian ? r.Ru : r.En);
+        }
+
+        var owned = snap.InventoryItems;
+        if (owned == null) return;
+        if (!_spikeSeeded)
+        {
+            _spikeSeeded = true;
+            // ROSHIQ запустили посреди матча — уже купленное не объявляем
+            if (clock > 120) { foreach (var k in owned) _spikeItems.Add(k); return; }
+        }
+        var core = CurrentBuild == null ? Array.Empty<string>()
+            : CurrentBuild[BuildPhase.Mid].Concat(CurrentBuild[BuildPhase.Late]).Select(p => p.Item.Key).ToArray();
+        foreach (var key in PowerSpikes.NewSpikes(owned, _spikeItems, Costs.Cost, core))
+        {
+            var name = Database.FindItem(key)?.DisplayName(L.Language) ?? key;
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast(L.Get("spike_item_header").ToUpperInvariant(), L.Format("spike_item", name));
+            break; // за раз — одно уведомление
+        }
+    }
+
+    /// <summary>Загрузить мета-сборку героя из OpenDota (кэш на 3 дня). Возвращает сборку или текст ошибки.</summary>
+    public async Task<(MetaBuild? Build, string? Message)> LoadMetaBuildAsync(Hero hero, bool force)
+    {
+        if (!force && MetaBuilds.Get(hero.Id) is { } cached && !MetaBuilds.IsStale(hero.Id)) return (cached, null);
+        var d = Settings.Current.Data;
+        if (!d.AllowOnlineStats) return (MetaBuilds.Get(hero.Id), Loc.T("steam_need_network"));
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            _itemIdMap ??= await client.GetItemIdMapAsync(CancellationToken.None);
+            var raw = await client.GetItemPopularityAsync(hero.Id, CancellationToken.None);
+            var phases = new Dictionary<BuildPhase, IReadOnlyDictionary<int, int>>();
+            foreach (var (k, v) in raw)
+                if (MetaBuildCache.PhaseOf(k) is BuildPhase p) phases[p] = v;
+            var build = MetaBuildBuilder.Build(hero.Id, phases, _itemIdMap, key => Database.FindItem(key) != null);
+            if (build.TotalItems == 0) return (MetaBuilds.Get(hero.Id), Loc.T("meta_empty"));
+            MetaBuilds.Set(build);
+            return (build, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Мета-сборка {hero.Key}: {ex.Message}");
+            return (MetaBuilds.Get(hero.Id), Loc.T("meta_failed") + " " + ex.Message);
+        }
+    }
+
+    /// <summary>Личная сборка из меты — дальше её можно править в редакторе.</summary>
+    public PersonalBuild PersonalFromMeta(MetaBuild meta, Hero hero, Position position) => new()
+    {
+        HeroKey = hero.Key,
+        Position = position,
+        Name = Loc.Instance.Format("meta_build_name", meta.FetchedUtc.ToLocalTime().ToString("dd.MM")),
+        Notes = Loc.T("meta_build_note"),
+        Entries = meta.Phases.OrderBy(p => p.Key).SelectMany(p => p.Value.Take(p.Key == BuildPhase.Start ? 6 : 4)
+            .Select(i => new PersonalBuildEntry { Phase = p.Key, ItemKey = i.ItemKey })).ToList()
+    };
 
     // ------------------------------------------------------------------ автоматика: игра, роль, импорт, режимы оверлея
 
@@ -1167,8 +1306,14 @@ public sealed class AppHost : IDisposable
         var b = CurrentBriefing;
         var rows = new List<(string, string)>();
         if (b == null) return rows;
+        if (CurrentTiming?.Plan is { } plan)
+            rows.Add((L.Get("spike_plan"), L.Language == Language.Russian ? plan.Ru : plan.En));
         if (b.LaneOpponents.Count > 0)
             rows.Add((L.Get("brief_lane"), string.Join(", ", b.LaneOpponents.Select(h => h.DisplayName(L.Language)))));
+        if (Settings.Current.Automation.LaneTips)
+            foreach (var a in LaneAdvice.Take(2))
+                if (a.Tips.FirstOrDefault() is { } tip)
+                    rows.Add((a.Hero.DisplayName(L.Language), L.Language == Language.Russian ? tip.Ru : tip.En));
         if (BriefingItem is ItemPick item)
             rows.Add((L.Get("brief_item"), item.Item.DisplayName(L.Language)));
         foreach (var line in b.Lines.Take(maxLines))

@@ -142,7 +142,9 @@
                     <CheckBox x:Name="AutoModesBox" Content="{app:T set_auto_modes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
                     <CheckBox x:Name="AutoImportBox" Content="{app:T set_auto_import}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,2" />
                     <TextBlock Text="{app:T set_auto_import_hint}" Style="{StaticResource MutedText}" Margin="28,0,0,6" />
-                    <CheckBox x:Name="AutoReviewBox" Content="{app:T set_auto_review}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,12" />
+                    <CheckBox x:Name="AutoReviewBox" Content="{app:T set_auto_review}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
+                    <CheckBox x:Name="LaneTipsBox" Content="{app:T set_lane_tips}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
+                    <CheckBox x:Name="PowerSpikesBox" Content="{app:T set_power_spikes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,12" />
                     <DockPanel>
                         <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Brush="{DynamicResource Accent}" Margin="0,1,10,0" VerticalAlignment="Top" />
                         <TextBlock Text="{app:T set_auto_note}" Style="{StaticResource MutedText}" />

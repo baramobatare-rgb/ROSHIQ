@@ -16,6 +16,9 @@ public sealed record PairRule(string SourceTrait, string CandidateTrait, double 
 public sealed record GapRule(string Trait, double Weight, string Ru, string En);
 
 /// <summary>Периодическое событие матча по игровым часам (руны, лотосы и т.п.).</summary>
+/// <summary>Совет на линию против героя с признаком Trait.</summary>
+public sealed record LaneTip(string Trait, string Ru, string En);
+
 public sealed record TimerRule(string Key, string Ru, string En, int FirstSec, int IntervalSec, int? LastSec, int LeadSec,
     IReadOnlyList<Position>? Positions = null)
 {
@@ -51,6 +54,8 @@ public sealed class GameDatabase
     public IReadOnlyList<GapRule> GapRules { get; private set; } = Array.Empty<GapRule>();
     public IReadOnlyList<RoleTip> RoleTips { get; private set; } = Array.Empty<RoleTip>();
     public IReadOnlyList<TimerRule> Timers { get; private set; } = Array.Empty<TimerRule>();
+    /// <summary>Советы на линию по признакам соперника (lane_tips.txt), в порядке важности.</summary>
+    public IReadOnlyList<LaneTip> LaneTips { get; private set; } = Array.Empty<LaneTip>();
     public IReadOnlyDictionary<string, string> VersionInfo { get; private set; } = new Dictionary<string, string>();
     /// <summary>Предупреждения валидации (неизвестные признаки, предметы и т.п.).</summary>
     public IReadOnlyList<string> Warnings { get; private set; } = Array.Empty<string>();
@@ -221,6 +226,14 @@ public sealed class GameDatabase
             timers.Add(new TimerRule(f[0], f[1], f[2], first, interval, last, Math.Min(lead, 120), timerPositions));
         }
         Timers = timers;
+
+        var laneTips = new List<LaneTip>();
+        foreach (var f in src.Rows("lane_tips.txt", 3))
+        {
+            if (!_traits.ContainsKey(f[0])) { warnings.Add($"lane_tips.txt: неизвестный признак '{f[0]}'"); continue; }
+            laneTips.Add(new LaneTip(f[0], f[1], f[2]));
+        }
+        LaneTips = laneTips;
 
         var version = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var line in src.Lines("data_version.txt"))

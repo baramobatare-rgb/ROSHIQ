@@ -319,4 +319,8 @@ public sealed class AutomationSettings
     public bool AutoOverlayModes { get; set; } = true;
     /// <summary>После матча просить OpenDota разобрать запись и делать разбор (нужен привязанный Steam).</summary>
     public bool AutoReview { get; set; } = true;
+    /// <summary>Советы на линию против соперников (оверлей в начале игры и уведомление на старте).</summary>
+    public bool LaneTips { get; set; } = true;
+    /// <summary>Пики силы: план по фазам составов и уведомление о ключевом предмете.</summary>
+    public bool PowerSpikes { get; set; } = true;
 }

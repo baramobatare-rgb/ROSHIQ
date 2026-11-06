@@ -77,6 +77,24 @@
                     </StackPanel>
                 </Border>
 
+                <!-- Мета сейчас (OpenDota) -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <DockPanel>
+                            <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Top">
+                                <Button x:Name="MetaRefreshButton" Style="{StaticResource GhostButton}" Content="{app:T meta_refresh, Upper=True}" Click="MetaRefresh_Click" />
+                                <Button x:Name="MetaUseButton" Content="{app:T meta_use, Upper=True}" Click="MetaUse_Click" />
+                            </WrapPanel>
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource H2}" Text="{app:T meta_title, Upper=True}" />
+                                <TextBlock Text="{app:T meta_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock x:Name="MetaStatus" Style="{StaticResource MutedText}" Margin="0,0,0,6" TextWrapping="Wrap" />
+                        <StackPanel x:Name="MetaPanel" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Личные заметки к герою -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>

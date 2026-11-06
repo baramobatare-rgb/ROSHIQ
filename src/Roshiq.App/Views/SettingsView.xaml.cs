@@ -51,6 +51,8 @@ public partial class SettingsView : UserControl, IRefreshable
         AutoModesBox.IsChecked = a.AutoOverlayModes;
         AutoImportBox.IsChecked = a.AutoImport;
         AutoReviewBox.IsChecked = a.AutoReview;
+        LaneTipsBox.IsChecked = a.LaneTips;
+        PowerSpikesBox.IsChecked = a.PowerSpikes;
         CtxReference.IsChecked = s.UsageContext == UsageContext.Reference;
         CtxTraining.IsChecked = s.UsageContext == UsageContext.Training;
 
@@ -294,6 +296,8 @@ public partial class SettingsView : UserControl, IRefreshable
             a.AutoOverlayModes = AutoModesBox.IsChecked == true;
             a.AutoImport = AutoImportBox.IsChecked == true;
             a.AutoReview = AutoReviewBox.IsChecked == true;
+            a.LaneTips = LaneTipsBox.IsChecked == true;
+            a.PowerSpikes = PowerSpikesBox.IsChecked == true;
         });
         AutoHideBox.IsEnabled = AutoShowBox.IsEnabled = AutoWatchBox.IsChecked == true;
     }

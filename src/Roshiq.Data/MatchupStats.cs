@@ -355,5 +355,35 @@ public sealed class OpenDotaClient : IDisposable
         return ItemTimingNormCache.Median(buckets);
     }
 
+    /// <summary>Соответствие числового id предмета ключу item_xxx (constants/item_ids).</summary>
+    public async Task<IReadOnlyDictionary<int, string>> GetItemIdMapAsync(CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync("/constants/item_ids", ct).ConfigureAwait(false);
+        var map = new Dictionary<int, string>();
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) return map;
+        foreach (var p in doc.RootElement.EnumerateObject())
+            if (int.TryParse(p.Name, out var id) && p.Value.ValueKind == JsonValueKind.String && p.Value.GetString() is string key && key.Length > 0)
+                map[id] = "item_" + key;
+        return map;
+    }
+
+    /// <summary>Популярность предметов на герое по фазам игры: фаза (start/early/mid/late) → id предмета → число покупок.</summary>
+    public async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<int, int>>> GetItemPopularityAsync(int heroId, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync($"/heroes/{heroId}/itemPopularity", ct).ConfigureAwait(false);
+        var result = new Dictionary<string, IReadOnlyDictionary<int, int>>();
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) return result;
+        foreach (var phase in doc.RootElement.EnumerateObject())
+        {
+            if (phase.Value.ValueKind != JsonValueKind.Object) continue;
+            var counts = new Dictionary<int, int>();
+            foreach (var it in phase.Value.EnumerateObject())
+                if (int.TryParse(it.Name, out var id) && it.Value.ValueKind == JsonValueKind.Number && it.Value.TryGetInt32(out var n))
+                    counts[id] = n;
+            result[phase.Name] = counts;
+        }
+        return result;
+    }
+
     public void Dispose() => _http.Dispose();
 }

@@ -1,0 +1,20 @@
+# Советы на линию против героев с определёнными признаками (traits.txt).
+# Формат: признак|совет по-русски|совет по-английски
+# Порядок важен: сверху — самые важные. На каждого соперника показывается до двух советов.
+# Советы о поведении, без конкретных предметов: подбор предметов против состава — только в режиме «Тренировка».
+dot|Его урон копится со временем — не стойте под ним долго, уходите лечиться заранее, а не на последних хп.|His damage stacks over time — don't stand in it, go heal early rather than at low HP.
+early_game|Силён на первых уровнях — до 6-го уровня не ищите драки, добивайте безопасно и берите опыт.|Strong in the first levels — don't look for fights before level 6, farm safely and take experience.
+late_game|Слаб в начале и силён поздно — давите его на линии и мешайте фармить, пока он не собрал предметы.|Weak early and strong late — pressure him in lane and deny his farm before items come online.
+magic_burst|Может убить связкой заклинаний — следите за его маной и 6-м уровнем, не стойте один впереди крипов.|Can kill with a spell combo — watch his mana and level 6, don't stand alone ahead of your creeps.
+physical_burst|Наносит много урона с руки — не меняйтесь ударами впустую, отходите, когда он рядом с вами.|Deals heavy right-click damage — don't trade hits for nothing, step back when he is close.
+mana_burn|Сжигает ману — не тратьте её на крипов, держите запас на побег.|Burns mana — don't spend it on creeps, keep enough for an escape.
+invisibility|Может уйти в невидимость и пропасть с линии — сразу говорите команде, когда он исчез.|Can go invisible and leave the lane — tell your team as soon as he disappears.
+global|Может появиться на вашей линии из любой точки карты — после его 6-го уровня не уходите далеко от вышки без обзора.|Can join your lane from anywhere — after his level 6 don't push far from your tower without vision.
+summons|Призванные существа дают ему давление — бейте их: они дают золото и опыт.|His summons give him lane pressure — kill them, they give gold and experience.
+illusions|Иллюзии быстро бьют крипов и толкают линию — держите линию у своей вышки и бейте самого героя.|Illusions clear creeps fast and push — keep the lane near your tower and hit the real hero.
+heal|Лечится на линии — частые мелкие размены бесполезны, делайте один сильный заход.|Heals in lane — small trades are pointless, commit to one strong engage instead.
+lifesteal|Восстанавливает здоровье ударами — не дерись с ним долго, бей коротко и уходи.|Heals with attacks — don't fight him long, trade briefly and back off.
+stun|Есть надёжный контроль — не подходите близко без причины, а если поймал — ждите, что подтянутся его союзники.|Has reliable disable — don't walk close without a reason, and expect his allies to follow up.
+mobility|Очень мобильный — не гонитесь за ним далеко без контроля, это часто ловушка.|Very mobile — don't chase him far without a disable, it's often a trap.
+push|Быстро сносит крипов и вышки — следите, чтобы линия не уезжала к вашей вышке, просите помощь вовремя.|Clears creeps and towers fast — keep the lane from crashing into your tower, ask for help in time.
+ranged|Атакует издалека — стойте за своими крипами и добивайте, когда он бьёт крипов, а не вас.|Attacks from range — stay behind your creeps and last-hit while he is hitting creeps, not you.

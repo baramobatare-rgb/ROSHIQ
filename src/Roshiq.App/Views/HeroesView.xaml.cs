@@ -107,6 +107,7 @@ public partial class HeroesView : UserControl, IRefreshable
         var hero = _selected;
         Details.Visibility = hero == null ? Visibility.Collapsed : Visibility.Visible;
         if (hero == null) return;
+        ShowMeta(hero, autoLoad: true);
 
         FavoriteButton.Content = L.Get(App.Host.Settings.Current.FavoriteHeroKeys.Contains(hero.Key) ? "my_favorite_remove" : "my_favorite_add");
         FavoriteButton.Foreground = Ui.Res(App.Host.Settings.Current.FavoriteHeroKeys.Contains(hero.Key) ? "Accent" : "Text");
@@ -274,6 +275,83 @@ public partial class HeroesView : UserControl, IRefreshable
         if (_loadingBuilds || !Ui.TryValue<string?>(PersonalBuildBox, out var id)) return;
         _previewBuildId = id;
         ShowDetails();
+    }
+
+    // ------------------------------------------------------------------ мета-сборка из OpenDota
+
+    private int _metaLoadingHero = -1;
+    /// <summary>Герои, для которых уже пробовали загрузить мету в этот запуск (без повторов при каждой перерисовке).</summary>
+    private readonly HashSet<int> _metaTried = new();
+
+    private void ShowMeta(Hero hero, bool autoLoad)
+    {
+        var L = Loc.Instance;
+        var meta = App.Host.MetaBuilds.Get(hero.Id);
+        MetaPanel.Children.Clear();
+        MetaUseButton.IsEnabled = meta != null;
+        bool online = App.Host.Settings.Current.Data.AllowOnlineStats;
+        MetaRefreshButton.IsEnabled = online && _metaLoadingHero != hero.Id;
+        if (meta == null)
+        {
+            MetaStatus.Text = online ? L.Get("meta_none") : L.Get("steam_need_network");
+        }
+        else
+        {
+            MetaStatus.Text = L.Format("meta_updated", meta.FetchedUtc.ToLocalTime().ToString("dd.MM HH:mm"));
+            foreach (var (phase, items) in meta.Phases.OrderBy(p => p.Key))
+            {
+                MetaPanel.Children.Add(new TextBlock
+                {
+                    Text = L.PhaseName(phase).ToUpperInvariant(), Style = (Style)FindResource("Eyebrow"), Margin = new Thickness(0, 8, 0, 4)
+                });
+                var wrap = new WrapPanel();
+                foreach (var it in items)
+                {
+                    var item = App.Host.Database.FindItem(it.ItemKey);
+                    var chip = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 6) };
+                    var icon = Ui.ItemIcon(it.ItemKey);
+                    chip.Children.Add(icon);
+                    chip.Children.Add(new TextBlock
+                    {
+                        Text = item?.DisplayName(L.Language) ?? it.ItemKey, Foreground = Ui.Res("Text"), VerticalAlignment = VerticalAlignment.Center
+                    });
+                    chip.Children.Add(new TextBlock
+                    {
+                        Text = " " + (it.Share * 100).ToString("0") + "%", Foreground = Ui.Res("Muted"), VerticalAlignment = VerticalAlignment.Center
+                    });
+                    chip.ToolTip = L.Format("meta_count", it.Count);
+                    wrap.Children.Add(chip);
+                }
+                MetaPanel.Children.Add(wrap);
+            }
+        }
+        if (autoLoad && online && App.Host.MetaBuilds.IsStale(hero.Id) && _metaLoadingHero != hero.Id && _metaTried.Add(hero.Id))
+            _ = LoadMetaAsync(hero, force: false);
+    }
+
+    private async Task LoadMetaAsync(Hero hero, bool force)
+    {
+        _metaLoadingHero = hero.Id;
+        MetaRefreshButton.IsEnabled = false;
+        MetaStatus.Text = Loc.T("meta_loading");
+        string? message;
+        try { (_, message) = await App.Host.LoadMetaBuildAsync(hero, force); }
+        finally { _metaLoadingHero = -1; }
+        if (_selected?.Id != hero.Id) return;
+        ShowMeta(hero, autoLoad: false);
+        if (message != null) MetaStatus.Text = message;
+    }
+
+    private void MetaRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selected != null) _ = LoadMetaAsync(_selected, force: true);
+    }
+
+    private void MetaUse_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selected == null || App.Host.MetaBuilds.Get(_selected.Id) is not { } meta) return;
+        var build = App.Host.PersonalFromMeta(meta, _selected, SelectedPosition);
+        OpenEditor(build);
     }
 
     private void NewBuild_Click(object sender, RoutedEventArgs e)
