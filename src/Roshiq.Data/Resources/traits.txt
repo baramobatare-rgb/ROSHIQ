@@ -1,0 +1,49 @@
+# Признаки героев: key|ru|en
+melee|ближний бой|melee
+ranged|дальний бой|ranged
+right_click|зависит от атак|relies on attacks
+caster|заклинатель|spellcaster
+stun|оглушения/контроль|stuns/disables
+silence|безмолвие|silence
+root|удержание (root)|root
+hex|превращение (hex)|hex
+slow|замедления|slows
+disarm|обезоруживание|disarm
+magic_burst|магический прокаст|magic burst
+physical_burst|физический прокаст|physical burst
+dot|периодический урон|damage over time
+aoe|урон по площади|area damage
+illusions|иллюзии|illusions
+summons|призванные существа|summons
+invisibility|невидимость|invisibility
+evasion|уклонение|evasion
+mobility|мобильность|mobility
+heal|лечение|healing
+save|спасение союзников|saves
+lifesteal|вампиризм|lifesteal
+armor_reduction|снижение брони|armor reduction
+high_armor|высокая броня|high armor
+magic_resist|сопротивление магии|magic resistance
+spell_immunity|защита от магии|spell immunity
+tanky|живучесть|tankiness
+fragile|хрупкость|fragile
+push|давление на строения|pushing
+global|глобальное присутствие|global presence
+reveal|раскрытие невидимости|reveals invisibility
+dispel|развеивание|dispel
+mana_burn|сжигание маны|mana burn
+break|break (отключение пассивок)|break
+cleave|сплэш-урон|cleave
+late_game|сильная поздняя игра|late game
+early_game|сильная ранняя игра|early game
+channeling|поддерживаемые заклинания|channeled spells
+initiator|инициация|initiation
+aura|ауры|auras
+heal_reduction|снижение лечения|heal reduction
+pure_damage|чистый урон|pure damage
+punishes_attacks|наказывает за атаки|punishes attackers
+punishes_casters|наказывает за заклинания|punishes casters
+mana_dependent|зависит от маны|mana dependent
+percent_damage|урон от % здоровья|percentage damage
+passive_reliant|зависит от пассивок|relies on passives
+anti_mobility|наказывает мобильность|punishes mobility

@@ -1,0 +1,6 @@
+Hero portrait templates for local visual matching.
+Source: https://cdn.akamai.steamstatic.com/apps/dota2/images/dota_react/heroes/{heroKey}.png
+Retrieved: 2026-11-05
+127 hero portraits, base and mirrored variants, 96 x 54 RGB, DPT1 format.
+Dota 2 and its hero artwork belong to Valve Corporation. ROSHIQ is unofficial and is not endorsed by Valve.
+These images are reference templates; matching them does not establish real-game detection accuracy.

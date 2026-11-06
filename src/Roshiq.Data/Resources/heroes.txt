@@ -1,0 +1,132 @@
+# ROSHIQ — база героев (качественные признаки, без процентов побед).
+# Формат: id|key|Name|NameRu|атрибут(S/A/I/U)|позиции по убыванию типичности|признаки
+# Признаки описаны в traits.txt. Данные собраны вручную по состоянию знаний на 2026 г.;
+# после крупных патчей проверьте и при необходимости поправьте файл
+# (переопределение: %AppData%\Roshiq\data\heroes.txt).
+1|antimage|Anti-Mage|Антимаг|A|1|melee,right_click,mobility,mana_burn,magic_resist,late_game,punishes_casters
+2|axe|Axe|Акс|S|3|melee,initiator,stun,tanky,punishes_attacks,high_armor,early_game
+3|bane|Bane|Бейн|U|5,4|ranged,caster,stun,channeling,pure_damage,save
+4|bloodseeker|Bloodseeker|Бладсикер|A|1,3,2|melee,right_click,silence,heal,pure_damage,early_game,anti_mobility
+5|crystal_maiden|Crystal Maiden|Кристал Мейден|I|5,4|ranged,caster,root,slow,aoe,aura,channeling,fragile,magic_burst
+6|drow_ranger|Drow Ranger|Дроу Рейнджер|A|1|ranged,right_click,silence,slow,fragile,aura,push
+7|earthshaker|Earthshaker|Эртшейкер|S|4,3|melee,initiator,stun,aoe,magic_burst
+8|juggernaut|Juggernaut|Джаггернаут|A|1|melee,right_click,spell_immunity,heal,physical_burst,push
+9|mirana|Mirana|Мирана|A|4,2|ranged,caster,stun,invisibility,mobility,magic_burst
+10|morphling|Morphling|Морфлинг|A|1|ranged,right_click,mobility,stun,late_game
+11|nevermore|Shadow Fiend|Шедоу Финд|A|2,1|ranged,right_click,armor_reduction,aoe,magic_burst,fragile,push
+12|phantom_lancer|Phantom Lancer|Фантом Лансер|A|1|melee,right_click,illusions,mobility,mana_burn,late_game
+13|puck|Puck|Пак|I|2|ranged,caster,silence,mobility,aoe,magic_burst,root,initiator
+14|pudge|Pudge|Пудж|S|4,3|melee,stun,channeling,tanky,magic_resist,dot
+15|razor|Razor|Разор|A|1,3,2|ranged,right_click,slow,aoe,early_game,push,punishes_attacks
+16|sand_king|Sand King|Сенд Кинг|U|3,4|melee,initiator,stun,aoe,magic_burst,invisibility,mobility
+17|storm_spirit|Storm Spirit|Шторм Спирит|I|2|ranged,caster,mobility,stun,magic_burst,mana_dependent,slow
+18|sven|Sven|Свен|S|1|melee,right_click,stun,cleave,physical_burst,late_game,aoe
+19|tiny|Tiny|Тини|S|2,4,1|melee,stun,magic_burst,physical_burst,cleave,initiator
+20|vengefulspirit|Vengeful Spirit|Венгефул Спирит|A|5,4|ranged,stun,save,armor_reduction,aura
+21|windrunner|Windranger|Виндрейнджер|U|2,4,3|ranged,right_click,stun,evasion,mobility,physical_burst
+22|zuus|Zeus|Зевс|I|2,5|ranged,caster,magic_burst,global,reveal,fragile
+23|kunkka|Kunkka|Кунка|S|3,2|melee,stun,cleave,aoe,tanky,magic_burst,initiator
+25|lina|Lina|Лина|I|2,1|ranged,caster,stun,magic_burst,aoe,fragile,right_click
+26|lion|Lion|Лион|I|5,4|ranged,caster,stun,hex,mana_burn,magic_burst,fragile
+27|shadow_shaman|Shadow Shaman|Шедоу Шаман|I|5,4|ranged,caster,hex,stun,channeling,summons,push
+28|slardar|Slardar|Слардар|S|3|melee,stun,armor_reduction,reveal,initiator,tanky,mobility
+29|tidehunter|Tidehunter|Тайдхантер|S|3|melee,initiator,stun,aoe,tanky,slow,dispel
+30|witch_doctor|Witch Doctor|Вич Доктор|I|5|ranged,caster,stun,heal,channeling,magic_burst,aoe
+31|lich|Lich|Лич|I|5|ranged,caster,slow,save,magic_burst,aoe
+32|riki|Riki|Рики|A|4,1|melee,right_click,invisibility,silence,mobility,physical_burst,fragile
+33|enigma|Enigma|Энигма|U|3,5,4|ranged,initiator,stun,channeling,aoe,summons,push
+34|tinker|Tinker|Тинкер|I|2|ranged,caster,magic_burst,mobility,global,push,mana_dependent,fragile
+35|sniper|Sniper|Снайпер|A|2,1|ranged,right_click,stun,fragile,slow
+36|necrolyte|Necrophos|Некрофос|I|2,3,1|ranged,caster,heal,heal_reduction,tanky,dot,push
+37|warlock|Warlock|Варлок|I|5,4|ranged,caster,stun,heal,summons,aoe,slow
+38|beastmaster|Beastmaster|Бистмастер|U|3|melee,initiator,stun,summons,aura,push
+39|queenofpain|Queen of Pain|Королева боли|I|2|ranged,caster,mobility,magic_burst,aoe,dot
+40|venomancer|Venomancer|Веномансер|U|3,4,5|ranged,dot,slow,summons,aoe,push
+41|faceless_void|Faceless Void|Фейслесс Войд|A|1|melee,right_click,stun,mobility,late_game,initiator
+42|skeleton_king|Wraith King|Врейт Кинг|S|1,3|melee,right_click,stun,lifesteal,tanky,passive_reliant
+43|death_prophet|Death Prophet|Дез Профет|U|2,3|ranged,caster,silence,push,aoe,heal,tanky
+44|phantom_assassin|Phantom Assassin|Фантом Ассассин|A|1|melee,right_click,evasion,physical_burst,mobility,passive_reliant,late_game
+45|pugna|Pugna|Пугна|I|2,5,4|ranged,caster,magic_burst,heal,push,channeling,fragile,punishes_casters
+46|templar_assassin|Templar Assassin|Темплар Ассассин|A|2|ranged,right_click,invisibility,physical_burst,armor_reduction,mobility,slow
+47|viper|Viper|Вайпер|A|2,3,1|ranged,right_click,dot,slow,break,tanky
+48|luna|Luna|Луна|A|1|ranged,right_click,aoe,magic_burst,aura,stun,late_game,push
+49|dragon_knight|Dragon Knight|Драгон Кнайт|S|1,2,3|melee,right_click,stun,tanky,high_armor,cleave,push,heal
+50|dazzle|Dazzle|Даззл|U|5,4|ranged,save,heal,armor_reduction,dot
+51|rattletrap|Clockwerk|Клокверк|S|4,3|melee,initiator,stun,tanky,mobility,magic_burst
+52|leshrac|Leshrac|Лешрак|I|2,3|ranged,caster,stun,aoe,magic_burst,push,mana_dependent,dot
+53|furion|Nature's Prophet|Фурион|U|4,3,1|ranged,right_click,global,summons,push,root,mobility
+54|life_stealer|Lifestealer|Лайфстилер|S|1|melee,right_click,spell_immunity,lifesteal,percent_damage,slow,heal
+55|dark_seer|Dark Seer|Дарк Сир|I|3|melee,initiator,aoe,push,mobility,stun
+56|clinkz|Clinkz|Клинкз|A|1,2,4|ranged,right_click,invisibility,physical_burst,fragile,summons,push
+57|omniknight|Omniknight|Омникнайт|S|5,4,3|melee,save,heal,dispel,pure_damage,tanky,magic_resist
+58|enchantress|Enchantress|Энчантресс|I|5,4|ranged,right_click,heal,summons,slow,pure_damage,push
+59|huskar|Huskar|Хускар|S|2,1|ranged,right_click,heal,magic_resist,early_game,dot,lifesteal
+60|night_stalker|Night Stalker|Найт Сталкер|S|3,2|melee,right_click,silence,tanky,early_game,mobility,initiator
+61|broodmother|Broodmother|Бруда|A|2,3,1|melee,right_click,summons,push,mobility,early_game,slow
+62|bounty_hunter|Bounty Hunter|Баунти Хантер|A|4|melee,invisibility,reveal,mobility,slow
+63|weaver|Weaver|Вивер|A|1,4|ranged,right_click,invisibility,mobility,save,fragile,late_game
+64|jakiro|Jakiro|Джакиро|I|5,4|ranged,caster,stun,aoe,dot,push,slow
+65|batrider|Batrider|Бэтрайдер|U|3,4,2|ranged,initiator,mobility,dot,aoe,stun
+66|chen|Chen|Чен|I|5|ranged,save,heal,summons,push,global
+67|spectre|Spectre|Спектра|A|1|melee,right_click,global,tanky,punishes_attacks,illusions,late_game,pure_damage
+68|ancient_apparition|Ancient Apparition|Эншент Аппарейшн|I|5,4|ranged,caster,heal_reduction,slow,global,magic_burst,stun
+69|doom_bringer|Doom|Дум|S|3|melee,silence,break,dot,tanky,initiator
+70|ursa|Ursa|Урса|A|1,3|melee,right_click,physical_burst,early_game,slow,tanky
+71|spirit_breaker|Spirit Breaker|Спирит Брейкер|S|4,3|melee,stun,initiator,global,mobility,tanky
+72|gyrocopter|Gyrocopter|Гирокоптер|A|1,4|ranged,right_click,aoe,magic_burst,cleave,stun
+73|alchemist|Alchemist|Алхимик|S|1,3,2|melee,right_click,stun,tanky,heal,dot,late_game,push
+74|invoker|Invoker|Инвокер|I|2|ranged,caster,stun,magic_burst,aoe,mobility,disarm,mana_dependent,fragile
+75|silencer|Silencer|Сайленсер|I|5,4,2|ranged,caster,silence,aoe,pure_damage
+76|obsidian_destroyer|Outworld Destroyer|Аутворлд Дестроер|I|2|ranged,caster,save,pure_damage,mana_dependent,magic_burst
+77|lycan|Lycan|Ликан|S|1,3|melee,right_click,summons,push,mobility,early_game,aura
+78|brewmaster|Brewmaster|Брюмастер|U|3|melee,initiator,dispel,evasion,tanky,aoe,summons
+79|shadow_demon|Shadow Demon|Шедоу Демон|I|5,4|ranged,caster,save,dispel,illusions,slow,magic_burst
+80|lone_druid|Lone Druid|Лон Друид|A|1,2|ranged,right_click,summons,push,root,early_game
+81|chaos_knight|Chaos Knight|Хаос Кнайт|S|1,3|melee,right_click,stun,illusions,physical_burst,tanky,late_game
+82|meepo|Meepo|Мипо|A|2,1|melee,right_click,root,mobility,summons,fragile,early_game
+83|treant|Treant Protector|Трент Протектор|S|5,4|melee,root,heal,save,initiator,invisibility,tanky
+84|ogre_magi|Ogre Magi|Огр Маги|S|5,4|melee,stun,tanky,magic_burst,dot
+85|undying|Undying|Андайинг|S|5,4|melee,stun,tanky,heal,summons,slow
+86|rubick|Rubick|Рубик|I|4,5|ranged,caster,stun,magic_burst,punishes_casters
+87|disruptor|Disruptor|Дисраптор|I|5,4|ranged,caster,silence,anti_mobility,magic_burst,aoe,root
+88|nyx_assassin|Nyx Assassin|Никс Ассассин|U|4|melee,stun,invisibility,mana_burn,punishes_attacks,punishes_casters,magic_burst
+89|naga_siren|Naga Siren|Нага Сирена|A|1,4|melee,right_click,illusions,root,save,push,late_game
+90|keeper_of_the_light|Keeper of the Light|Кипер оф зе Лайт|I|4,5,2|ranged,caster,magic_burst,push,global,stun
+91|wisp|Io|Ио|U|5,4|ranged,save,heal,global,mobility,stun
+92|visage|Visage|Визаж|U|3,2,4|ranged,summons,stun,magic_burst,high_armor
+93|slark|Slark|Сларк|A|1|melee,right_click,dispel,invisibility,mobility,heal,root,late_game
+94|medusa|Medusa|Медуза|A|1,2|ranged,right_click,stun,tanky,aoe,mana_dependent,late_game,slow
+95|troll_warlord|Troll Warlord|Тролль Варлорд|A|1|ranged,right_click,slow,physical_burst,late_game,passive_reliant
+96|centaur|Centaur Warrunner|Кентавр Варраннер|S|3|melee,initiator,stun,tanky,punishes_attacks,mobility,save
+97|magnataur|Magnus|Магнус|U|3,2,4|melee,initiator,stun,aoe,cleave,mobility
+98|shredder|Timbersaw|Тимберсо|S|3,2|melee,tanky,high_armor,pure_damage,mobility,aoe,caster,mana_dependent
+99|bristleback|Bristleback|Бристлбек|S|3,1|melee,tanky,dot,armor_reduction,slow,passive_reliant
+100|tusk|Tusk|Таск|S|4|melee,initiator,stun,mobility,save,physical_burst
+101|skywrath_mage|Skywrath Mage|Скайврат Мейдж|I|4,5,2|ranged,caster,silence,magic_burst,slow,fragile
+102|abaddon|Abaddon|Абаддон|U|3,5,1|melee,save,heal,dispel,tanky,slow
+103|elder_titan|Elder Titan|Элдер Титан|S|4,5|melee,stun,armor_reduction,aoe,initiator,magic_burst
+104|legion_commander|Legion Commander|Легион Коммандер|S|3,1|melee,right_click,stun,dispel,heal,initiator,physical_burst
+105|techies|Techies|Техис|U|4,5|ranged,caster,magic_burst,stun,aoe
+106|ember_spirit|Ember Spirit|Эмбер Спирит|A|2|melee,right_click,mobility,root,aoe,magic_burst
+107|earth_spirit|Earth Spirit|Эрт Спирит|S|4|melee,stun,silence,mobility,magic_burst,initiator,save
+108|abyssal_underlord|Underlord|Андерлорд|S|3|melee,aoe,root,tanky,push,slow,global
+109|terrorblade|Terrorblade|Террорблейд|A|1|melee,right_click,illusions,push,late_game,high_armor
+110|phoenix|Phoenix|Феникс|S|4,3|ranged,initiator,dot,heal,slow,aoe,stun,mobility
+111|oracle|Oracle|Оракул|I|5|ranged,caster,save,dispel,heal,fragile
+112|winter_wyvern|Winter Wyvern|Винтер Виверн|I|5,4|ranged,caster,save,stun,slow,aoe,heal
+113|arc_warden|Arc Warden|Арк Варден|U|1,2|ranged,right_click,push,slow,magic_burst,late_game
+114|monkey_king|Monkey King|Манки Кинг|A|1,2,4|melee,right_click,stun,mobility,physical_burst,aoe
+119|dark_willow|Dark Willow|Дарк Виллоу|I|4,5|ranged,caster,root,stun,magic_burst,fragile
+120|pangolier|Pangolier|Панголье|U|3,2|melee,initiator,stun,mobility,disarm,magic_burst
+121|grimstroke|Grimstroke|Гримстрок|I|5,4|ranged,caster,silence,stun,magic_burst,save
+123|hoodwink|Hoodwink|Худвинк|A|4|ranged,root,mobility,magic_burst,evasion,fragile
+126|void_spirit|Void Spirit|Войд Спирит|U|2|melee,mobility,silence,magic_burst,aoe
+128|snapfire|Snapfire|Снэпфаер|U|5,4|ranged,stun,magic_burst,mobility,aoe,slow
+129|mars|Mars|Марс|S|3|melee,initiator,stun,tanky,cleave,aoe,punishes_attacks
+131|ringmaster|Ringmaster|Ринг-мастер|I|5,4|ranged,caster,stun,save,dot,aoe
+135|dawnbreaker|Dawnbreaker|Даунбрейкер|S|3,5,4|melee,heal,stun,global,aoe,tanky,initiator
+136|marci|Marci|Марси|U|4,3,2|melee,stun,mobility,physical_burst,initiator,lifesteal
+137|primal_beast|Primal Beast|Праймал Бист|S|3,2|melee,initiator,stun,mobility,tanky,aoe,magic_burst
+138|muerta|Muerta|Муэрта|I|1,2|ranged,right_click,silence,magic_burst,late_game,fragile
+145|kez|Kez|Кез|A|1,2|melee,right_click,mobility,physical_burst
+155|largo|Largo|Ларго|S|3,4,5|melee,stun,heal,dispel,slow,tanky,save,caster,mana_dependent,aura

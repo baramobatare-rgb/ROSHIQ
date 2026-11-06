@@ -1,0 +1,96 @@
+# Выпуск версии: push тега вида v0.7.0 (версия должна совпадать с <Version> в Directory.Build.props).
+# Собирает установщик, переносной zip и SHA256SUMS.txt и публикует их в GitHub Releases —
+# оттуда программа берёт обновления (вкладка «Обновления»).
+#
+# Подпись (необязательно): секреты репозитория SIGN_PFX_BASE64 (сертификат .pfx в base64)
+# и SIGN_PFX_PASSWORD. Без них релиз выходит неподписанным. Подробности — RELEASING.md.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      SIGN_PFX_BASE64: ${{ secrets.SIGN_PFX_BASE64 }}
+      SIGN_PFX_PASSWORD: ${{ secrets.SIGN_PFX_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Проверка версии
+        id: ver
+        shell: pwsh
+        run: |
+          $v = ([xml](Get-Content Directory.Build.props -Raw)).Project.PropertyGroup.Version | Select-Object -First 1
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$v") {
+            Write-Error "Тег $env:GITHUB_REF_NAME не совпадает с версией v$v в Directory.Build.props"
+            exit 1
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Сертификат подписи
+        if: env.SIGN_PFX_BASE64 != ''
+        shell: pwsh
+        run: |
+          $pfx = Join-Path $env:RUNNER_TEMP 'roshiq-sign.pfx'
+          [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:SIGN_PFX_BASE64))
+          "ROSHIQ_SIGN_PFX=$pfx" >> $env:GITHUB_ENV
+          "ROSHIQ_SIGN_PFX_PASSWORD=$env:SIGN_PFX_PASSWORD" >> $env:GITHUB_ENV
+
+      - name: Сборка, тесты, установщик
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Удалить сертификат
+        if: always()
+        shell: pwsh
+        run: Remove-Item (Join-Path $env:RUNNER_TEMP 'roshiq-sign.pfx') -ErrorAction SilentlyContinue
+
+      - name: Описание релиза из README
+        shell: pwsh
+        run: |
+          $v = '${{ steps.ver.outputs.version }}'
+          $lines = Get-Content README.md -Encoding utf8
+          $start = ($lines | Select-String -Pattern "^## Версия $([regex]::Escape($v))\b" | Select-Object -First 1).LineNumber
+          if ($start) {
+            $body = $lines[$start..($lines.Count - 1)]
+            $end = ($body | Select-String -Pattern '^## ' | Select-Object -First 1).LineNumber
+            if ($end) { $body = $body[0..($end - 2)] }
+          } else { $body = @("ROSHIQ $v") }
+          $body += ''
+          $body += 'Проверка файлов: `Get-FileHash <файл> -Algorithm SHA256` и сравнение с SHA256SUMS.txt.'
+          $body | Out-File notes.md -Encoding utf8
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: roshiq-${{ steps.ver.outputs.version }}
+          path: |
+            dist/Roshiq-Setup-*.exe
+            dist/Roshiq-Portable-*.zip
+            dist/SHA256SUMS.txt
+            build.log
+
+      - name: GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ROSHIQ ${{ steps.ver.outputs.version }}
+          body_path: notes.md
+          files: |
+            dist/Roshiq-Setup-*.exe
+            dist/Roshiq-Portable-*.zip
+            dist/SHA256SUMS.txt

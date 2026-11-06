@@ -1,0 +1,7 @@
+# Чего не хватает команде: если ни у одного союзника нет признака, кандидат с ним получает бонус.
+stun|0.8|В команде пока мало надёжного контроля|Your team lacks reliable disables
+initiator|0.8|В команде нет явного инициатора|Your team has no clear initiator
+save|0.6|В команде нет героев со спасающими способностями|Your team lacks saves
+aoe|0.5|Команде не хватает урона по площади|Your team lacks area damage
+late_game|0.5|Команде не хватает силы в поздней игре|Your team lacks late-game power
+dispel|0.3|В команде нет развеивания|Your team lacks dispels

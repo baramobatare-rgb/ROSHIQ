@@ -1,0 +1,22 @@
+# Советы по ролям: позиция|категория|RU|EN
+1|farm|Ранняя задача — стабильный фарм: добивайте крипов, не отдавайте лишние размены|Early goal is steady farm: last-hit and avoid bad trades
+1|farm|Совмещайте лес и линии, чтобы не простаивать между волнами|Mix jungle and lanes so you are never idle between waves
+1|items|Выбирайте между атакующей и защитной сборкой по угрозам противника: контроль и прокаст требуют защиты|Choose offensive vs defensive items by enemy threats: disables and burst call for defense
+1|gameplay|Не умирайте без пользы: смерть кэрри стоит команде темпа|Don't die for nothing: a carry's death costs the team tempo
+1|gameplay|Подключайтесь к дракам, когда ключевой предмет готов|Join fights when your key item is ready
+2|laning|Следите за рунами и временем их появления|Track rune timings
+2|items|Подбирайте предметы под матчап: мобильность, усиление способностей или защита|Adapt items to the matchup: mobility, spell power or defense
+2|gameplay|Используйте пик силы для ротаций на другие линии|Use your power spikes to rotate to other lanes
+2|gameplay|Опыт важен не меньше золота: не теряйте волны|XP matters as much as gold: don't miss waves
+3|laning|Главное на линии — выжить и мешать вражескому кэрри фармить|In lane, survive and disrupt the enemy carry's farm
+3|items|Первые большие предметы — для инициации или выживания|First big items should enable initiation or survival
+3|items|Командные предметы (ауры, защита от магии) часто полезнее личного урона|Team items (auras, magic defense) are often better than personal damage
+3|gameplay|Инициируйте, когда союзники рядом и готовы продолжить|Initiate when allies are close and ready to follow up
+4|items|Расходники и мобильность важнее дорогих предметов в ранней игре|Consumables and mobility beat expensive items early
+4|items|Защитные предметы для союзников помогают выигрывать драки|Defensive items for allies win fights
+4|gameplay|Ищите возможности для ганков и помогайте линиям|Look for ganks and help lanes
+4|gameplay|Делите варды и смоки с пятой позицией|Share wards and smokes with your position 5
+5|items|Обзор карты и развеивание вражеских вардов — ваш вклад в каждую драку|Vision and dewarding are your contribution to every fight
+5|items|Тратьте ограниченное золото на то, что спасает союзников|Spend limited gold on items that save allies
+5|gameplay|Держитесь позади и сохраняйте способности для защиты кэрри|Stay behind and save spells to protect your carry
+5|gameplay|Не забирайте фарм у кор-героев|Don't take farm from your cores

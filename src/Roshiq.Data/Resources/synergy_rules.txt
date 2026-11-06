@@ -1,0 +1,14 @@
+# Синергия: если у союзника признак A, а у кандидата — B. {a} — союзники.
+initiator|aoe|0.9|Урон по площади после инициации союзников: {a}|Area damage follows up initiation from {a}
+initiator|magic_burst|0.7|Прокаст после инициации союзников: {a}|Burst follows up initiation from {a}
+aoe|initiator|0.9|Инициация для массовых способностей союзников: {a}|Initiation sets up area spells of {a}
+magic_burst|initiator|0.6|Создаёт возможность для прокаста союзников: {a}|Creates openings for burst from {a}
+stun|right_click|0.6|Контроль союзников даёт время для атак: {a}|Allied disables give time to attack: {a}
+stun|physical_burst|0.6|Контроль союзников помогает реализовать прокаст: {a}|Allied disables enable burst: {a}
+right_click|armor_reduction|0.8|Снижение брони усиливает атаки союзников: {a}|Armor reduction amplifies attacks of {a}
+right_click|stun|0.5|Даёт контроль союзникам, зависящим от атак: {a}|Provides lockdown for attack-based {a}
+late_game|save|0.8|Сейвы помогают союзникам дожить до поздней игры: {a}|Saves help {a} reach the late game
+save|late_game|0.6|Сейвы союзников защищают ваш поздний потенциал: {a}|Allied saves protect your late game: {a}
+fragile|save|0.7|Может защищать хрупких союзников: {a}|Can protect fragile allies: {a}
+root|aoe|0.5|Удержание союзников помогает попасть способностями по области: {a}|Allied roots help land area spells: {a}
+push|push|0.4|Совместное давление на строения с: {a}|Joint pushing with {a}

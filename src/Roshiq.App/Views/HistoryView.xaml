@@ -1,0 +1,183 @@
+<UserControl x:Class="Roshiq.App.Views.HistoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="clr-namespace:Roshiq.App"
+             xmlns:ov="clr-namespace:Roshiq.Overlay;assembly=Roshiq.Overlay">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,6,20">
+            <!-- Вкладки раздела: матчи и разбор / прогресс / импорт -->
+            <WrapPanel Margin="0,0,0,14">
+                <RadioButton x:Name="TabMatches" Style="{StaticResource Segment}" GroupName="HistTabs" IsChecked="True" Content="{app:T hist_tab_matches, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabProgress" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_progress, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabImport" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_import, Upper=True}" Checked="Tab_Checked" />
+            </WrapPanel>
+            <StackPanel x:Name="MatchesSection">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="340" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Список матчей -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Top">
+                                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T hist_matches, Upper=True}" /></TextBlock>
+                                <TextBlock x:Name="CountText" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                            </StackPanel>
+                            <Button x:Name="DeleteButton" DockPanel.Dock="Bottom" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                                    Content="{app:T hist_delete, Upper=True}" Click="Delete_Click" Margin="0,8,0,0" />
+                            <ListBox x:Name="MatchList" Height="420" SelectionChanged="MatchList_SelectionChanged" />
+                        </DockPanel>
+                    </Border>
+
+                    <!-- Разбор выбранного матча -->
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T hist_review, Upper=True}" /></TextBlock>
+                            <ContentControl x:Name="EmptyState" Focusable="False" />
+                            <StackPanel x:Name="ReviewPanel">
+                                <DockPanel>
+                                <ContentControl x:Name="MatchPortrait" DockPanel.Dock="Left" Focusable="False" Margin="0,4,16,0" VerticalAlignment="Top" />
+                                <TextBlock x:Name="MatchTitle" Style="{StaticResource Display}" FontSize="30" VerticalAlignment="Center" />
+                            </DockPanel>
+                                <TextBlock x:Name="MatchMeta" Style="{StaticResource MutedText}" Margin="0,2,0,8" />
+                                <WrapPanel x:Name="LinksPanel" Margin="0,0,0,8">
+                                    <Button Style="{StaticResource GhostButton}" Content="OPENDOTA" Click="OpenDota_Click" />
+                                    <Button Style="{StaticResource GhostButton}" Content="STRATZ" Click="Stratz_Click" />
+                                </WrapPanel>
+                                <WrapPanel x:Name="SummaryChips" Margin="0,0,0,10" />
+                                <StackPanel x:Name="OdReviewPanel" Margin="0,0,0,12" />
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T hist_chart, Upper=True}" />
+                                <Border CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Panel2}"
+                                        Height="170" Margin="0,0,0,6" ClipToBounds="True">
+                                    <Canvas x:Name="Chart" SizeChanged="Chart_SizeChanged" />
+                                </Border>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                    <Rectangle Width="14" Height="3" Fill="{DynamicResource Accent}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="GPM" Style="{StaticResource MutedText}" Margin="0,0,16,0" />
+                                    <Rectangle Width="14" Height="3" Fill="{DynamicResource Muted}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                    <TextBlock Text="XPM" Style="{StaticResource MutedText}" Margin="0,0,16,0" />
+                                    <TextBlock x:Name="ChartNote" Style="{StaticResource MutedText}" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T hist_items, Upper=True}" />
+                                <TextBlock Text="{app:T hist_items_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,6" />
+                                <StackPanel x:Name="ItemsPanel" />
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T deaths_title, Upper=True}" Margin="0,12,0,0" />
+                                <StackPanel x:Name="DeathsPanel" />
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T hist_alerts, Upper=True}" Margin="0,12,0,0" />
+                                <StackPanel x:Name="AlertsPanel" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+            <StackPanel x:Name="ProgressSection" Visibility="Collapsed">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T hist_by_hero, Upper=True}" /></TextBlock>
+                            <StackPanel x:Name="HeroStatsPanel" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,8,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T hist_by_role, Upper=True}" /></TextBlock>
+                            <StackPanel x:Name="RoleStatsPanel" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Margin="8,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T hist_mistakes, Upper=True}" /></TextBlock>
+                            <TextBlock Text="{app:T hist_mistakes_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,6" />
+                            <StackPanel x:Name="MistakesPanel" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Цели -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="06 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T goal_title, Upper=True}" /></TextBlock>
+                            <TextBlock x:Name="GoalText" Style="{StaticResource BigValue}" FontSize="20" TextWrapping="Wrap" />
+                            <TextBlock x:Name="GoalProgress" Style="{StaticResource MutedText}" Margin="0,4,0,8" />
+                            <WrapPanel x:Name="GoalHistory" Margin="0,0,0,8" />
+                            <Button x:Name="GoalSkip" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Content="{app:T goal_skip, Upper=True}" Click="GoalSkip_Click" />
+                            <TextBlock Text="{app:T goal_hint}" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                        </StackPanel>
+                    </Border>
+                    <!-- Тренды -->
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="07 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T trend_title, Upper=True}" /></TextBlock>
+                            <TextBlock Text="{app:T trend_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                            <UniformGrid x:Name="TrendGrid" Columns="2" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <!-- Закономерности -->
+                    <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="08 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T pattern_title, Upper=True}" /></TextBlock>
+                            <StackPanel x:Name="PatternsPanel" />
+                        </StackPanel>
+                    </Border>
+                    <!-- Против кого проигрываете -->
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,8,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="09 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T matchups_title, Upper=True}" /></TextBlock>
+                            <TextBlock Text="{app:T matchups_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,6" TextWrapping="Wrap" />
+                            <StackPanel x:Name="MatchupsPanel" />
+                        </StackPanel>
+                    </Border>
+                    <!-- Карта смертей -->
+                    <Border Grid.Column="2" Style="{StaticResource Card}" Margin="8,0,0,16">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="10 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T deathmap_title, Upper=True}" /></TextBlock>
+                            <TextBlock Text="{app:T deathmap_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" TextWrapping="Wrap" MaxWidth="262" HorizontalAlignment="Left" />
+                            <StackPanel x:Name="DeathMapPanel" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+            <StackPanel x:Name="ImportSection" Visibility="Collapsed">
+
+                <!-- Импорт из OpenDota -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="08 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T hist_import, Upper=True}" /></TextBlock>
+                        <TextBlock Text="{app:T hist_import_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
+                        <DockPanel>
+                            <Button x:Name="ImportButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Click="Import_Click" Margin="10,0,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <ov:Icon Glyph="{StaticResource I.Database}" Size="15" Margin="0,0,8,0" />
+                                    <TextBlock Text="{app:T hist_import_button, Upper=True}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                            <TextBox x:Name="SteamIdBox" FontFamily="{StaticResource MonoFont}" ToolTip="{app:T hist_steam_id}" VerticalContentAlignment="Center" />
+                        </DockPanel>
+                        <TextBlock x:Name="ImportStatus" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

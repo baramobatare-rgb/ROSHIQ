@@ -1,0 +1,48 @@
+# Контрпик: если у врага есть признак A, а у кандидата — признак B.
+# Формат: enemyTrait|candidateTrait|вес|объяснение RU ({e} — враги)|EN
+right_click|punishes_attacks|1.2|Может эффективно противостоять героям, зависящим от обычных атак: {e}|Punishes heroes that rely on right-clicks: {e}
+right_click|disarm|1.1|Может обезоруживать героев, зависящих от атак: {e}|Can disarm attack-reliant heroes: {e}
+right_click|evasion|0.7|Уклонение снижает урон от атак: {e}|Evasion reduces attack damage from {e}
+right_click|high_armor|0.6|Высокая броня против физического урона: {e}|High armor vs physical damage from {e}
+illusions|aoe|1.2|Урон по площади хорошо справляется с иллюзиями: {e}|Area damage deals with illusions of {e}
+illusions|cleave|0.8|Сплэш-урон бьёт по иллюзиям: {e}|Cleave hits illusions of {e}
+summons|aoe|1.0|Урон по площади против призванных существ: {e}|Area damage vs summons of {e}
+summons|cleave|0.6|Сплэш-урон против существ: {e}|Cleave vs summons of {e}
+invisibility|reveal|2.0|Способен раскрывать невидимость: {e}|Can reveal invisibility of {e}
+mobility|anti_mobility|1.2|Наказывает мобильных героев: {e}|Punishes mobile heroes: {e}
+mobility|root|0.9|Root ограничивает перемещение: {e}|Roots limit mobility of {e}
+mobility|hex|0.9|Hex надёжно выключает мобильного героя: {e}|Hex reliably shuts down {e}
+mobility|silence|0.6|Безмолвие мешает способностям перемещения: {e}|Silence stops movement spells of {e}
+channeling|stun|0.6|Оглушения прерывают поддерживаемые заклинания: {e}|Stuns interrupt channeled spells of {e}
+channeling|silence|0.5|Безмолвие прерывает поддерживаемые заклинания: {e}|Silence interrupts channeled spells of {e}
+heal|heal_reduction|1.2|Снижение лечения против: {e}|Heal reduction vs {e}
+lifesteal|heal_reduction|1.0|Снижение лечения ослабляет вампиризм: {e}|Heal reduction weakens lifesteal of {e}
+passive_reliant|break|1.3|Break отключает ключевые пассивные способности: {e}|Break disables key passives of {e}
+mana_dependent|mana_burn|1.2|Сжигание маны против зависящих от маны: {e}|Mana burn vs mana-dependent {e}
+mana_dependent|silence|0.6|Безмолвие против зависящих от заклинаний: {e}|Silence vs spell-reliant {e}
+caster|silence|0.8|Безмолвие выключает заклинателей: {e}|Silence shuts down casters: {e}
+caster|punishes_casters|1.0|Наказывает за применение способностей: {e}|Punishes spellcasting of {e}
+caster|magic_resist|0.5|Сопротивление магии снижает урон: {e}|Magic resistance reduces damage from {e}
+magic_burst|magic_resist|0.8|Переживает магический прокаст: {e}|Survives magic burst from {e}
+magic_burst|spell_immunity|0.9|Встроенная защита от магии против: {e}|Innate spell protection vs {e}
+magic_burst|save|0.6|Может спасать союзников от прокаста: {e}|Can save allies from burst of {e}
+physical_burst|save|0.6|Может спасать союзников от физического прокаста: {e}|Can save allies from physical burst of {e}
+physical_burst|disarm|0.8|Обезоруживание срывает физический прокаст: {e}|Disarm stops physical burst of {e}
+fragile|physical_burst|0.7|Быстро убивает хрупких героев: {e}|Quickly kills fragile heroes: {e}
+fragile|magic_burst|0.7|Магический прокаст по хрупким героям: {e}|Magic burst vs fragile {e}
+fragile|initiator|0.5|Может навязать драку хрупким героям: {e}|Can force fights on fragile {e}
+tanky|armor_reduction|0.6|Снижение брони против крепких героев: {e}|Armor reduction vs tanky {e}
+tanky|pure_damage|0.8|Чистый урон игнорирует защиту: {e}|Pure damage ignores defenses of {e}
+tanky|percent_damage|1.0|Урон от процента здоровья против: {e}|Percentage damage vs {e}
+high_armor|armor_reduction|0.8|Снижение брони против: {e}|Armor reduction vs {e}
+high_armor|pure_damage|0.7|Чистый урон не зависит от брони: {e}|Pure damage ignores armor of {e}
+high_armor|magic_burst|0.5|Магический урон обходит броню: {e}|Magic damage bypasses armor of {e}
+dot|dispel|0.7|Развеивание снимает часть периодических эффектов: {e}|Dispel removes some lingering effects of {e}
+evasion|magic_burst|0.7|Заклинания не промахиваются — полезно против уклонения: {e}|Spells don't miss — useful vs evasion of {e}
+push|aoe|0.5|Зачистка волн против пуша: {e}|Wave clear vs pushing of {e}
+melee|slow|0.4|Замедления помогают кайтить героев ближнего боя: {e}|Slows help kite melee heroes: {e}
+initiator|save|0.7|Сейвы обесценивают инициацию: {e}|Saves blunt initiation of {e}
+initiator|dispel|0.5|Развеивание снимает часть контроля от инициации: {e}|Dispel removes some disables from {e}
+silence|dispel|0.5|Развеивание снимает безмолвие: {e}|Dispel removes silences of {e}
+root|dispel|0.4|Развеивание снимает root: {e}|Dispel removes roots of {e}
+early_game|late_game|0.4|Переживает раннюю агрессию и сильнее в поздней игре, чем: {e}|Outscales early-game {e}

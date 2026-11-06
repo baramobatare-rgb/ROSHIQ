@@ -1,0 +1,202 @@
+<UserControl x:Class="Roshiq.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="clr-namespace:Roshiq.App"
+             xmlns:ov="clr-namespace:Roshiq.Overlay;assembly=Roshiq.Overlay">
+    <UserControl.Resources>
+        <Style x:Key="FieldLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Resources>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,6,20">
+
+            <!-- Оформление -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_appearance, Upper=True}" /></TextBlock>
+                        <TextBlock Text="{app:T set_theme}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
+                        <WrapPanel x:Name="ThemePanel" Margin="0,0,0,12" />
+                        <CheckBox x:Name="ReduceMotionBox" Content="{app:T set_reduce_motion}" ToolTip="{app:T set_reduce_motion_hint}" Checked="Motion_Changed" Unchecked="Motion_Changed" Margin="0,0,0,8" />
+                        <CheckBox x:Name="CursorGlowBox" Content="{app:T set_cursor_glow}" ToolTip="{app:T set_cursor_glow_hint}" Checked="Glow_Changed" Unchecked="Glow_Changed" Margin="0,0,0,12" />
+                        <TextBlock Text="{app:T set_ui_scale}" Style="{StaticResource FieldLabel}" />
+                        <DockPanel>
+                            <TextBlock x:Name="UiScaleText" DockPanel.Dock="Right" Width="52" TextAlignment="Right" FontFamily="{StaticResource MonoFont}"
+                                       Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                            <Slider x:Name="UiScaleSlider" Minimum="0.85" Maximum="1.3" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                                    ValueChanged="UiScale_Changed" />
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_general, Upper=True}" /></TextBlock>
+                        <TextBlock Text="{app:T set_language}" Style="{StaticResource FieldLabel}" />
+                        <ComboBox x:Name="LanguageBox" Width="200" HorizontalAlignment="Left" SelectionChanged="Language_Changed" />
+                        <CheckBox x:Name="AutostartBox" Content="{app:T set_autostart}" Margin="0,12,0,0" Checked="Autostart_Changed" Unchecked="Autostart_Changed" />
+                        <CheckBox x:Name="TrayMinimizeBox" Content="{app:T set_tray_minimize}" Margin="0,8,0,0" Checked="Tray_Changed" Unchecked="Tray_Changed" />
+                        <CheckBox x:Name="TrayCloseBox" Content="{app:T set_tray_close}" Margin="0,8,0,0" Checked="Tray_Changed" Unchecked="Tray_Changed" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Режим допуска -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_context, Upper=True}" /></TextBlock>
+                    <UniformGrid Columns="2">
+                        <Border Style="{StaticResource InnerCard}" Margin="0,0,8,0">
+                            <StackPanel>
+                                <RadioButton x:Name="CtxReference" GroupName="Ctx" FontWeight="SemiBold" Content="{app:T ctx_reference}" Checked="Context_Checked" />
+                                <TextBlock Text="{app:T ctx_reference_hint}" Style="{StaticResource MutedText}" Margin="30,0,0,0" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource InnerCard}" Margin="8,0,0,0">
+                            <StackPanel>
+                                <RadioButton x:Name="CtxTraining" GroupName="Ctx" FontWeight="SemiBold" Content="{app:T ctx_training}" Checked="Context_Checked" />
+                                <TextBlock Text="{app:T ctx_training_hint}" Style="{StaticResource MutedText}" Margin="30,0,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+                    <DockPanel Margin="0,14,0,0">
+                        <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Brush="{DynamicResource Warning}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{app:T ctx_rules_note}" Style="{StaticResource MutedText}" />
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Game State Integration -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="GAME STATE INTEGRATION" /></TextBlock>
+                    <CheckBox x:Name="GsiEnabled" Content="{app:T set_gsi_enabled}" />
+                    <Grid Margin="0,6,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions><RowDefinition /><RowDefinition /></Grid.RowDefinitions>
+                        <TextBlock Text="{app:T set_gsi_port}" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="GsiPort" Grid.Column="1" Width="110" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" />
+                        <TextBlock Grid.Row="1" Text="{app:T set_dota_path}" Style="{StaticResource FieldLabel}" />
+                        <TextBox x:Name="DotaPath" Grid.Row="1" Grid.Column="1" />
+                        <Button Grid.Row="1" Grid.Column="2" Content="{app:T set_detect, Upper=True}" Click="Detect_Click" Margin="8,3,0,3" />
+                    </Grid>
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button Style="{StaticResource PrimaryButton}" Click="WriteCfg_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <ov:Icon Glyph="{StaticResource I.Link}" Size="15" Margin="0,0,8,0" />
+                                <TextBlock Text="{app:T set_write_cfg, Upper=True}" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Content="{app:T save, Upper=True}" Click="SaveGsi_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_copy_cfg, Upper=True}" Click="CopyCfg_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_new_token, Upper=True}" Click="NewToken_Click" />
+                    </WrapPanel>
+                    <TextBlock x:Name="GsiStatus" Style="{StaticResource Value}" Margin="0,8,0,0" />
+                    <TextBlock Text="{app:T set_gsi_hint}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Распознавание драфта -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_vision, Upper=True}" /></TextBlock>
+                    <CheckBox x:Name="VisionEnabled" Content="{app:T set_vision_enabled}" />
+                    <TextBlock Text="{app:T set_vision_hint}" Style="{StaticResource MutedText}" Margin="0,2,0,12" />
+                    <UniformGrid Columns="4">
+                        <StackPanel Margin="0,0,10,8"><TextBlock Text="{app:T set_vision_interval}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="VisionInterval" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,10,8"><TextBlock Text="{app:T set_vision_threshold}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="VisionThreshold" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,10,8"><TextBlock Text="Radiant X" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LRadiant" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,0,8"><TextBlock Text="Dire X" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LDire" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,10,8"><TextBlock Text="{app:T set_slot_size}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LSlotW" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,10,8"><TextBlock Text="{app:T set_slot_height}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LSlotH" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,10,8"><TextBlock Text="{app:T set_slot_step}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LStep" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                        <StackPanel Margin="0,0,0,8"><TextBlock Text="{app:T set_slot_top}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LTop" FontFamily="{StaticResource MonoFont}" /></StackPanel>
+                    </UniformGrid>
+                    <WrapPanel Margin="0,6,0,0">
+                        <Button Content="{app:T save, Upper=True}" Click="SaveVision_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_open_templates, Upper=True}" Click="OpenTemplates_Click" />
+                    </WrapPanel>
+                    <TextBlock x:Name="VisionStatus" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Работа с игрой -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="06 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_automation, Upper=True}" /></TextBlock>
+                    <CheckBox x:Name="AutoWatchBox" Content="{app:T set_auto_watch}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
+                    <CheckBox x:Name="AutoHideBox" Content="{app:T set_auto_hide}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,6" />
+                    <CheckBox x:Name="AutoShowBox" Content="{app:T set_auto_show}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,12" />
+                    <CheckBox x:Name="AutoRoleBox" Content="{app:T set_auto_role}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
+                    <CheckBox x:Name="AutoModesBox" Content="{app:T set_auto_modes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
+                    <CheckBox x:Name="AutoImportBox" Content="{app:T set_auto_import}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,2" />
+                    <TextBlock Text="{app:T set_auto_import_hint}" Style="{StaticResource MutedText}" Margin="28,0,0,6" />
+                    <CheckBox x:Name="AutoReviewBox" Content="{app:T set_auto_review}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,12" />
+                    <DockPanel>
+                        <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Brush="{DynamicResource Accent}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{app:T set_auto_note}" Style="{StaticResource MutedText}" />
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Steam -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="07 / " Foreground="{DynamicResource Accent}" /><Run Text="STEAM" /></TextBlock>
+                    <DockPanel Margin="0,2,0,12">
+                        <Border x:Name="SteamAvatar" DockPanel.Dock="Left" Width="52" Height="52" CornerRadius="10" Margin="0,0,14,0"
+                                Background="{DynamicResource Panel3}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1">
+                            <ov:Icon x:Name="SteamAvatarIcon" Glyph="{StaticResource I.Shield}" Size="20" Brush="{DynamicResource Faint}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="SteamNameText" Style="{StaticResource Value}" FontWeight="SemiBold" FontSize="16" />
+                            <TextBlock x:Name="SteamDetails" Style="{StaticResource MutedText}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </DockPanel>
+                    <TextBlock x:Name="SteamWarning" Style="{StaticResource MutedText}" Foreground="{DynamicResource Warning}"
+                               TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,10" />
+                    <WrapPanel>
+                        <Button x:Name="SteamSignInButton" Content="{app:T steam_signin, Upper=True}" Click="SteamSignIn_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T steam_find_local, Upper=True}" Click="SteamFindLocal_Click" />
+                        <Button x:Name="SteamRefreshButton" Style="{StaticResource GhostButton}" Content="{app:T steam_refresh, Upper=True}" Click="SteamRefresh_Click" />
+                        <Button x:Name="SteamUnlinkButton" Style="{StaticResource GhostButton}" Content="{app:T steam_unlink, Upper=True}" Click="SteamUnlink_Click" />
+                    </WrapPanel>
+                    <StackPanel x:Name="SteamLocalList" Margin="0,6,0,0" />
+                    <TextBlock x:Name="SteamStatus" Style="{StaticResource MutedText}" Margin="0,4,0,6" TextWrapping="Wrap" />
+                    <CheckBox x:Name="PersonalStatsBox" Content="{app:T steam_use_stats}" Checked="PersonalStats_Changed" Unchecked="PersonalStats_Changed" Margin="0,4,0,8" />
+                    <DockPanel>
+                        <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Brush="{DynamicResource Accent}" Margin="0,1,10,0" VerticalAlignment="Top" />
+                        <TextBlock Text="{app:T steam_privacy}" Style="{StaticResource MutedText}" TextWrapping="Wrap" />
+                    </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Локальные данные -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="08 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_storage, Upper=True}" /></TextBlock>
+                    <TextBlock x:Name="StoragePath" Style="{StaticResource Value}" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
+                    <TextBlock Text="{app:T set_storage_hint}" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
+                    <WrapPanel>
+                        <Button Content="{app:T set_open_folder, Upper=True}" Click="OpenFolder_Click" />
+                        <Button Content="{app:T set_export, Upper=True}" Click="Export_Click" />
+                        <Button Content="{app:T set_import, Upper=True}" Click="Import_Click" />
+                    </WrapPanel>
+                    <TextBlock x:Name="StorageStatus" Style="{StaticResource MutedText}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

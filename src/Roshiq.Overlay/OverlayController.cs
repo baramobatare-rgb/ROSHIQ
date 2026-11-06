@@ -1,0 +1,227 @@
+using System.Windows.Threading;
+using Roshiq.Core.Diagnostics;
+using Roshiq.Core.Layout;
+using Roshiq.Core.Models;
+using Roshiq.Core.Settings;
+
+namespace Roshiq.Overlay;
+
+/// <summary>
+/// Управляет окнами оверлея: отслеживает окно игры (раз в 500 мс), скрывает оверлей при сворачивании,
+/// пересчитывает положение при смене разрешения, обрабатывает F8 и режим настройки.
+/// </summary>
+public sealed class OverlayController : IDisposable
+{
+    private readonly SettingsService _settings;
+    private readonly GameWindowTracker _tracker = new();
+    private readonly DispatcherTimer _timer;
+    private OverlayPanelWindow? _panel;
+    private ToastWindow? _toast;
+    private HotkeyManager? _hotkeys;
+    /// <summary>Ctrl+Shift+R регистрируется только на время драфта, чтобы не перехватывать сочетание в других программах.</summary>
+    private HotkeyManager? _draftHotkeys;
+    private bool _userHidden;
+    private bool _testMode;
+    private GameWindowState _lastGame = GameWindowState.NotFound;
+    private OverlayVisibility.Decision? _lastDecision;
+
+    public OverlayController(SettingsService settings, OverlayViewModel viewModel)
+    {
+        _settings = settings;
+        ViewModel = viewModel;
+        _timer = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromMilliseconds(500) };
+        _timer.Tick += (_, _) => Update();
+    }
+
+    public OverlayViewModel ViewModel { get; }
+    public GameWindowState Game => _lastGame;
+    public bool IsVisible => _lastDecision?.Visible == true;
+    public string StatusKey => _lastDecision?.ReasonKey ?? "overlay_game_not_found";
+    public bool EditMode => _panel?.EditMode == true;
+    public bool TestMode
+    {
+        get => _testMode;
+        set { _testMode = value; Update(); }
+    }
+    public bool ToggleHotkeyOk { get; private set; }
+    public bool RoshanHotkeyOk { get; private set; }
+
+    /// <summary>Нажата клавиша «Рошан убит» — приложение запускает таймер возрождения.</summary>
+    public event EventHandler? RoshanKillMarked;
+
+    public event EventHandler? StateChanged;
+    public event EventHandler? DraftRoleRequested;
+
+    public void Start()
+    {
+        _panel = new OverlayPanelWindow { DataContext = ViewModel };
+        _panel.BoundsChangedByUser += OnUserMovedPanel;
+        _toast = new ToastWindow();
+        RegisterHotkeys();
+        _timer.Start();
+        Update();
+    }
+
+    public void RegisterHotkeys()
+    {
+        try
+        {
+            _hotkeys?.Dispose();
+            _hotkeys = new HotkeyManager();
+            var o = _settings.Current.Overlay;
+            ToggleHotkeyOk = _hotkeys.Register(o.ToggleHotkey, ToggleHidden);
+            _hotkeys.Register(o.EditHotkey, () => SetEditMode(!EditMode));
+            _hotkeys.Register(o.DetailsHotkey, ToggleDetails);
+            RoshanHotkeyOk = _hotkeys.Register(o.RoshanHotkey, () => RoshanKillMarked?.Invoke(this, EventArgs.Empty));
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Не удалось зарегистрировать горячие клавиши", ex);
+        }
+    }
+
+    /// <summary>F8: показать/скрыть панель.</summary>
+    public void ToggleHidden()
+    {
+        var o = _settings.Current.Overlay;
+        if (o.Mode == OverlayMode.Hidden)
+        {
+            o.Mode = OverlayMode.Minimal;
+            _userHidden = false;
+            _settings.Save();
+        }
+        else
+        {
+            _userHidden = !_userHidden;
+        }
+        if (_userHidden) _toast?.HideToast();
+        Update();
+    }
+
+    /// <summary>Ctrl+F8: свернуть/развернуть подсказки (Minimal ↔ Expanded) без мыши.</summary>
+    public void ToggleDetails()
+    {
+        var o = _settings.Current.Overlay;
+        o.Mode = o.Mode == OverlayMode.Expanded ? OverlayMode.Minimal : OverlayMode.Expanded;
+        _userHidden = false;
+        _settings.Save();
+        Update();
+    }
+
+    public void SetEditMode(bool on)
+    {
+        if (_panel == null) return;
+        _panel.EditMode = on;
+        if (on) _userHidden = false;
+        if (!on) _settings.Save();
+        Update();
+    }
+
+    public void ShowToast(string text) => ShowToast("ROSHIQ", text);
+
+    public void ShowToast(string header, string text) => ShowToast(header, text, warning: false);
+
+    public void ShowToast(string header, string text, bool warning)
+    {
+        if (_toast == null || _userHidden) return;
+        var host = HostRect();
+        if (host == null) return;
+        var n = _settings.Current.Notifications;
+        _toast.ShowToast(header, text, SafeZone.ToastArea.ToPixels(host.Value), TimeSpan.FromSeconds(n.DisplaySec), _settings.Current.Overlay.Opacity,
+            warning, !_settings.Current.ReduceMotion);
+    }
+
+    public void HideToast() => _toast?.HideToast();
+
+    /// <summary>Пересчитать видимость/положение (вызывается таймером и при изменении настроек).</summary>
+    public void Update()
+    {
+        if (_panel == null) return;
+        try
+        {
+            var o = _settings.Current.Overlay;
+            _tracker.ProcessName = o.TargetProcess;
+            _lastGame = _tracker.Poll();
+            ViewModel.Expanded = o.Mode == OverlayMode.Expanded || EditMode || ViewModel.DraftMode;
+
+            var panel = ViewModel.DraftMode ? o.Panel with { W = Math.Max(o.Panel.W, .24), H = Math.Max(o.Panel.H, Math.Min(.65, 420.0 / Math.Max(1, _lastGame.ClientArea.Height))) } : o.Panel;
+            var mode = ViewModel.DraftMode && o.Mode != OverlayMode.Hidden ? OverlayMode.Expanded : o.Mode;
+            var decision = OverlayVisibility.Decide(_lastGame, mode, panel, _userHidden,
+                o.HideWhenGameNotFocused || ViewModel.DraftMode, _testMode || EditMode && !_lastGame.Found, GameWindowTracker.PrimaryScreen());
+
+            if (decision.Visible)
+            {
+                // масштаб: увеличиваем окно от точки привязки и само содержимое, оставаясь в пределах окна игры
+                var b = decision.Bounds;
+                var host = HostRect() ?? b;
+                int w = (int)Math.Round(b.Width * o.Scale), h = (int)Math.Round(b.Height * o.Scale);
+                w = Math.Min(w, host.X + host.Width - b.X);
+                h = Math.Min(h, host.Y + host.Height - b.Y);
+                if (!EditMode) _panel.SetBoundsPixels(b with { Width = Math.Max(1, w), Height = Math.Max(1, h) });
+                _panel.SetContentScale(o.Scale);
+                _panel.SetPanelOpacity(o.Opacity);
+                if (!_panel.IsShownOrShowing) _panel.FadeIn();
+            }
+            else
+            {
+                if (_panel.IsShownOrShowing) _panel.FadeOut();
+                _toast?.HideToast();
+            }
+
+            SyncDraftHotkey();
+            bool changed = _lastDecision == null || _lastDecision.Visible != decision.Visible || _lastDecision.ReasonKey != decision.ReasonKey;
+            _lastDecision = decision;
+            if (changed) StateChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Оверлей: ошибка обновления", ex);
+        }
+    }
+
+    private PixelRect? HostRect()
+    {
+        if (_lastGame.Found && !_lastGame.Minimized && !_lastGame.ClientArea.IsEmpty) return _lastGame.ClientArea;
+        if (_testMode) return GameWindowTracker.PrimaryScreen();
+        return null;
+    }
+
+    private void OnUserMovedPanel(object? sender, PixelRect pixels)
+    {
+        var host = HostRect();
+        if (host == null) return;
+        var rel = RelRect.FromPixels(pixels, host.Value);
+        // в режиме Minimal высоту задаёт сам режим, сохраняем только позицию
+        if (_settings.Current.Overlay.Mode == OverlayMode.Minimal) rel = rel with { H = _settings.Current.Overlay.Panel.H };
+        _settings.Current.Overlay.Panel = SafeZone.Clamp(rel);
+    }
+
+    private void SyncDraftHotkey()
+    {
+        if (ViewModel.DraftMode && _draftHotkeys == null)
+        {
+            try
+            {
+                _draftHotkeys = new HotkeyManager();
+                _draftHotkeys.Register("Ctrl+Shift+R", () => { if (ViewModel.DraftMode) DraftRoleRequested?.Invoke(this, EventArgs.Empty); });
+            }
+            catch (Exception ex) { Log.Error("Не удалось зарегистрировать Ctrl+Shift+R", ex); }
+        }
+        else if (!ViewModel.DraftMode && _draftHotkeys != null)
+        {
+            var old = _draftHotkeys;
+            _draftHotkeys = null;
+            // освобождаем вне обработчика сообщения, который мог вызвать Update
+            System.Windows.Threading.Dispatcher.CurrentDispatcher.InvokeAsync(old.Dispose);
+        }
+    }
+
+    public void Dispose()
+    {
+        _draftHotkeys?.Dispose();
+        _timer.Stop();
+        _hotkeys?.Dispose();
+        _panel?.Close();
+        _toast?.Close();
+    }
+}

@@ -1,0 +1,101 @@
+# Предметы. Формат:
+# key|Name|NameRu|фаза(start/early/mid/late)|группа|позиции(* = все)|даёт|против признаков врага|требования к герою (!x = не должен иметь)|назначение RU|назначение EN
+# Стоимость не указывается: она меняется от патча к патчу.
+item_tango|Tango|Танго|start|-|*|consumable,hp_regen|-|-|Дешёвое восстановление здоровья на линии|Cheap lane health regeneration
+item_flask|Healing Salve|Хилка (Healing Salve)|start|-|*|consumable,hp_regen|-|-|Быстрое лечение после неудачного размена|Quick heal after a bad trade
+item_clarity|Clarity|Кларити|start|-|2,4,5|consumable,mana_regen|-|caster|Мана для частого использования способностей на линии|Mana for frequent spell use in lane
+item_enchanted_mango|Enchanted Mango|Манго|start|-|2,4,5|consumable,mana_regen|-|-|Мгновенная мана в нужный момент|Instant mana when needed
+item_faerie_fire|Faerie Fire|Фейри Фаер|start|-|1,2|consumable,attack_damage,hp_regen|-|right_click|Урон для добиваний и экстренное лечение|Last-hit damage and an emergency heal
+item_branches|Iron Branch|Веточка|start|-|*|stats|-|-|Дешёвые характеристики и компонент Magic Wand|Cheap stats and a Magic Wand component
+item_quelling_blade|Quelling Blade|Кволлинг Блейд|start|-|1,3|farm,attack_damage|-|melee|Облегчает добивание крипов на линии|Makes last-hitting creeps easier
+item_slippers|Slippers of Agility|Слипперсы|start|-|1,2|stats,armor|-|right_click|Ловкость: броня и скорость атаки|Agility: armor and attack speed
+item_circlet|Circlet|Циклет|start|-|1,2,3|stats|-|-|Все характеристики; основа Wraith Band, Bracer и Null Talisman|All stats; builds into Wraith Band, Bracer or Null Talisman
+item_gauntlets|Gauntlets of Strength|Гаунтлеты|start|-|3|stats,hp|-|-|Запас здоровья для разменов на сложной линии|Extra HP for trades in a hard lane
+item_tpscroll|Town Portal Scroll|Свиток телепорта (TP)|start|-|*|mobility|-|-|Всегда держите ТП: защита строений и помощь союзникам|Always carry a TP to defend and help allies
+item_ward_observer|Observer Ward|Обсервер|start|-|4,5|vision|-|-|Обзор карты для всей команды|Map vision for the whole team
+item_blood_grenade|Blood Grenade|Кровавая граната|start|-|4,5|consumable,slow|-|-|Урон и замедление для агрессии на линии|Damage and slow for lane aggression
+item_ward_sentry|Sentry Ward|Сентри|early|-|4,5|detection,vision|invisibility|-|Обнаруживает невидимых юнитов и вражеские варды|Reveals invisible units and enemy wards
+item_smoke_of_deceit|Smoke of Deceit|Смок|early|-|4,5|mobility,initiation|-|-|Скрытное перемещение группы для ганка или выхода в лес|Hidden group movement for ganks and rotations
+item_dust|Dust of Appearance|Даст|early|-|4,5|detection|invisibility|-|Кратковременно раскрывает невидимых героев рядом|Briefly reveals nearby invisible heroes
+item_magic_wand|Magic Wand|Мэджик Ванд|early|-|*|hp_regen,mana_regen,survival|caster|-|Копит заряды от заклинаний врагов и мгновенно лечит|Stores charges from enemy spells for burst regen
+item_wraith_band|Wraith Band|Врейс Бенд|early|-|1,2|stats,attack_speed|-|right_click|Дешёвые характеристики для героя с атаками|Cheap stats for an attack-based hero
+item_bracer|Bracer|Брейсер|early|-|1,2,3|stats,hp,survival|-|-|Здоровье и характеристики на ранней стадии|Early HP and stats
+item_null_talisman|Null Talisman|Нулл Талисман|early|-|2|stats,mana|-|caster|Мана и интеллект для заклинателя на миду|Mana and intelligence for a caster mid
+item_bottle|Bottle|Ботл|early|-|2|hp_regen,mana_regen|-|-|Восстановление и хранение рун на центральной линии|Sustain and rune storage in the mid lane
+item_orb_of_corrosion|Orb of Corrosion|Орб оф Корроужн|early|-|1,3,4|armor_reduction,slow|-|melee,right_click|Снижает броню и замедляет цель атаками|Attacks reduce armor and slow the target
+item_power_treads|Power Treads|Пауэр Тредсы|early|boots|1,2,3|attack_speed,stats,mobility|-|right_click|Скорость атаки и переключаемые характеристики|Attack speed and switchable stats
+item_phase_boots|Phase Boots|Фейз Бутсы|early|boots|1,2,3|attack_damage,armor,mobility|-|melee,right_click|Броня, урон и рывок для героев ближнего боя|Armor, damage and a dash for melee heroes
+item_arcane_boots|Arcane Boots|Аркейн Бутсы|early|boots|2,3,4,5|mana_regen,mana,mobility|-|caster|Мана для себя и союзников|Mana for you and your allies
+item_tranquil_boots|Tranquil Boots|Транквил Бутсы|early|boots|3,4,5|hp_regen,mobility|-|!caster|Регенерация и скорость передвижения|Regeneration and movement speed
+item_boots|Boots of Speed|Сапоги|early|boots|4,5|mobility|-|-|Базовая скорость передвижения|Basic movement speed
+item_soul_ring|Soul Ring|Соул Ринг|early|-|2,3|mana|-|mana_dependent|Быстрая мана ценой здоровья|Quick mana at the cost of HP
+item_infused_raindrop|Infused Raindrop|Инфьюзд Рейндроп|early|-|2,3|magic_resist,survival|magic_burst|-|Блокирует часть магического урона на линии|Blocks some magic damage in lane
+item_vanguard|Vanguard|Вангард|early|-|1,3|hp,survival|right_click|melee|Блокирует часть физического урона|Blocks some physical damage
+item_hand_of_midas|Hand of Midas|Хенд оф Мидас|early|-|1,2|farm|-|late_game|Ускоряет получение золота и опыта — для героев, которым нужно время|Speeds up gold and XP for heroes that scale
+item_bfury|Battle Fury|Баттл Фьюри|mid|farm|1|farm,aoe_damage,hp_regen,mana_regen|illusions,summons|melee,right_click|Сплэш-урон для быстрого фарма|Cleave for fast farming
+item_maelstrom|Maelstrom|Мельстрём|mid|farm|1,2|farm,aoe_damage,attack_speed|illusions,summons|right_click|Цепные молнии ускоряют фарм и бьют по иллюзиям|Chain lightning speeds up farm and hits illusions
+item_radiance|Radiance|Радиенс|mid|farm|1,3|farm,aoe_damage|illusions,summons,evasion|tanky|Постоянный урон вокруг и промахи у ближайших врагов|Constant area damage and misses for nearby enemies
+item_black_king_bar|Black King Bar|Black King Bar (БКБ)|mid|-|1,2,3|spell_immunity,survival|stun,silence,hex,magic_burst,caster|-|Один из вариантов защиты от многих видов контроля и магии. Учитывайте актуальные взаимодействия: часть способностей проходит сквозь иммунитет|One option against many disables and magic. Check current interactions: some spells pierce immunity
+item_blink|Blink Dagger|Блинк Даггер|mid|blink|2,3,4|initiation,mobility|-|-|Мгновенное перемещение для инициации или побега|Instant reposition for initiation or escape
+item_manta|Manta Style|Манта Стайл|mid|-|1,2|stats,dispel,illusion,attack_speed|silence,root|right_click|Иллюзии для урона и развеивание негативных эффектов|Illusions for damage and a self-dispel
+item_sange_and_yasha|Sange and Yasha|Санге и Яша|mid|-|1,2,3|stats,attack_speed,mobility,survival|slow|right_click,melee|Характеристики, скорость и сопротивление эффектам|Stats, speed and status resistance
+item_kaya_and_sange|Kaya and Sange|Кая и Санге|mid|-|2,3|spell_amp,survival,stats|-|caster|Усиление способностей и живучесть|Spell amplification and durability
+item_desolator|Desolator|Дезолятор|mid|-|1,2|attack_damage,armor_reduction|tanky,high_armor|right_click|Снижает броню цели и усиливает физический урон|Reduces target armor and boosts physical damage
+item_echo_sabre|Echo Sabre|Эхо Сабля|mid|-|2,3|attack_damage,slow,mana_regen|-|melee,right_click|Двойной удар с замедлением|Double strike with a slow
+item_mask_of_madness|Mask of Madness|Маска безумия|mid|-|1|attack_speed,lifesteal,farm|-|right_click|Скорость атаки и вампиризм для быстрого фарма|Attack speed and lifesteal for fast farming
+item_armlet|Armlet of Mordiggian|Армлет|mid|-|1,3|attack_damage,attack_speed,armor,hp|-|melee,right_click|Урон и сила при активации|Damage and strength when toggled on
+item_crimson_guard|Crimson Guard|Кримсон Гард|mid|-|3|survival,aura|right_click,illusions,summons|-|Блокирует физический урон по всей команде|Blocks physical damage for the whole team
+item_pipe|Pipe of Insight|Пайп оф Инсайт|mid|-|3,4|magic_resist,aura,survival|magic_burst|-|Защищает команду от магического урона|Protects the team from magic damage
+item_force_staff|Force Staff|Форс Стафф|mid|-|4,5|mobility,save|-|-|Толкает себя или союзника: спасение и позиционирование|Pushes you or an ally: save and reposition
+item_glimmer_cape|Glimmer Cape|Глиммер Кейп|mid|-|4,5|save,magic_resist|magic_burst|-|Невидимость и сопротивление магии для спасения союзника|Invisibility and magic resistance to save an ally
+item_ghost|Ghost Scepter|Гост Скипетр|mid|-|4,5|save,survival|right_click,physical_burst|-|Защита от физических атак ценой уязвимости к магии|Immunity to attacks at the cost of magic vulnerability
+item_cyclone|Eul's Scepter of Divinity|Эул|mid|-|2,4,5|mobility,dispel,mana_regen,save|channeling|caster|Развеивание себя, прерывание заклинаний и позиционирование|Self-dispel, interrupts and positioning
+item_lotus_orb|Lotus Orb|Лотус Орб|mid|-|3,4|dispel,save,armor|silence,root,hex|-|Развеивает союзника и отражает направленные заклинания|Dispels an ally and reflects targeted spells
+item_solar_crest|Solar Crest|Солар Крест|mid|-|4,5|armor,armor_reduction,save|-|-|Броня союзнику или снижение брони цели|Armor for an ally or armor reduction on a target
+item_heavens_halberd|Heaven's Halberd|Хэвенс Хальберд|mid|-|3|survival,evasion|right_click|-|Обезоруживает героя, зависящего от атак|Disarms an attack-reliant hero
+item_orchid|Orchid Malevolence|Орхид|mid|-|2,4|silence,mana_regen|caster,mobility,mana_dependent|-|Безмолвие против заклинателей и мобильных героев|Silence vs casters and mobile heroes
+item_diffusal_blade|Diffusal Blade|Диффузал Блейд|mid|-|1|mana_burn,slow|mana_dependent,illusions|right_click|Сжигает ману атаками и замедляет|Burns mana on hit and slows
+item_mekansm|Mekansm|Мекансм|mid|-|4,5|team_heal,armor,aura|-|-|Массовое лечение и броня для команды|Group heal and armor for the team
+item_aghanims_shard|Aghanim's Shard|Аганим Шард|mid|-|*|spell_upgrade|-|-|Улучшает способность; ценность зависит от героя|Upgrades an ability; value depends on the hero
+item_aether_lens|Aether Lens|Этер Ленс|mid|-|2,4,5|cast_range,mana|-|caster|Увеличивает дальность заклинаний|Increases cast range
+item_veil_of_discord|Veil of Discord|Вейл оф Дискорд|mid|-|2,4|spell_amp|-|caster|Усиливает магический урон команды по области|Amplifies team magic damage in an area
+item_rod_of_atos|Rod of Atos|Род оф Атос|mid|-|2,4|lockdown,root|mobility|caster|Root против мобильных целей|Root against mobile targets
+item_vladmir|Vladmir's Offering|Владимир|mid|-|3,4|aura,lifesteal,armor|-|-|Аура вампиризма и брони для команды|Lifesteal and armor aura for the team
+item_holy_locket|Holy Locket|Холи Локет|mid|-|5|team_heal,hp_regen|-|-|Усиливает лечение союзников|Amplifies healing on allies
+item_invis_sword|Shadow Blade|Шэдоу Блейд|mid|-|1,2|mobility,attack_damage|-|right_click|Невидимость для позиционирования и инициации|Invisibility for positioning and initiation
+item_dragon_lance|Dragon Lance|Драгон Ланс|mid|-|1,2|stats,attack_range|-|ranged,right_click|Дальность атаки и характеристики|Attack range and stats
+item_basher|Skull Basher|Скулл Башер|mid|-|1,3|lockdown,attack_damage|mobility|melee,right_click|Шанс оглушить цель атакой|Chance to stun with attacks
+item_blade_mail|Blade Mail|Блейд Мейл|mid|-|3,2|armor,survival|right_click,physical_burst|-|Возвращает урон атакующим|Returns damage to attackers
+item_ancient_janggo|Drum of Endurance|Драм оф Эндуранс|mid|-|3,4|aura,mobility,stats|-|-|Скорость передвижения и атаки для команды|Movement and attack speed for the team
+item_mage_slayer|Mage Slayer|Мейдж Слеер|mid|-|1,2|magic_resist,attack_speed|caster,magic_burst|right_click|Снижает магический урон цели и защищает от магии|Reduces target spell damage and resists magic
+item_gem|Gem of True Sight|Гем оф Тру Сайт|mid|-|4,5|detection|invisibility|-|Постоянное раскрытие невидимости вокруг носителя|Persistent true sight around the carrier
+item_pavise|Pavise|Павис|mid|-|4,5|save,armor|physical_burst|-|Щит от урона для союзника|A damage shield for an ally
+item_spirit_vessel|Spirit Vessel|Спирит Вессел|mid|-|3,4|heal_reduction,team_heal|heal,lifesteal|-|Снижает лечение противника и лечит союзников|Reduces enemy healing and heals allies
+item_ultimate_scepter|Aghanim's Scepter|Аганим Скипетр|late|-|*|spell_upgrade|-|-|Улучшает способности; ценность сильно зависит от героя|Upgrades abilities; value depends heavily on the hero
+item_monkey_king_bar|Monkey King Bar|Monkey King Bar (МКБ)|late|-|1,2|evasion_pierce,attack_damage,attack_speed|evasion|right_click|Может быть полезен героям, зависящим от атак, против противников с уклонением|Useful for attack-based heroes against evasion
+item_butterfly|Butterfly|Баттерфляй|late|-|1|evasion,attack_speed,stats|right_click|right_click|Уклонение и скорость атаки|Evasion and attack speed
+item_greater_crit|Daedalus|Дедал|late|-|1,2|crit,attack_damage|-|right_click|Критический урон для героя с атаками|Critical strikes for an attack-based hero
+item_satanic|Satanic|Сатаник|late|-|1|lifesteal,survival,dispel|-|melee,right_click|Мощный вампиризм и развеивание при активации|Strong lifesteal and a dispel on use
+item_skadi|Eye of Skadi|Око Скади|late|-|1,2|stats,slow,heal_reduction|heal,lifesteal|right_click|Характеристики, замедление и снижение лечения цели|Stats, slow and reduced healing on target
+item_abyssal_blade|Abyssal Blade|Абиссал Блейд|late|-|1,3|lockdown,survival|mobility|melee,right_click|Надёжный контроль цели сквозь многие защиты|Reliable lockdown on a target
+item_assault|Assault Cuirass|Ассолт Кирасс|late|-|1,3|armor,armor_reduction,aura,attack_speed|right_click|-|Броня союзникам и снижение брони врагов|Armor for allies and armor reduction for enemies
+item_heart|Heart of Tarrasque|Сердце Тарраска|late|-|1,3|hp,hp_regen,survival|-|-|Огромный запас здоровья и регенерация|Huge HP pool and regeneration
+item_shivas_guard|Shiva's Guard|Шива|late|-|3,2|armor,slow,aoe_damage,heal_reduction|right_click,heal|-|Броня, замедление атаки врагов и снижение лечения|Armor, enemy attack slow and heal reduction
+item_sheepstick|Scythe of Vyse|Гекс (Scythe of Vyse)|late|-|2,4,5|hex,lockdown,mana_regen|mobility,initiator|caster|Надёжный контроль одной цели|Reliable single-target disable
+item_bloodthorn|Bloodthorn|Бладторн|late|-|1,2|silence,crit|caster,evasion|right_click|Безмолвие и гарантированные попадания по цели|Silence and true strike on the target
+item_nullifier|Nullifier|Нуллифаер|late|-|1,2|anti_save|save|right_click|Снимает и блокирует защитные эффекты цели|Removes and blocks protective effects on the target
+item_refresher|Refresher Orb|Рефрешер|late|-|2,3|cooldown|-|caster|Повторное использование ключевых способностей|Recast your key abilities
+item_octarine_core|Octarine Core|Октарин Кор|late|-|2,3|cooldown,mana,hp|-|caster|Снижение перезарядки способностей|Reduced ability cooldowns
+item_sphere|Linken's Sphere|Линкенс Сфир|late|-|1,2|survival,mana_regen,stats|hex,silence|-|Блокирует направленные заклинания|Blocks targeted spells
+item_aeon_disk|Aeon Disk|Аеон Диск|late|-|1,2,3|survival|physical_burst,magic_burst|-|Спасает от внезапного прокаста|Protects from sudden burst
+item_wind_waker|Wind Waker|Винд Вейкер|late|-|4,5|save,mobility|-|caster|Спасение и перемещение себя или союзника|Save and reposition yourself or an ally
+item_travel_boots|Boots of Travel|Тревел Бутсы|late|travel|1,2,3|mobility,push|-|-|Телепорт к союзным юнитам для фарма и защиты|Teleport to allied units to farm and defend
+item_hurricane_pike|Hurricane Pike|Харрикейн Пайк|late|-|1,2|mobility,survival,attack_range|melee|ranged,right_click|Отталкивает вражеского героя и даёт серию дальних атак|Pushes an enemy away and grants long-range attacks
+item_mjollnir|Mjollnir|Мьёльнир|late|-|1,2|attack_speed,aoe_damage|illusions,summons|right_click|Скорость атаки и цепные молнии|Attack speed and chain lightning
+item_bloodstone|Bloodstone|Бладстоун|late|-|2,3|lifesteal,mana|-|caster|Вампиризм от заклинаний и запас маны|Spell lifesteal and mana
+item_ethereal_blade|Ethereal Blade|Этериал Блейд|late|-|2,4|magic_damage,spell_amp,save|right_click|caster|Эфирная форма: защита от атак и усиление магии|Ethereal form: attack immunity and magic amplification
+item_dagon|Dagon|Дагон|late|-|2|magic_damage|fragile|caster|Мгновенный магический урон по цели|Instant magic damage on a target
+item_silver_edge|Silver Edge|Сильвер Эдж|late|-|1,2,3|break,attack_damage,mobility,crit|passive_reliant|right_click|Break отключает пассивные способности цели|Break disables the target's passives
+item_boots_of_bearing|Boots of Bearing|Бутсы Беаринг|late|boots_upgrade|4,5|aura,mobility|-|-|Скорость передвижения и атаки для команды|Movement and attack speed for the team
+item_guardian_greaves|Guardian Greaves|Гардиан Гривз|late|boots_upgrade|3,4,5|team_heal,dispel,armor,aura|-|-|Массовое лечение, мана и развеивание себя|Group heal, mana and a self-dispel
+item_eternal_shroud|Eternal Shroud|Этернал Шрауд|late|-|3|magic_resist,survival|magic_burst|-|Сопротивление магии и восстановление маны от урона|Magic resistance and mana from damage taken

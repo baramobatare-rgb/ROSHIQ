@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Roshiq.Core\Roshiq.Core.csproj" />
+    <ProjectReference Include="..\Roshiq.Vision\Roshiq.Vision.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,14 @@
+bin/
+obj/
+dist/
+.vs/
+*.user
+build.log
+TestResults/
+*.pfx
+*.p12
+notes.md
+# иконки предметов скачиваются при сборке (картинки Valve в репозиторий не кладём)
+src/Roshiq.App/Assets/ItemIcons/
+src/Roshiq.App/Assets/ItemIcons.zip
+github-update.log

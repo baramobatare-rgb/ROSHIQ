@@ -1,0 +1,1290 @@
+using System.Windows.Threading;
+using Roshiq.App.Services;
+using Roshiq.Core.Compliance;
+using Roshiq.Core.Diagnostics;
+using Roshiq.Core.Localization;
+using Roshiq.Core.Models;
+using Roshiq.Core.Settings;
+using Roshiq.Data;
+using Roshiq.Draft;
+using Roshiq.GSI;
+using Roshiq.Overlay;
+using Roshiq.Recommendations;
+using Roshiq.Vision;
+
+namespace Roshiq.App;
+
+/// <summary>
+/// Композиция всех модулей и логика "что показать в оверлее".
+/// Сбой любого модуля логируется и не останавливает остальные.
+/// </summary>
+public sealed class AppHost : IDisposable
+{
+    private readonly DispatcherTimer _tick;
+    private readonly Dispatcher _dispatcher;
+    private string _lastToggleHotkey = "";
+    private string _lastEditHotkey = "";
+    private string _lastDetailsHotkey = "";
+    private string _lastRoshanHotkey = "";
+    private readonly TimerAnnouncer _timerAnnouncer = new();
+    private readonly MatchRecorder _recorder = new();
+    private readonly HashSet<int> _notedEnemies = new();
+    private DateTime _lastEventToastUtc = DateTime.MinValue;
+    private bool _onlineCheckRunning;
+    private PaceAdvisor? _pace;
+    private string? _paceMatchId;
+    private readonly HashSet<string> _paceItemsSeen = new(StringComparer.OrdinalIgnoreCase);
+    private int _lastGsiPort;
+    private string _lastGsiToken = "";
+    private bool _lastGsiEnabled;
+    private bool _manualScanRequested;
+    private DateTime? _manualTimerStartUtc;
+    private string? _lastMatchId;
+    private readonly DraftPickTracker _autoPicks = new();
+    private readonly LaneRoleDetector _roleDetector = new();
+    private readonly GameLaunchWatcher _gameWatch = new();
+    private readonly HashSet<string> _importPending = new(StringComparer.Ordinal);
+    private MatchRecord? _lastSaved;
+    private string? _autoSessionKey;
+    private DateTime _autoStartedUtc;
+    public long AutoDraftGeneration { get; private set; }
+    public DraftAnalysis? AutoDraftAnalysis { get; private set; }
+    public bool AutoDraftLive => Settings.Current.Vision.AutoDraftEnabled && LastGsi != null &&
+        DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(40) && LastGsi.IsHeroSelection;
+    public IReadOnlyList<Hero> AutoEnemies => _autoPicks.Heroes(MySide == Side.Radiant ? Side.Dire : Side.Radiant)
+        .Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
+
+
+    public AppHost()
+    {
+        _dispatcher = Dispatcher.CurrentDispatcher;
+        Settings = new SettingsService();
+        Loc.Instance.Language = Settings.Current.Language;
+
+        Database = GameDatabase.Load(AppPaths.DataOverrides);
+        Stats = new MatchupStatsCache(Path.Combine(AppPaths.Cache, "matchups.json"));
+        Analyzer = new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats);
+        Builds = new ItemBuildEngine(Database);
+        Advisor = new RoleAdvisor(Database);
+        Reminders = new SupportReminderScheduler(Settings.Current.Notifications);
+        OverlayVm = new OverlayViewModel();
+        Overlay = new OverlayController(Settings, OverlayVm);
+        Vision = new VisionService(Settings);
+        Monitor = new ProcessMonitor();
+        Draft = DraftState.Empty(Settings.Current.Position);
+        CurrentHero = Database.FindHero(Settings.Current.LastHeroKey);
+        Costs = new ItemCostCache(Path.Combine(AppPaths.Cache, "item_costs.json"));
+        PlayerHeroes = new PlayerHeroStatsCache(Path.Combine(AppPaths.Cache, "player_heroes.json"));
+        Reviews = new MatchReviewStore(Path.Combine(AppPaths.Cache, "reviews"));
+        ItemNorms = new ItemTimingNormCache(Path.Combine(AppPaths.Cache, "item_timings.json"));
+        Patch = new PatchInfoCache(Path.Combine(AppPaths.Cache, "patch.json"));
+        PatchNotes = PatchDigest.Load(PatchNotesPath);
+        History = new MatchHistoryStore(AppPaths.Matches);
+        Goals = new GoalStore(Path.Combine(AppPaths.DataRoot, "goals.json"));
+        Goals.Changed += (_, _) => _dispatcher.InvokeAsync(RaiseChanged);
+        Trainer = new DraftTrainer(Database, new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats));
+        ApplyPool();
+
+        Reminders.Shown += (_, r) => Overlay.ShowToast(
+            (Loc.T("role_short_" + (int)Settings.Current.Position) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(),
+            Loc.T(r.TextKey));
+        Reminders.Hidden += (_, _) => Overlay.HideToast();
+        Vision.Recognized += (_, r) => _dispatcher.InvokeAsync(() => OnVisionResult(r));
+        Settings.Changed += (_, _) => ApplySettings();
+        Overlay.DraftRoleRequested += (_, _) => Settings.Update(s => s.Position = (Position)((int)s.Position % 5 + 1));
+        Overlay.RoshanKillMarked += (_, _) => _dispatcher.InvokeAsync(ToggleRoshanMark);
+
+        _tick = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
+        _tick.Tick += (_, _) => OnTick();
+    }
+
+    public SettingsService Settings { get; }
+    public GameDatabase Database { get; private set; }
+    public MatchupStatsCache Stats { get; }
+    public DraftAnalyzer Analyzer { get; private set; }
+    public ItemBuildEngine Builds { get; private set; }
+    public RoleAdvisor Advisor { get; private set; }
+    public SupportReminderScheduler Reminders { get; }
+    public OverlayViewModel OverlayVm { get; }
+    public OverlayController Overlay { get; }
+    public VisionService Vision { get; }
+    public ProcessMonitor Monitor { get; }
+    public GsiServer? Gsi { get; private set; }
+    public ItemCostCache Costs { get; }
+    /// <summary>Ваша статистика по героям из OpenDota (привязанный Steam).</summary>
+    public PlayerHeroStatsCache PlayerHeroes { get; }
+    /// <summary>Разборы матчей через OpenDota.</summary>
+    public MatchReviewStore Reviews { get; }
+    public ItemTimingNormCache ItemNorms { get; }
+    /// <summary>Изменилась привязка Steam или профиль.</summary>
+    public event EventHandler? SteamChanged;
+    public PatchInfoCache Patch { get; }
+    /// <summary>Изменения героев в последнем патче (OpenDota), если загружены.</summary>
+    public PatchDigest? PatchNotes { get; private set; }
+    private static string PatchNotesPath => Path.Combine(AppPaths.Cache, "patchnotes.json");
+    public MatchHistoryStore History { get; }
+    public GoalStore Goals { get; }
+    public DraftTrainer Trainer { get; private set; }
+    public MatchAlerts Alerts { get; } = new();
+    public RoshanTracker Roshan { get; } = new();
+    /// <summary>Найденное обновление ROSHIQ на GitHub (если проверка включена).</summary>
+    public AppUpdateInfo? AvailableUpdate { get; private set; }
+
+    public Hero? CurrentHero { get; private set; }
+    public GameStateSnapshot? LastGsi { get; private set; }
+    public DraftState Draft { get; private set; }
+    public DraftAnalysis? LastDraftAnalysis { get; private set; }
+    public BuildRecommendation? CurrentBuild { get; private set; }
+    /// <summary>Сторона игрока для распознавания (из GSI player.team_name или выбранная вручную).</summary>
+    public Side MySide { get; set; } = Side.Radiant;
+
+    public bool ManualTimerRunning => _manualTimerStartUtc != null;
+
+    public event EventHandler? StateChanged;
+    /// <summary>Dota 2 запустилась (окно игры появилось и держится несколько секунд).</summary>
+    public event EventHandler? GameLaunched;
+    /// <summary>Dota 2 закрылась.</summary>
+    public event EventHandler? GameClosed;
+    /// <summary>С момента запуска игры был сохранён хотя бы один матч.</summary>
+    public bool MatchSavedSinceGameStart { get; private set; }
+    /// <summary>Последний сохранённый матч (для итога в оверлее).</summary>
+    public MatchRecord? LastSavedMatch => _lastSaved;
+
+    public void Start()
+    {
+        Overlay.Start();
+        _lastToggleHotkey = Settings.Current.Overlay.ToggleHotkey;
+        _lastEditHotkey = Settings.Current.Overlay.EditHotkey;
+        _lastDetailsHotkey = Settings.Current.Overlay.DetailsHotkey;
+        _lastRoshanHotkey = Settings.Current.Overlay.RoshanHotkey;
+        RestartGsiIfNeeded(force: true);
+        RecomputeBuild();
+        _tick.Start();
+        Overlay.StateChanged += (_, _) => RaiseChanged();
+        _ = RunOnlineChecksAsync(force: false);
+        _ = StartupImportAsync();
+    }
+
+    // ------------------------------------------------------------------ события
+
+    private void OnTick()
+    {
+        try
+        {
+            Monitor.Sample();
+            WatchGame();
+            var gsiFresh = LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(10);
+
+            // Напоминания: по игровым часам GSI или по ручному таймеру матча
+            TimeSpan? clock = null;
+            bool inProgress = false;
+            if (gsiFresh && LastGsi!.ClockTime != null && (LastGsi.IsInProgress))
+            {
+                clock = TimeSpan.FromSeconds(LastGsi.ClockTime.Value);
+                inProgress = LastGsi.Paused != true;
+            }
+            else if (_manualTimerStartUtc != null)
+            {
+                clock = DateTime.UtcNow - _manualTimerStartUtc.Value;
+                inProgress = true;
+            }
+            if (clock != null) Reminders.Tick(clock.Value, Settings.Current.Position, inProgress);
+            if (clock != null && inProgress) TickMatchEvents((int)Math.Floor(clock.Value.TotalSeconds));
+            if (gsiFresh && LastGsi!.IsInProgress && LastGsi.Paused != true && LastGsi.HasHero && LastGsi.ClockTime is int gsiClock)
+            {
+                TickAlerts(gsiClock);
+                TickPace(gsiClock);
+            }
+
+            // Распознавание драфта (только тренировочный контекст)
+            UpdateAutoDraftSession();
+            bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration);
+            if (started) _manualScanRequested = false;
+
+            RefreshOverlay();
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Ошибка такта приложения", ex);
+        }
+    }
+
+    private void OnGsi(GameStateSnapshot snap)
+    {
+        LastGsi = snap;
+        try
+        {
+            var completed = _recorder.Observe(ToTick(snap));
+            if (completed != null) SaveMatch(completed);
+            if (_recorder.Current is MatchRecord cur && cur.Id != _paceMatchId) OnMatchStarted(cur);
+        }
+        catch (Exception ex) { Log.Error("История матча: ошибка записи", ex); }
+        if (snap.MatchId != null && snap.MatchId != _lastMatchId)
+        {
+            _lastMatchId = snap.MatchId;
+            Reminders.Reset();
+            Alerts.Reset();
+            _timerAnnouncer.Reset();
+            Roshan.Clear();
+            _roleDetector.Reset();
+        }
+        if (string.Equals(snap.TeamName, "dire", StringComparison.OrdinalIgnoreCase)) MySide = Side.Dire;
+        else if (string.Equals(snap.TeamName, "radiant", StringComparison.OrdinalIgnoreCase)) MySide = Side.Radiant;
+
+        UpdateAutoDraftSession();
+        Hero? hero = snap.HeroId is > 0 ? Database.FindHero(snap.HeroId.Value) : null;
+        hero ??= Database.FindHero(snap.HeroName);
+        if (hero != null && hero.Id != CurrentHero?.Id) SelectHero(hero);
+        TryLinkFromGsi(snap);
+        TickRoleDetection(snap);
+        RaiseChanged();
+    }
+
+    public string AutoDraftStatus
+    {
+        get
+        {
+            if (!Settings.Current.Vision.AutoDraftEnabled) return Loc.T("auto_off");
+            if (LastGsi == null || DateTime.UtcNow - LastGsi.ReceivedUtc >= TimeSpan.FromSeconds(40)) return Loc.T("auto_need_gsi");
+            if (!AutoDraftLive) return Loc.T("auto_wait_draft");
+            if (LastGsi.TeamName is not ("radiant" or "dire")) return Loc.T("auto_need_side");
+            if (Vision.Matcher.HeroCount == 0) return Loc.T("auto_no_templates");
+            if (Vision.LastError != null) return Loc.T("auto_capture_failed");
+            if (!Overlay.Game.Foreground && Overlay.Game.Found) return Loc.T("auto_focus");
+            if (AutoEnemies.Count > 0) return Loc.Instance.Format("auto_detected", string.Join(", ", AutoEnemies.Select(h => h.Name)));
+            if (DateTime.UtcNow - _autoStartedUtc > TimeSpan.FromSeconds(15) && Vision.LastRunUtc >= _autoStartedUtc && Vision.LastResult?.UncertainCount > 0)
+                return Loc.T("auto_calibrate");
+            return Loc.T("auto_wait_picks");
+        }
+    }
+
+    private void UpdateAutoDraftSession()
+    {
+        string? key = AutoDraftLive ? (LastGsi!.MatchId ?? "unidentified") + ":" + LastGsi.TeamName : null;
+        if (key == _autoSessionKey) return;
+        _autoSessionKey = key;
+        AutoDraftGeneration++;
+        _autoStartedUtc = DateTime.UtcNow;
+        _autoPicks.Reset();
+        _notedEnemies.Clear();
+        AutoDraftAnalysis = null;
+    }
+
+    private void RecomputeAutoDraft()
+    {
+        if (!AutoDraftLive || LastGsi?.TeamName is not ("radiant" or "dire") || AutoEnemies.Count == 0)
+        { AutoDraftAnalysis = null; return; }
+        var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
+        AutoDraftAnalysis = Analyzer.Analyze(new DraftState(allies, AutoEnemies, Settings.Current.Position), countersOnly: true);
+    }
+
+    private void OnVisionResult(DraftRecognitionResult result)
+    {
+        if (result.SessionId != AutoDraftGeneration) return;
+        if (result.IsManual && !AutoDraftLive)
+        {
+            List<Hero> Read(Side side) => result.For(side).Where(x => x.Match.Status == SlotStatus.Recognized)
+                .Select(x => Database.FindHero(x.Match.HeroKey)).Where(x => x != null).Select(x => x!).DistinctBy(x => x.Id).ToList();
+            SetDraft(Read(MySide), Read(MySide == Side.Radiant ? Side.Dire : Side.Radiant));
+            return;
+        }
+        if (!AutoDraftLive || LastGsi?.TeamName is not ("radiant" or "dire")) return;
+        _autoPicks.Apply(result);
+        RecomputeAutoDraft();
+        AnnounceEnemyNotes(AutoEnemies);
+        var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
+        // Keep the main draft view in sync with confirmed screen picks.
+        SetDraft(allies, AutoEnemies);
+        RefreshOverlay();
+    }
+
+    // ------------------------------------------------------------------ действия
+
+    public void SelectHero(Hero? hero)
+    {
+        CurrentHero = hero;
+        Settings.Current.LastHeroKey = hero?.Key;
+        Settings.Save();
+        RecomputeBuild();
+        RaiseChanged();
+    }
+
+    public void SetDraft(IReadOnlyList<Hero> allies, IReadOnlyList<Hero> enemies)
+    {
+        Draft = new DraftState(allies, enemies, Settings.Current.Position);
+        LastDraftAnalysis = Analyzer.Analyze(Draft);
+        RecomputeBuild();
+        RaiseChanged();
+    }
+
+    public void RequestManualScan() => _manualScanRequested = true;
+
+    public void StartManualTimer()
+    {
+        _manualTimerStartUtc = DateTime.UtcNow;
+        Reminders.Reset();
+        RaiseChanged();
+    }
+
+    public void StopManualTimer()
+    {
+        _manualTimerStartUtc = null;
+        Reminders.Dismiss();
+        RaiseChanged();
+    }
+
+    public void ReloadDatabase()
+    {
+        Database = GameDatabase.Load(AppPaths.DataOverrides);
+        RebuildEngines();
+        CurrentHero = CurrentHero == null ? null : Database.FindHero(CurrentHero.Key);
+        RecomputeBuild();
+        RaiseChanged();
+    }
+
+    public void RebuildEngines()
+    {
+        Analyzer = new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats);
+        Trainer = new DraftTrainer(Database, new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats));
+        ApplyPool();
+        Builds = new ItemBuildEngine(Database);
+        Advisor = new RoleAdvisor(Database);
+        if (Draft.Allies.Count + Draft.Enemies.Count > 0) LastDraftAnalysis = Analyzer.Analyze(Draft);
+    }
+
+    /// <summary>Учитывать ли героев противника в предметах (только Training).</summary>
+    public bool EnemyAwareItems => ComplianceGate.IsAllowed(Feature.EnemyAwareItemAdvice, Settings.Current.UsageContext);
+
+    public void RecomputeBuild()
+    {
+        CurrentBuild = CurrentHero == null
+            ? null
+            : PersonalBuildResolver.Resolve(PersonalBuildResolver.Active(Settings.Current, CurrentHero, Settings.Current.Position),
+                CurrentHero, Settings.Current.Position, Database)
+              ?? Builds.Build(CurrentHero, Settings.Current.Position, EnemyAwareItems ? Draft.Enemies : null);
+    }
+
+    private void ApplySettings()
+    {
+        var s = Settings.Current;
+        Loc.Instance.Language = s.Language;
+        Reminders.ApplySettings(s.Notifications);
+        ApplyPool();
+        if (s.Overlay.ToggleHotkey != _lastToggleHotkey || s.Overlay.EditHotkey != _lastEditHotkey || s.Overlay.DetailsHotkey != _lastDetailsHotkey
+            || s.Overlay.RoshanHotkey != _lastRoshanHotkey)
+        {
+            _lastRoshanHotkey = s.Overlay.RoshanHotkey;
+            _lastDetailsHotkey = s.Overlay.DetailsHotkey;
+            _lastToggleHotkey = s.Overlay.ToggleHotkey;
+            _lastEditHotkey = s.Overlay.EditHotkey;
+            // перерегистрация вне обработчика текущего сообщения
+            _dispatcher.InvokeAsync(() => Overlay.RegisterHotkeys());
+        }
+        RestartGsiIfNeeded(force: false);
+        if (Draft.UserPosition != s.Position) Draft = Draft with { UserPosition = s.Position };
+        if (Draft.Allies.Count + Draft.Enemies.Count > 0) LastDraftAnalysis = Analyzer.Analyze(Draft);
+        RecomputeBuild();
+        UpdateAutoDraftSession();
+        RecomputeAutoDraft();
+        RefreshOverlay();
+        Overlay.Update();
+        RaiseChanged();
+    }
+
+    private void RestartGsiIfNeeded(bool force)
+    {
+        var g = Settings.Current.Gsi;
+        if (!force && g.Enabled == _lastGsiEnabled && g.Port == _lastGsiPort && g.Token == _lastGsiToken) return;
+        _lastGsiEnabled = g.Enabled;
+        _lastGsiPort = g.Port;
+        _lastGsiToken = g.Token;
+        Gsi?.Dispose();
+        Gsi = null;
+        if (!g.Enabled) return;
+        Gsi = new GsiServer(g.Port, g.Token);
+        Gsi.SnapshotReceived += (_, snap) => _dispatcher.InvokeAsync(() => OnGsi(snap));
+        Gsi.Start();
+    }
+
+    // ------------------------------------------------------------------ оверлей
+
+    public void RefreshOverlay()
+    {
+        var L = Loc.Instance;
+        var s = Settings.Current;
+        var vm = OverlayVm;
+        string role = L.Get("role_short_" + (int)s.Position);
+        vm.SubHeader = LastGsi?.ClockTime is int clk && LastGsi.IsInProgress
+            ? $"{(clk < 0 ? "-" : "")}{Math.Abs(clk) / 60}:{Math.Abs(clk) % 60:00}"
+            : L.Get(s.UsageContext == UsageContext.Training ? "ctx_training_short" : "ctx_reference_short").ToUpperInvariant();
+
+        bool trainingDraft = ComplianceGate.IsAllowed(Feature.AutoDraftRecognition, s.UsageContext);
+        bool inDraft = AutoDraftLive;
+        vm.DraftMode = inDraft;
+
+        if (inDraft)
+        {
+            vm.Header = (role + " / " + L.Get("auto_counters")).ToUpperInvariant();
+            vm.SubHeader = L.Get("auto_live");
+            vm.MainTitle = AutoDraftAnalysis?.Top.Count > 0 ? L.Get("auto_top") : L.Get("auto_wait_picks");
+            vm.MainDetail = AutoDraftStatus;
+            vm.Section1Title = AutoDraftAnalysis?.Top.Count > 0 ? L.Get("auto_why") : "";
+            vm.ReplaceRows(vm.Section1, (AutoDraftAnalysis?.Top ?? Array.Empty<HeroRecommendation>()).Select(r =>
+                new OverlayRow(r.Hero.Name,
+                    string.Join("; ", r.Positives.Where(x => x.Kind is ReasonKind.Counter or ReasonKind.Stats).Take(2).Select(x => x.Text(L.Language))),
+                    L.ConfidenceName(r.Confidence)) { Icon = HeroArt.Portrait(r.Hero.Key) }));
+            vm.HeroPortrait = AutoDraftAnalysis?.Top.FirstOrDefault() is HeroRecommendation best ? HeroArt.Portrait(best.Hero.Key) : null;
+            vm.GoldProgress = -1;
+            var notes = AutoEnemies.Select(h => (Hero: h, Note: NoteFor(h))).Where(x => x.Note != null).ToList();
+            vm.Section2Title = notes.Count > 0 ? L.Get("notes_overlay") : "";
+            var draftRows = notes.Select(x => new OverlayRow(x.Hero.Name, Short(x.Note!, 140))).ToList();
+            if (LastGsi?.GameState == "DOTA_GAMERULES_STATE_STRATEGY_TIME" && CurrentBriefing != null)
+            {
+                // выбор окончен — вместо пустого места показываем сводку драфта
+                vm.Section2Title = L.Get("brief_title");
+                draftRows = draftRows.Concat(BriefingRows(3).Select(r => new OverlayRow(r.Title, r.Text))).ToList();
+            }
+            vm.ReplaceRows(vm.Section2, draftRows);
+            if (AutoDraftAnalysis?.Top.Count == 0 && AutoEnemies.Count > 0)
+            { vm.MainTitle = L.Get("auto_no_counter"); vm.MainDetail = L.Get("auto_no_counter_hint"); }
+        }
+        else if (s.Automation.AutoOverlayModes && GsiFresh && LastGsi!.IsPostGame && FillPostGameMode(vm, role)) { }
+        else if (s.Automation.AutoOverlayModes && GsiFresh && LastGsi!.IsInProgress && LastGsi.HeroAlive == false
+                 && CurrentHero != null && CurrentBuild != null)
+            FillDeadMode(vm, role, LastGsi);
+        else if (CurrentHero != null && CurrentBuild != null)
+        {
+            vm.Header = (role + " / " + L.Get("sec_build")).ToUpperInvariant();
+            var owned = LastGsi?.InventoryItems;
+            var next = CurrentBuild.NextItem(owned, LastGsi?.ClockTime);
+            vm.MainTitle = next != null
+                ? $"{CurrentHero.DisplayName(L.Language)} → {next.Item.DisplayName(L.Language)}"
+                : CurrentHero.DisplayName(L.Language);
+            vm.MainDetail = next?.Explain(L.Language) ?? L.Get("ov_build_done");
+            if (next != null && GoldLine(next.Item.Key) is string goldLine) vm.MainDetail = goldLine + " · " + vm.MainDetail;
+            vm.HeroPortrait = HeroArt.Portrait(CurrentHero.Key);
+            vm.GoldProgress = next != null ? GoldProgress(next.Item.Key) : -1;
+
+            var phase = PhaseForClock(LastGsi?.ClockTime);
+            vm.Section1Title = L.PhaseName(phase) + (CurrentBuild.EnemyAware ? "" : " · " + L.Get("ov_reference_build"));
+            vm.ReplaceRows(vm.Section1, CurrentBuild[phase].Concat(CurrentBuild[BuildPhase.Situational].Take(2)).Take(5).Select(p =>
+                new OverlayRow(p.Item.DisplayName(L.Language), p.Explain(L.Language),
+                    owned != null && owned.Contains(p.Item.Key) ? "✓" : Costs.Cost(p.Item.Key)?.ToString() ?? "") { Icon = HeroArt.ItemIcon(p.Item.Key) }));
+            var tips = Advisor.HeroTips(CurrentHero, s.Position).Take(2)
+                .Concat(Advisor.TipsFor(s.Position).Take(1).Select(t => new Reason(ReasonKind.Info, 0, t.Ru, t.En)))
+                .ToList();
+            vm.Section2Title = L.Get("ov_tips");
+            var rows = tips.Select(t => new OverlayRow("•", t.Text(L.Language))).ToList();
+            if (NoteFor(CurrentHero) is string myNote) rows.Insert(0, new OverlayRow(L.Get("notes_mine"), Short(myNote, 160)));
+            if (BriefingPhase)
+            {
+                vm.Section2Title = L.Get("brief_title");
+                rows = BriefingRows().Select(r => new OverlayRow(r.Title, r.Text)).ToList();
+            }
+            vm.ReplaceRows(vm.Section2, rows);
+        }
+        else
+        {
+            vm.Header = (role + " / " + L.Get("sec_assistant")).ToUpperInvariant();
+            vm.MainTitle = L.Get("ov_pick_hero");
+            vm.HeroPortrait = null;
+            vm.GoldProgress = -1;
+            vm.MainDetail = L.Get(trainingDraft ? "ov_pick_hero_hint_training" : "ov_pick_hero_hint");
+            vm.Section1Title = "";
+            vm.Section2Title = "";
+            vm.Section1.Clear();
+            vm.Section2.Clear();
+        }
+
+        vm.TimersLine = BuildTimersLine();
+        vm.TimersUrgent = TimersUrgentNow();
+        vm.Animate = !s.ReduceMotion;
+
+        var gsiState = LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(40)
+            ? L.Get("gsi_connected") : L.Get("gsi_waiting");
+        vm.Footer = $"GSI · {gsiState}".ToUpperInvariant();
+        vm.HideHint = (s.Overlay.ToggleHotkey + " " + L.Get("ov_key_hide")).ToUpperInvariant();
+        vm.DetailsHint = vm.DraftMode ? "CTRL+SHIFT+R · " + L.Get("auto_role_key").ToUpperInvariant() : (s.Overlay.DetailsHotkey + " " + L.Get(s.Overlay.Mode == OverlayMode.Expanded ? "ov_key_less" : "ov_key_more")).ToUpperInvariant();
+    }
+
+    // ------------------------------------------------------------------ автоматика: игра, роль, импорт, режимы оверлея
+
+    private bool GsiFresh => LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(10);
+
+    /// <summary>Запуск/закрытие Доты по окну игры (тот же поиск окна, что и у оверлея).</summary>
+    private void WatchGame()
+    {
+        if (!Settings.Current.Automation.WatchGame) return;
+        if (_gameWatch.Observe(Overlay.Game.Found) is not bool started) return;
+        if (started)
+        {
+            MatchSavedSinceGameStart = false;
+            Log.Info("Dota 2 запущена");
+            GameLaunched?.Invoke(this, EventArgs.Empty);
+        }
+        else
+        {
+            Log.Info("Dota 2 закрыта");
+            GameClosed?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Автоопределение роли в начале матча (линия по координатам GSI + герой + история + добивания).</summary>
+    private void TickRoleDetection(GameStateSnapshot snap)
+    {
+        if (!Settings.Current.Automation.AutoRole || _roleDetector.Decided || !snap.IsInProgress || snap.ClockTime is not int clock || CurrentHero == null)
+            return;
+        _roleDetector.Observe(clock, snap.HeroX, snap.HeroY, snap.LastHits);
+        var guess = _roleDetector.TryDecide(clock, CurrentHero, snap.TeamName, () => History.All(), Settings.Current.Position);
+        if (guess == null) return;
+        Log.Info($"Роль определена: {guess.Position} ({guess.Confidence:0.00}; {guess.ReasonRu})");
+        if (guess.Confidence < 0.45) return;
+        if (_recorder.Current != null) _recorder.Current.Position = guess.Position;
+        if (guess.Position == Settings.Current.Position) return;
+        var L = Loc.Instance;
+        Settings.Update(s => s.Position = guess.Position);
+        _lastEventToastUtc = DateTime.MinValue;
+        ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
+            L.Format("role_auto_changed", L.PositionName(guess.Position), guess.Reason(L.Language)));
+    }
+
+    private async Task StartupImportAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(30));
+        var d = Settings.Current.Data;
+        if (d.SteamAccountId != null && (d.ProfileCheckedUtc == null || DateTime.UtcNow - d.ProfileCheckedUtc > TimeSpan.FromHours(12)))
+            await RefreshSteamProfileAsync();
+        await AutoImportOnceAsync(null);
+    }
+
+    // ------------------------------------------------------------------ Steam: привязка, профиль, статистика героев
+
+    public long? SteamAccount => SteamIds.ToAccountId(Settings.Current.Data.SteamAccountId);
+
+    /// <summary>Привязать аккаунт (Steam ID64 или account id). via: gsi / local / openid / manual.</summary>
+    public void LinkSteam(string steamId, string via, string? name = null)
+    {
+        if (SteamIds.ToAccountId(steamId) is not long account) return;
+        bool changed = SteamAccount != account;
+        Settings.Update(s =>
+        {
+            s.Data.SteamAccountId = account.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            s.Data.SteamLinkedVia = via;
+            if (changed)
+            {
+                s.Data.SteamName = name;
+                s.Data.SteamAvatarUrl = null;
+                s.Data.RankTier = null;
+                s.Data.LeaderboardRank = null;
+                s.Data.ProfileCheckedUtc = null;
+                s.Data.PublicMatchData = null;
+            }
+            else if (name != null) s.Data.SteamName ??= name;
+        });
+        if (changed) PlayerHeroes.Clear();
+        Log.Info($"Steam привязан ({via}): {account}");
+        ApplyPool();
+        SteamChanged?.Invoke(this, EventArgs.Empty);
+        if (changed)
+        {
+            _ = RefreshSteamProfileAsync();
+            _ = AutoImportOnceAsync(null);
+        }
+    }
+
+    public void UnlinkSteam()
+    {
+        Settings.Update(s =>
+        {
+            s.Data.SteamAccountId = null;
+            s.Data.SteamLinkedVia = null;
+            s.Data.SteamName = null;
+            s.Data.SteamAvatarUrl = null;
+            s.Data.RankTier = null;
+            s.Data.LeaderboardRank = null;
+            s.Data.ProfileCheckedUtc = null;
+            s.Data.PublicMatchData = null;
+        });
+        PlayerHeroes.Clear();
+        ApplyPool();
+        Log.Info("Steam отвязан");
+        SteamChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Обновить ник, аватар, медаль и статистику по героям из OpenDota. Возвращает текст ошибки или null.</summary>
+    public async Task<string?> RefreshSteamProfileAsync()
+    {
+        var d = Settings.Current.Data;
+        if (SteamAccount is not long account) return Loc.T("steam_not_linked");
+        if (!d.AllowOnlineStats) return Loc.T("steam_need_network");
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var profile = await client.GetPlayerProfileAsync(account, CancellationToken.None);
+            var heroes = await client.GetPlayerHeroesAsync(account, CancellationToken.None);
+            if (SteamAccount != account) return null; // успели перепривязать
+            PlayerHeroes.Replace(account, heroes, DateTime.UtcNow);
+            Settings.Update(s =>
+            {
+                s.Data.ProfileCheckedUtc = DateTime.UtcNow;
+                if (profile != null)
+                {
+                    s.Data.SteamName = profile.Name ?? s.Data.SteamName;
+                    s.Data.SteamAvatarUrl = profile.AvatarUrl;
+                    s.Data.RankTier = profile.RankTier;
+                    s.Data.LeaderboardRank = profile.LeaderboardRank;
+                }
+                if (heroes.Count > 0) s.Data.PublicMatchData = true;
+            });
+            ApplyPool();
+            Log.Info($"Профиль Steam обновлён: {profile?.Name}, героев со статистикой {heroes.Count}");
+            SteamChanged?.Invoke(this, EventArgs.Empty);
+            return profile == null ? Loc.T("steam_no_profile") : null;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Профиль OpenDota: " + ex.Message);
+            return Loc.T("steam_refresh_failed") + " " + ex.Message;
+        }
+    }
+
+    // ------------------------------------------------------------------ разбор матча (OpenDota)
+
+    private readonly HashSet<string> _reviewPending = new(StringComparer.Ordinal);
+
+    private string? HeroNpc(int heroId) => Database.FindHero(heroId)?.Key is string key ? "npc_dota_hero_" + key : null;
+
+    /// <summary>
+    /// Разобрать матч: загрузить его из OpenDota, при необходимости попросить разобрать запись, посчитать нормы таймингов
+    /// и сделать выводы. Возвращает разбор или текст, почему его пока нет.
+    /// </summary>
+    public async Task<(MatchReview? Review, string? Message)> ReviewMatchAsync(string matchId, Position? position, bool requestParse)
+    {
+        var d = Settings.Current.Data;
+        if (SteamAccount is not long account) return (null, Loc.T("review_need_steam"));
+        if (!d.AllowOnlineStats) return (null, Loc.T("steam_need_network"));
+        if (!long.TryParse(matchId, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var id))
+            return (null, Loc.T("review_no_id"));
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var details = await client.GetMatchAsync(id, account, HeroNpc, CancellationToken.None);
+            if (details == null) return (null, Loc.T("review_not_found"));
+            if (!details.Parsed && requestParse)
+            {
+                await client.RequestParseAsync(id, CancellationToken.None);
+                // итог без разбора всё равно сохраняем: сравнение с игроками на герое уже есть
+                if (details.Benchmarks.Count == 0) return (null, Loc.T("review_parsing"));
+            }
+            var norms = new Dictionary<string, int?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var p in MatchReviewBuilder.KeyPurchases(details, Costs.Cost))
+            {
+                var norm = ItemNorms.Get(details.HeroId, p.ItemKey, out bool stale);
+                if (stale)
+                {
+                    try { norm = await client.GetItemTimingNormAsync(details.HeroId, p.ItemKey, CancellationToken.None); ItemNorms.Set(details.HeroId, p.ItemKey, norm); }
+                    catch (Exception ex) { Log.Warn($"Норма тайминга {p.ItemKey}: {ex.Message}"); }
+                }
+                norms[p.ItemKey] = norm;
+            }
+            var review = MatchReviewBuilder.Build(details, position, norms,
+                key => Database.FindItem(key) is { } item ? (item.NameRu, item.Name) : (key, key),
+                hid => Database.FindHero(hid) is { } h ? (h.NameRu, h.Name) : ("?", "?"),
+                Costs.Cost);
+            Reviews.Save(review);
+            Log.Info($"Разбор матча {matchId}: выводов {review.Insights.Count}, разобран: {review.Parsed}");
+            return (review, review.Parsed ? null : Loc.T("review_parsing"));
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Разбор матча {matchId}: {ex.Message}");
+            return (null, Loc.T("review_failed") + " " + ex.Message);
+        }
+    }
+
+    /// <summary>После матча: попросить разбор записи и ждать его (через 4, 10 и 20 минут). Готово — уведомление.</summary>
+    private async Task AutoReviewAsync(string matchId)
+    {
+        if (!Settings.Current.Automation.AutoReview || SteamAccount == null || !_reviewPending.Add(matchId)) return;
+        try
+        {
+            var position = History.All().FirstOrDefault(m => m.MatchId == matchId)?.Position;
+            await ReviewMatchAsync(matchId, position, requestParse: true);
+            foreach (var minutes in new[] { 4, 10, 20 })
+            {
+                if (Reviews.Get(matchId) is { Parsed: true }) break;
+                await Task.Delay(TimeSpan.FromMinutes(minutes));
+                await ReviewMatchAsync(matchId, position, requestParse: false);
+            }
+            if (Reviews.Get(matchId) is { } review)
+            {
+                var L = Loc.Instance;
+                var top = review.Problems.FirstOrDefault() ?? review.Good.FirstOrDefault();
+                _lastEventToastUtc = DateTime.MinValue;
+                ShowEventToast(L.Get("review_ready").ToUpperInvariant(), top != null ? top.Text(L.Language) : L.Get("review_no_insights"));
+                RaiseChanged();
+            }
+        }
+        finally { _reviewPending.Remove(matchId); }
+    }
+
+    /// <summary>Пул по вашей статистике: часто играете и выигрываете (ключи героев).</summary>
+    public IReadOnlyList<string> SuggestPoolFromSteam() =>
+        PlayerHeroes.SuggestPool().Select(Database.FindHero).Where(h => h != null).Select(h => h!.Key).ToList();
+
+    /// <summary>Привязка из игры: Dota сама передаёт Steam ID игрока в GSI.</summary>
+    private void TryLinkFromGsi(GameStateSnapshot snap)
+    {
+        if (Settings.Current.Data.SteamAccountId != null || string.IsNullOrEmpty(snap.SteamId)) return;
+        if (SteamIds.ToAccountId(snap.SteamId) is null) return;
+        LinkSteam(snap.SteamId!, "gsi", snap.PlayerName);
+        _lastEventToastUtc = DateTime.MinValue;
+        ShowEventToast(Loc.T("steam_header").ToUpperInvariant(), Loc.Instance.Format("steam_linked_gsi", snap.PlayerName ?? snap.SteamId!));
+    }
+
+    /// <summary>После матча: OpenDota обычно видит игру через несколько минут — пробуем через 2, 8 и 25 минут.</summary>
+    private async Task AutoImportAfterMatchAsync(string? matchId)
+    {
+        if (string.IsNullOrEmpty(matchId) || !_importPending.Add(matchId)) return;
+        try
+        {
+            foreach (var minutes in new[] { 2, 8, 25 })
+            {
+                await Task.Delay(TimeSpan.FromMinutes(minutes));
+                if (await AutoImportOnceAsync(matchId)) return;
+            }
+        }
+        finally { _importPending.Remove(matchId); }
+    }
+
+    /// <summary>Подтянуть последние матчи из OpenDota. true — делать больше нечего (матч найден или импорт выключен).</summary>
+    private async Task<bool> AutoImportOnceAsync(string? waitFor)
+    {
+        var s = Settings.Current;
+        if (!s.Automation.AutoImport || !s.Data.AllowOnlineStats) return true;
+        if (SteamIds.ToAccountId(s.Data.SteamAccountId) is not long account) return true;
+        try
+        {
+            using var client = new OpenDotaClient(s.Data.OpenDotaApiKey);
+            var rows = await client.GetRecentMatchesAsync(account, CancellationToken.None);
+            int added = History.Import(rows);
+            bool? visible = rows.Count > 0 ? true : History.All().Any(m => m.Source == "GSI") ? false : null;
+            if (visible != null && visible != s.Data.PublicMatchData)
+            {
+                Settings.Update(x => x.Data.PublicMatchData = visible);
+                SteamChanged?.Invoke(this, EventArgs.Empty);
+            }
+            bool found = waitFor == null || rows.Any(r => r.MatchId.ToString(System.Globalization.CultureInfo.InvariantCulture) == waitFor);
+            Log.Info($"Автоимпорт OpenDota: получено {rows.Count}, добавлено {added}" + (waitFor != null ? (found ? $", матч {waitFor} найден" : $", матча {waitFor} пока нет") : ""));
+            if (found && waitFor != null)
+            {
+                RaiseChanged();
+                _ = AutoReviewAsync(waitFor);
+            }
+            return found;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Автоимпорт OpenDota: " + ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>Оверлей «пока мёртв»: что купить, выкуп, склад и ближайшие события.</summary>
+    private void FillDeadMode(OverlayViewModel vm, string role, GameStateSnapshot g)
+    {
+        var L = Loc.Instance;
+        var owned = g.InventoryItems;
+        var next = CurrentBuild!.NextItem(owned, g.ClockTime);
+        vm.Header = (role + " / " + L.Get("dead_header") + (g.RespawnSeconds is int r && r > 0 ? " · " + GameTimers.Clock(r) : "")).ToUpperInvariant();
+        vm.MainTitle = next != null ? L.Format("dead_buy", next.Item.DisplayName(L.Language)) : L.Get("ov_build_done");
+        vm.MainDetail = next == null ? "" : GoldLine(next.Item.Key) ?? next.Explain(L.Language);
+        vm.HeroPortrait = (next != null ? HeroArt.ItemIcon(next.Item.Key) : null) ?? HeroArt.Portrait(CurrentHero!.Key);
+        vm.GoldProgress = next != null ? GoldProgress(next.Item.Key) : -1;
+
+        var rows = new List<OverlayRow>();
+        int gold = g.Gold ?? 0;
+        if (g.BuybackCost is int bb && bb > 0)
+        {
+            string text = g.BuybackCooldown is int cd && cd > 0 ? L.Format("dead_bb_cd", GameTimers.Clock(cd))
+                : gold >= bb ? L.Format("dead_bb_ready", bb) : L.Format("dead_bb_short", bb - gold);
+            rows.Add(new OverlayRow(L.Get("dead_bb"), text));
+            int lateFrom = Settings.Current.Alerts.BuybackFromMinute * 60;
+            if (next != null && Costs.Cost(next.Item.Key) is int cost && gold >= cost && gold - cost < bb
+                && g.BuybackCooldown is 0 && g.ClockTime >= lateFrom)
+                rows.Add(new OverlayRow(L.Get("dead_keep_bb"), L.Format("dead_keep_bb_hint", bb)));
+        }
+        if (g.ItemSlots.Any(kv => kv.Key.StartsWith("stash", StringComparison.Ordinal) && kv.Value != "empty"))
+            rows.Add(new OverlayRow(L.Get("dead_stash"), L.Get("dead_stash_hint")));
+        vm.Section1Title = rows.Count > 0 ? L.Get("dead_status") : "";
+        vm.ReplaceRows(vm.Section1, rows);
+
+        var events = g.ClockTime is int clock && Settings.Current.Timers.Enabled
+            ? GameTimers.Upcoming(Database.Timers, clock, TimerOn, 3).Select(e => new OverlayRow(TimerName(e.Rule), L.Format("dead_in", GameTimers.Clock(e.InSec)))).ToList()
+            : new List<OverlayRow>();
+        vm.Section2Title = events.Count > 0 ? L.Get("dead_events") : "";
+        vm.ReplaceRows(vm.Section2, events);
+    }
+
+    /// <summary>Оверлей после матча: результат, разбор смертей и цель.</summary>
+    private bool FillPostGameMode(OverlayViewModel vm, string role)
+    {
+        var m = _lastSaved;
+        if (m == null || m.MatchId != LastGsi?.MatchId) return false;
+        var L = Loc.Instance;
+        var hero = Database.FindHero(m.HeroId);
+        vm.Header = (role + " / " + L.Get("post_header")).ToUpperInvariant();
+        string result = L.Get(m.Result switch { MatchResult.Win => "hist_win", MatchResult.Loss => "hist_loss", _ => "hist_unknown" });
+        vm.MainTitle = (hero?.DisplayName(L.Language) ?? "") + (hero != null ? " · " : "") + result;
+        vm.MainDetail = L.Format("post_line", m.Kills, m.Deaths, m.Assists, m.Gpm, m.LastHits);
+        vm.HeroPortrait = hero != null ? HeroArt.Portrait(hero.Key) : null;
+        vm.GoldProgress = -1;
+
+        var rows = new List<OverlayRow>();
+        var d = DeathAnalysis.Analyze(m);
+        if (d == null || d.Total == 0) rows.Add(new OverlayRow("✓", L.Get("deaths_none")));
+        else
+        {
+            if (d.WithLotsOfGold > 0) rows.Add(new OverlayRow("×" + d.WithLotsOfGold, L.Format("deaths_gold", d.WithLotsOfGold, DeathAnalysis.LotsOfGold)));
+            if (d.WithoutTeleport > 0) rows.Add(new OverlayRow("×" + d.WithoutTeleport, L.Get("deaths_no_tp")));
+            if (d.LateWithoutBuyback > 0) rows.Add(new OverlayRow("×" + d.LateWithoutBuyback, L.Get("deaths_no_bb")));
+            if (rows.Count == 0) rows.Add(new OverlayRow("✓", L.Format("deaths_clean", d.AvgGoldAtRisk)));
+        }
+        vm.Section1Title = L.Get("post_deaths");
+        vm.ReplaceRows(vm.Section1, rows);
+
+        var tail = new List<OverlayRow>();
+        if (Reviews.Get(m.MatchId) is { } review)
+            foreach (var ins in review.Top) tail.Add(new OverlayRow(ins.Severity < 0 ? "!" : "✓", ins.Text(L.Language)));
+        if (Goals.Active is CoachGoal goal) tail.Add(new OverlayRow(L.Get("goal_header"), GoalText(goal)));
+        tail.Add(new OverlayRow("→", L.Get("post_open_history")));
+        vm.Section2Title = "";
+        vm.ReplaceRows(vm.Section2, tail);
+        return true;
+    }
+
+    // ------------------------------------------------------------------ матч: таймеры, Рошан, подсказки, история
+
+    /// <summary>Игровые часы: из GSI, иначе ручной таймер матча. null — матч не идёт.</summary>
+    public int? GameClock
+    {
+        get
+        {
+            if (LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(10) && LastGsi.IsInProgress && LastGsi.ClockTime is int c)
+                return c;
+            if (_manualTimerStartUtc != null) return (int)(DateTime.UtcNow - _manualTimerStartUtc.Value).TotalSeconds;
+            return null;
+        }
+    }
+
+    public bool TimerOn(string key)
+    {
+        var s = Settings.Current;
+        if (!s.Timers.IsOn(key)) return false;
+        var rule = Database.Timers.FirstOrDefault(t => string.Equals(t.Key, key, StringComparison.OrdinalIgnoreCase));
+        return rule == null || rule.AppliesTo(s.Position);
+    }
+
+    private string TimerName(TimerRule rule)
+    {
+        var L = Loc.Instance;
+        if (rule.Key == "daynight" && LastGsi?.Daytime is bool day) return L.Get(day ? "timer_night" : "timer_day");
+        return rule.Name(L.Language);
+    }
+
+    private void TickMatchEvents(int clock)
+    {
+        var t = Settings.Current.Timers;
+        if (!t.Enabled) return;
+        var L = Loc.Instance;
+        foreach (var e in _timerAnnouncer.Due(Database.Timers, clock, TimerOn))
+            if (t.Toasts) ShowEventToast(L.Get("timer_header").ToUpperInvariant(), L.Format("timer_soon", TimerName(e.Rule), e.InSec));
+        foreach (var key in Roshan.Due(clock))
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get(key));
+    }
+
+    private void TickAlerts(int clock)
+    {
+        var g = LastGsi!;
+        var state = new InventoryState(clock, g.HeroAlive != false, g.Gold, g.GoldUnreliable, g.ItemSlots, Settings.Current.Position,
+            g.BuybackCost, g.BuybackCooldown);
+        var key = Alerts.Tick(state, Settings.Current.Alerts, Costs.Cost("item_tpscroll") ?? 100);
+        if (key == null) return;
+        var L = Loc.Instance;
+        var text = key switch
+        {
+            MatchAlerts.UnspentGold => L.Format(key, g.GoldUnreliable ?? g.Gold ?? 0),
+            MatchAlerts.NoBuyback => L.Format(key, (g.BuybackCost ?? 0) - (g.Gold ?? 0)),
+            _ => L.Get(key)
+        };
+        ShowEventToast(L.Get("alert_header").ToUpperInvariant(), text, warning: true);
+    }
+
+    /// <summary>Показать всплывающее уведомление, не перебивая напоминание саппорту и не чаще раза в 4 секунды.</summary>
+    public bool ShowEventToast(string header, string text, bool warning = false)
+    {
+        if (Reminders.Active != null) return false;
+        if (DateTime.UtcNow - _lastEventToastUtc < TimeSpan.FromSeconds(4)) return false;
+        _lastEventToastUtc = DateTime.UtcNow;
+        Overlay.ShowToast(header, text, warning);
+        return true;
+    }
+
+    /// <summary>Горячая клавиша «Рошан убит»: отметить; повторное нажатие в течение 10 секунд снимает отметку.</summary>
+    public void ToggleRoshanMark()
+    {
+        var L = Loc.Instance;
+        var clock = GameClock;
+        if (clock == null)
+        {
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get("rosh_need_clock"), warning: true);
+            return;
+        }
+        if (Roshan.KilledAt is int k && clock.Value - k < 10)
+        {
+            Roshan.Clear();
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get("rosh_cleared"));
+        }
+        else
+        {
+            Roshan.MarkKilled(clock.Value);
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Format("rosh_marked",
+                GameTimers.Clock(clock.Value + RoshanTracker.RespawnMinSec), GameTimers.Clock(clock.Value + RoshanTracker.RespawnMaxSec)));
+        }
+        RefreshOverlay();
+        RaiseChanged();
+    }
+
+    public void ClearRoshanMark()
+    {
+        Roshan.Clear();
+        RefreshOverlay();
+        RaiseChanged();
+    }
+
+    /// <summary>Строка таймеров для оверлея: два ближайших события и Рошан.</summary>
+    /// <summary>Строка таймеров для обзора и оверлея.</summary>
+    public string TimersLineText => BuildTimersLine();
+
+    /// <summary>До одного из показанных событий или возможного появления Рошана меньше 10 секунд.</summary>
+    private bool TimersUrgentNow()
+    {
+        if (!Settings.Current.Timers.Enabled || GameClock is not int clock) return false;
+        if (GameTimers.Upcoming(Database.Timers, clock, TimerOn, 8).Any(e => e.InSec <= 10 && (e.Rule.IntervalSec > 60 || e.Rule.IntervalSec == 0 || e.InSec <= 15)))
+            return true;
+        var r = Roshan.State(clock);
+        return r.Phase == RoshanPhase.Dead && r.RespawnMinAt - clock is >= 0 and <= 10;
+    }
+
+    /// <summary>Доля золота до покупки предмета (0…1) или -1, если цена или золото неизвестны.</summary>
+    public double GoldProgress(string itemKey)
+    {
+        var cost = Costs.Cost(itemKey);
+        var g = LastGsi;
+        if (cost is not int c || c <= 0 || g?.Gold is not int gold || !g.IsInProgress || DateTime.UtcNow - g.ReceivedUtc > TimeSpan.FromSeconds(10)) return -1;
+        return Math.Clamp((double)gold / c, 0, 1);
+    }
+
+    private string BuildTimersLine()
+    {
+        if (!Settings.Current.Timers.Enabled || GameClock is not int clock) return "";
+        var L = Loc.Instance;
+        // частые события (стаки раз в минуту) показываем только в последние 15 секунд, чтобы не занимали строку
+        var parts = GameTimers.Upcoming(Database.Timers, clock, TimerOn, 8)
+            .Where(e => e.Rule.IntervalSec > 60 || e.Rule.IntervalSec == 0 || e.InSec <= 15)
+            .Take(2)
+            .Select(e => $"{TimerName(e.Rule)} {GameTimers.Clock(e.InSec)}").ToList();
+        var r = Roshan.State(clock);
+        if (r.Phase == RoshanPhase.Dead)
+            parts.Add(r.AegisLeftSec > 0
+                ? $"{L.Get("rosh_aegis_short")} {GameTimers.Clock(r.AegisLeftSec)}"
+                : $"{L.Get("rosh_short")} {GameTimers.Clock(r.RespawnMinAt - clock)}–{GameTimers.Clock(r.RespawnMaxAt - clock)}");
+        else if (r.Phase == RoshanPhase.MaybeAlive)
+            parts.Add($"{L.Get("rosh_short")} ≤{GameTimers.Clock(r.RespawnMaxAt - clock)}");
+        return string.Join(" · ", parts).ToUpperInvariant();
+    }
+
+    /// <summary>«Нужно ещё 650 золота» / «Хватает на покупку» — только когда есть цена и золото из GSI.</summary>
+    public string? GoldLine(string itemKey)
+    {
+        var cost = Costs.Cost(itemKey);
+        var g = LastGsi;
+        if (cost == null || g?.Gold is not int gold || !g.IsInProgress || DateTime.UtcNow - g.ReceivedUtc > TimeSpan.FromSeconds(10)) return null;
+        return gold >= cost.Value ? Loc.T("ov_gold_ready") : Loc.Instance.Format("ov_gold_need", cost.Value - gold);
+    }
+
+    public string? NoteFor(Hero? hero) =>
+        hero != null && Settings.Current.HeroNotes.TryGetValue(hero.Key, out var n) && !string.IsNullOrWhiteSpace(n) ? n : null;
+
+    private static string Short(string text, int max)
+    {
+        var t = text.Replace("\r", " ").Replace("\n", " ").Trim();
+        return t.Length <= max ? t : t[..max].TrimEnd() + "…";
+    }
+
+    /// <summary>Однократно показать личную заметку о только что распознанном герое противника.</summary>
+    public void AnnounceEnemyNotes(IEnumerable<Hero> enemies)
+    {
+        foreach (var hero in enemies)
+        {
+            if (NoteFor(hero) is not string note || !_notedEnemies.Add(hero.Id)) continue;
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast((Loc.T("notes_toast") + " · " + hero.Name).ToUpperInvariant(), Short(note, 120));
+        }
+    }
+
+    private void ApplyPool()
+    {
+        var s = Settings.Current;
+        Analyzer.PoolMode = s.PoolMode;
+        Analyzer.Pool = s.FavoriteHeroKeys.Select(Database.FindHero).Where(h => h != null).Select(h => h!.Id).ToHashSet();
+        Analyzer.Personal = s.Data.UsePersonalStats && s.Data.SteamAccountId != null
+            ? PlayerHeroes.All.ToDictionary(kv => kv.Key, kv => (kv.Value.Games, kv.Value.Wins))
+            : new Dictionary<int, (int, int)>();
+        Analyzer.PersonalAgainst = s.Data.UsePersonalStats && s.Data.SteamAccountId != null
+            ? PlayerHeroes.All.Where(kv => kv.Value.AgainstGames > 0).ToDictionary(kv => kv.Key, kv => (kv.Value.AgainstGames, kv.Value.AgainstWins))
+            : new Dictionary<int, (int, int)>();
+    }
+
+    private MatchTick ToTick(GameStateSnapshot g)
+    {
+        Hero? hero = g.HeroId is > 0 ? Database.FindHero(g.HeroId.Value) : Database.FindHero(g.HeroName);
+        return new MatchTick(g.MatchId, g.GameState, g.ClockTime, g.TeamName, g.WinTeam, hero?.Id ?? g.HeroId, hero?.Key,
+            g.HeroLevel, g.Kills, g.Deaths, g.Assists, g.LastHits, g.Denies, g.Gpm, g.Xpm, g.Gold, g.ItemSlots,
+            Settings.Current.Position, g.ReceivedUtc, g.GoldUnreliable, g.BuybackCost, g.BuybackCooldown, g.HeroX, g.HeroY);
+    }
+
+    private void SaveMatch(MatchRecord record)
+    {
+        if (record.MatchId == _lastMatchId || _lastMatchId == null)
+        {
+            record.Alerts = new Dictionary<string, int>(Alerts.Counts);
+            record.AlertsIgnored = new Dictionary<string, int>(Alerts.Ignored);
+        }
+        History.Save(record);
+        _lastSaved = record;
+        MatchSavedSinceGameStart = true;
+        Log.Info($"История: сохранён матч {record.MatchId} ({record.Result})");
+        _ = AutoImportAfterMatchAsync(record.MatchId);
+        try
+        {
+            var outcome = Goals.OnMatchSaved(record, History.All());
+            if (outcome is { } o)
+            {
+                _lastEventToastUtc = DateTime.MinValue;
+                ShowEventToast(Loc.T("goal_header").ToUpperInvariant(),
+                    Loc.Instance.Format(o.Result.Achieved ? "goal_done_toast" : "goal_failed_toast", GoalText(o.Goal)));
+            }
+        }
+        catch (Exception ex) { Log.Error("Цели: ошибка проверки", ex); }
+    }
+
+    // ------------------------------------------------------------------ личный темп и цели
+
+    /// <summary>Начался новый матч: подготовить сравнение с обычным темпом и напомнить цель.</summary>
+    private void OnMatchStarted(MatchRecord current)
+    {
+        _paceMatchId = current.Id;
+        _paceItemsSeen.Clear();
+        var history = History.All();
+        _pace = new PaceAdvisor(history, current.HeroId, current.Position ?? Settings.Current.Position, current.Id);
+        Alerts.CooldownMultipliers.Clear();
+        foreach (var (k, v) in MatchAlerts.AdaptiveMultipliers(history)) Alerts.CooldownMultipliers[k] = v;
+        if (Goals.Active is CoachGoal goal)
+        {
+            _lastEventToastUtc = DateTime.MinValue;
+            ShowEventToast(Loc.T("goal_header").ToUpperInvariant(), GoalText(goal));
+        }
+    }
+
+    private void TickPace(int clock)
+    {
+        if (!Settings.Current.Alerts.Pace || _pace == null || _recorder.Current is not MatchRecord cur) return;
+        var L = Loc.Instance;
+        if (_pace.CheckpointDue(clock, LastGsi?.LastHits) is PaceCheck check)
+        {
+            var key = check.Delta >= 0 ? "pace_lh_ahead" : "pace_lh_behind";
+            ShowEventToast(L.Get("pace_header").ToUpperInvariant(),
+                L.Format(key, GameTimers.Clock(check.Clock), check.Current, check.Usual, Math.Abs(check.Delta)), warning: check.Delta < 0);
+        }
+        foreach (var (item, at) in cur.ItemTimings.ToList())
+        {
+            if (!_paceItemsSeen.Add(item)) continue;
+            if (at <= 0 || clock - at > 30) continue; // только только что купленные
+            var cost = Costs.Cost(item);
+            if (cost is < 1500) continue;
+            if (_pace.ItemDue(cur, item, at) is not ItemPace pace || Math.Abs(pace.Delta) < 60) continue;
+            var name = Database.FindItem(item)?.DisplayName(L.Language) ?? item;
+            ShowEventToast(L.Get("pace_header").ToUpperInvariant(), L.Format(pace.Delta > 0 ? "pace_item_late" : "pace_item_early",
+                name, GameTimers.Clock(at), GameTimers.Clock(Math.Abs(pace.Delta)), GameTimers.Clock(pace.Bench.AvgSec)), warning: pace.Delta > 0);
+        }
+    }
+
+    /// <summary>Текст цели для интерфейса и уведомлений.</summary>
+    public string GoalText(CoachGoal goal)
+    {
+        var L = Loc.Instance;
+        return goal.Kind switch
+        {
+            GoalKind.GoldOnDeath => L.Format("goal_gold_death", goal.Target),
+            GoalKind.FewerDeaths => L.Format("goal_fewer_deaths", goal.Target),
+            GoalKind.LastHits10 => L.Format("goal_lh10", goal.Target),
+            GoalKind.CarryTeleport => L.Get("goal_tp"),
+            GoalKind.CourierStash => L.Get("goal_stash"),
+            GoalKind.ItemTiming => L.Format("goal_item", Database.FindItem(goal.ItemKey ?? "")?.DisplayName(L.Language) ?? goal.ItemKey ?? "?",
+                GameTimers.Clock(goal.Target)),
+            _ => goal.Kind.ToString()
+        };
+    }
+
+    // ------------------------------------------------------------------ сводка драфта
+
+    /// <summary>Видимые герои противника для сводки: автоматический драфт или ручной.</summary>
+    public IReadOnlyList<Hero> BriefingEnemies => AutoDraftLive && AutoEnemies.Count > 0 ? AutoEnemies : Draft.Enemies;
+
+    /// <summary>Сводка по драфту противника (от трёх героев).</summary>
+    public Briefing? CurrentBriefing =>
+        BriefingEnemies.Count >= 3 ? BriefingBuilder.Build(BriefingEnemies, Settings.Current.Position) : null;
+
+    /// <summary>Предмет, который стоит взять первым против этого драфта (только в режиме тренировки — как и остальные советы по врагам).</summary>
+    public ItemPick? BriefingItem
+    {
+        get
+        {
+            if (CurrentHero == null || BriefingEnemies.Count < 3) return null;
+            if (!ComplianceGate.IsAllowed(Feature.EnemyAwareItemAdvice, Settings.Current.UsageContext)) return null;
+            return Builds.Build(CurrentHero, Settings.Current.Position, BriefingEnemies)[BuildPhase.Situational].FirstOrDefault();
+        }
+    }
+
+    /// <summary>Строки сводки для оверлея и окна.</summary>
+    public IReadOnlyList<(string Title, string Text)> BriefingRows(int maxLines = 4)
+    {
+        var L = Loc.Instance;
+        var b = CurrentBriefing;
+        var rows = new List<(string, string)>();
+        if (b == null) return rows;
+        if (b.LaneOpponents.Count > 0)
+            rows.Add((L.Get("brief_lane"), string.Join(", ", b.LaneOpponents.Select(h => h.DisplayName(L.Language)))));
+        if (BriefingItem is ItemPick item)
+            rows.Add((L.Get("brief_item"), item.Item.DisplayName(L.Language)));
+        foreach (var line in b.Lines.Take(maxLines))
+            rows.Add((string.Join(", ", line.Heroes.Select(h => h.DisplayName(L.Language))), L.Language == Language.Russian ? line.Ru : line.En));
+        return rows;
+    }
+
+    /// <summary>Сводку показываем в оверлее между драфтом и началом игры.</summary>
+    private bool BriefingPhase =>
+        LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(20)
+        && (LastGsi.GameState is "DOTA_GAMERULES_STATE_STRATEGY_TIME" or "DOTA_GAMERULES_STATE_TEAM_SHOWCASE" or "DOTA_GAMERULES_STATE_WAIT_FOR_MAP_TO_LOAD"
+            || LastGsi.GameState == "DOTA_GAMERULES_STATE_PRE_GAME")
+        && CurrentBriefing != null;
+
+    // ------------------------------------------------------------------ сеть: патч, цены, обновления
+
+    /// <summary>Новый патч, о котором стоит сообщить: новее встроенной базы и ещё не отмечен пользователем.</summary>
+    public string? NewPatchNotice
+    {
+        get
+        {
+            var latest = Patch.Latest;
+            if (latest == null || !PatchVersion.IsNewer(latest, Database.PatchBaseline)) return null;
+            return PatchVersion.Short(latest) == PatchVersion.Short(Settings.Current.Data.AcknowledgedPatch) ? null : latest;
+        }
+    }
+
+    public void SetAvailableUpdate(AppUpdateInfo? info)
+    {
+        AvailableUpdate = info;
+        RaiseChanged();
+    }
+
+    public void AcknowledgePatch()
+    {
+        var latest = Patch.Latest;
+        if (latest != null) Settings.Update(s => s.Data.AcknowledgedPatch = latest);
+        RaiseChanged();
+    }
+
+    /// <summary>
+    /// Фоновая проверка (только если сеть разрешена): цены предметов раз в 3 дня, патч и версия ROSHIQ раз в сутки.
+    /// force — по кнопке, без учёта интервалов. Возвращает текст ошибки или null.
+    /// </summary>
+    public async Task<string?> RunOnlineChecksAsync(bool force)
+    {
+        var d = Settings.Current.Data;
+        if (!d.AllowOnlineStats || (!force && !d.AutoCheckOnline) || _onlineCheckRunning) return null;
+        _onlineCheckRunning = true;
+        string? error = null;
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var now = DateTime.UtcNow;
+            if (force || Costs.UpdatedUtc == null || now - Costs.UpdatedUtc.Value > TimeSpan.FromDays(3))
+            {
+                try
+                {
+                    var costs = await client.GetItemCostsAsync(CancellationToken.None);
+                    if (costs.Count > 0) Costs.Replace(costs, now);
+                }
+                catch (Exception ex) { error = ex.Message; Log.Warn("Цены предметов: " + ex.Message); }
+            }
+            if (force || Patch.CheckedUtc == null || now - Patch.CheckedUtc.Value > TimeSpan.FromDays(1))
+            {
+                try
+                {
+                    var (name, date) = await client.GetLatestPatchAsync(CancellationToken.None);
+                    if (name != null) Patch.Set(name, date, now);
+                }
+                catch (Exception ex) { error ??= ex.Message; Log.Warn("Патч: " + ex.Message); }
+            }
+            if (force || PatchNotes == null || now - PatchNotes.FetchedUtc > TimeSpan.FromDays(1)
+                || (Patch.Latest != null && PatchVersion.Short(Patch.Latest) != PatchVersion.Short(PatchNotes.Patch)))
+            {
+                try
+                {
+                    var notes = await client.GetPatchNotesAsync(CancellationToken.None);
+                    if (notes != null) { PatchNotes = notes; notes.Save(PatchNotesPath); }
+                }
+                catch (Exception ex) { error ??= ex.Message; Log.Warn("Изменения патча: " + ex.Message); }
+            }
+            if (!string.IsNullOrWhiteSpace(d.UpdateRepo))
+            {
+                try { AvailableUpdate = await AppUpdater.CheckAsync(d.UpdateRepo!, CancellationToken.None); }
+                catch (Exception ex) { error ??= ex.Message; Log.Warn("Обновление ROSHIQ: " + ex.Message); }
+            }
+        }
+        finally
+        {
+            _onlineCheckRunning = false;
+            _ = _dispatcher.InvokeAsync(() => { RefreshOverlay(); RaiseChanged(); });
+        }
+        return error;
+    }
+
+    public static BuildPhase PhaseForClock(int? clock) => clock switch
+    {
+        null or < 0 => BuildPhase.Start,
+        < 600 => BuildPhase.Early,
+        < 1800 => BuildPhase.Mid,
+        _ => BuildPhase.Late
+    };
+
+    private void RaiseChanged()
+    {
+        try { StateChanged?.Invoke(this, EventArgs.Empty); }
+        catch (Exception ex) { Log.Error("Ошибка обновления интерфейса", ex); }
+    }
+
+    public void Dispose()
+    {
+        _tick.Stop();
+        try { if (_recorder.Flush() is MatchRecord last) SaveMatch(last); } catch { }
+        try { Settings.Save(); } catch { }
+        Gsi?.Dispose();
+        Overlay.Dispose();
+    }
+}
