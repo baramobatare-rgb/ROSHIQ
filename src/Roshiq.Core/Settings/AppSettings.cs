@@ -80,6 +80,7 @@ public sealed class AppSettings
         Gsi ??= new();
         Vision ??= new();
         Data ??= new();
+        if (string.IsNullOrWhiteSpace(Data.UpdateRepo)) Data.UpdateRepo = DataSettings.DefaultUpdateRepo;
         Overlay.Normalize();
         Notifications.Normalize();
         Gsi.Normalize();
@@ -215,7 +216,9 @@ public sealed class DataSettings
     /// <summary>Учитывать вашу статистику на героях в советах драфта.</summary>
     public bool UsePersonalStats { get; set; } = true;
     /// <summary>Репозиторий GitHub с релизами ROSHIQ в виде owner/repo.</summary>
-    public string? UpdateRepo { get; set; }
+    public string? UpdateRepo { get; set; } = DefaultUpdateRepo;
+    /// <summary>Официальный репозиторий ROSHIQ с релизами.</summary>
+    public const string DefaultUpdateRepo = "baramobatare-rgb/ROSHIQ";
     /// <summary>Раз в день проверять новый патч, цены предметов и версию ROSHIQ (только если сеть разрешена).</summary>
     public bool AutoCheckOnline { get; set; } = true;
     /// <summary>Патч, о котором пользователь уже знает (уведомление больше не показывается).</summary>
