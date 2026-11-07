@@ -14,6 +14,8 @@ public sealed class OverlayController : IDisposable
 {
     private readonly SettingsService _settings;
     private readonly GameWindowTracker _tracker = new();
+    /// <summary>Окно игры (для запасного захвата картинки драфта).</summary>
+    public IntPtr GameWindowHandle => _tracker.WindowHandle;
     private readonly DispatcherTimer _timer;
     private OverlayPanelWindow? _panel;
     private ToastWindow? _toast;

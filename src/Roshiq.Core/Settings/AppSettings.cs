@@ -345,6 +345,10 @@ public sealed class AutomationSettings
     public bool LaneTips { get; set; } = true;
     /// <summary>Пики силы: план по фазам составов и уведомление о ключевом предмете.</summary>
     public bool PowerSpikes { get; set; } = true;
+    /// <summary>Сборка: предметы в оверлее, режим «пока мёртв», уведомления о ключевом предмете и темпе покупок. Раздел «Сборки» остаётся.</summary>
+    public bool ShowBuild { get; set; } = true;
+    /// <summary>Во время драфта — всплывающее уведомление с контрпиками, когда враги выбирают героев.</summary>
+    public bool DraftCounterToasts { get; set; } = true;
     /// <summary>Итог сразу после матча: что получилось и главная ошибка (по своей истории, без интернета).</summary>
     public bool PostMatchSummary { get; set; } = true;
 }

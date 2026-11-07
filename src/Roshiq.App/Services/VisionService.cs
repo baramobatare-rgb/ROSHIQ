@@ -61,7 +61,7 @@ public sealed class VisionService
     public bool IsAllowed => ComplianceGate.IsAllowed(Feature.AutoDraftRecognition, _settings.Current.UsageContext);
 
     /// <summary>Вызывается периодически. Возвращает true, если запущено распознавание.</summary>
-    public bool MaybeRun(GameWindowState game, bool heroSelectionByGsi, bool manualRequest, long sessionId = 0)
+    public bool MaybeRun(GameWindowState game, bool heroSelectionByGsi, bool manualRequest, long sessionId = 0, IntPtr gameWindow = default)
     {
         var v = _settings.Current.Vision;
         bool wanted = manualRequest || (v.AutoDraftEnabled && heroSelectionByGsi);
@@ -94,7 +94,13 @@ public sealed class VisionService
                     LogOnce(sessionId, "capture_null", $"Vision: захват не удался (область {strip.Width}×{strip.Height})");
                     return;
                 }
-                // Чёрный кадр — обычно эксклюзивный полноэкранный режим Dota: экран так не захватить
+                // Чёрный кадр с экрана — пробуем попросить окно игры отрисоваться в наш буфер (PrintWindow)
+                if (IsBlack(img) && ScreenCapture.CaptureWindowTop(gameWindow, strip.Width, strip.Height) is { } fromWindow && !IsBlack(fromWindow))
+                {
+                    LogOnce(sessionId, "capture_window", "Vision: экранный кадр чёрный — беру картинку из окна игры (PrintWindow)");
+                    img = fromWindow;
+                }
+                // Всё ещё чёрный — обычно эксклюзивный полноэкранный режим Dota: так не захватить
                 if (IsBlack(img))
                 {
                     LastError = "capture_black";

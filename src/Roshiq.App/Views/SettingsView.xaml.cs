@@ -58,6 +58,8 @@ public partial class SettingsView : UserControl, IRefreshable
         AutoReviewBox.IsChecked = a.AutoReview;
         LaneTipsBox.IsChecked = a.LaneTips;
         PowerSpikesBox.IsChecked = a.PowerSpikes;
+        ShowBuildBox.IsChecked = a.ShowBuild;
+        DraftToastsBox.IsChecked = a.DraftCounterToasts;
         PostMatchBox.IsChecked = a.PostMatchSummary;
         RefreshSounds();
         CtxReference.IsChecked = s.UsageContext == UsageContext.Reference;
@@ -406,6 +408,8 @@ public partial class SettingsView : UserControl, IRefreshable
             a.AutoReview = AutoReviewBox.IsChecked == true;
             a.LaneTips = LaneTipsBox.IsChecked == true;
             a.PowerSpikes = PowerSpikesBox.IsChecked == true;
+            a.ShowBuild = ShowBuildBox.IsChecked == true;
+            a.DraftCounterToasts = DraftToastsBox.IsChecked == true;
             a.PostMatchSummary = PostMatchBox.IsChecked == true;
         });
         AutoHideBox.IsEnabled = AutoShowBox.IsEnabled = AutoWatchBox.IsChecked == true;

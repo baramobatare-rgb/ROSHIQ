@@ -60,7 +60,14 @@ public sealed record GameStateSnapshot
         ItemSlots.Where(kv => !kv.Key.StartsWith("stash", StringComparison.Ordinal))
             .Select(kv => kv.Value).Where(v => v != "empty").Distinct().ToList();
 
-    public bool IsHeroSelection => GameState is "DOTA_GAMERULES_STATE_HERO_SELECTION" or "DOTA_GAMERULES_STATE_STRATEGY_TIME";
+    /// <summary>
+    /// Идёт выбор героев. Кроме классических стадий (выбор, стратегия) учитываем драфт игроков и любые будущие стадии
+    /// с «DRAFT» / «BAN» / «HERO_SELECTION» в названии — Valve меняет их от режима к режиму.
+    /// </summary>
+    public bool IsHeroSelection => GameState is "DOTA_GAMERULES_STATE_HERO_SELECTION" or "DOTA_GAMERULES_STATE_STRATEGY_TIME"
+        or "DOTA_GAMERULES_STATE_PLAYER_DRAFT"
+        || (GameState is string g && (g.Contains("_DRAFT", StringComparison.Ordinal) || g.Contains("_BAN", StringComparison.Ordinal)
+                                       || g.Contains("HERO_SELECTION", StringComparison.Ordinal)));
     public bool IsInProgress => GameState is "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS" or "DOTA_GAMERULES_STATE_PRE_GAME";
     public bool IsPostGame => GameState is "DOTA_GAMERULES_STATE_POST_GAME";
     public bool HasHero => HeroId is > 0 || (HeroName?.StartsWith("npc_dota_hero_", StringComparison.Ordinal) ?? false);

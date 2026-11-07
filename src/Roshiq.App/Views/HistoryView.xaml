@@ -161,7 +161,6 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <!-- Закономерности -->
                     <Border Style="{StaticResource Card}" Margin="0,0,8,16" VerticalAlignment="Top">
@@ -171,22 +170,24 @@
                         </StackPanel>
                     </Border>
                     <!-- Против кого проигрываете -->
-                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,8,16">
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
                         <StackPanel>
                             <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T matchups_title, Upper=True}" /></TextBlock>
                             <TextBlock Text="{app:T matchups_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,6" TextWrapping="Wrap" />
                             <StackPanel x:Name="MatchupsPanel" />
                         </StackPanel>
                     </Border>
-                    <!-- Карта смертей -->
-                    <Border Grid.Column="2" Style="{StaticResource Card}" Margin="8,0,0,16">
-                        <StackPanel>
-                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T deathmap_title, Upper=True}" /></TextBlock>
-                            <TextBlock Text="{app:T deathmap_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" TextWrapping="Wrap" MaxWidth="262" HorizontalAlignment="Left" />
-                            <StackPanel x:Name="DeathMapPanel" />
-                        </StackPanel>
-                    </Border>
                 </Grid>
+
+                <!-- Карта смертей: схема карты, тепловой слой, фильтры по времени и герою, разбивка по зонам -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T deathmap_title, Upper=True}" /></TextBlock>
+                        <TextBlock Text="{app:T deathmap_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap" />
+                        <WrapPanel x:Name="DeathMapFilters" Margin="0,0,0,12" />
+                        <StackPanel x:Name="DeathMapPanel" />
+                    </StackPanel>
+                </Border>
             </StackPanel>
             <StackPanel x:Name="ImportSection" Visibility="Collapsed">
 

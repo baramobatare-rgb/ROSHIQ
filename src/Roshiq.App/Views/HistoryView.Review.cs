@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Shapes;
 using Roshiq.Core.Localization;
 using Roshiq.Core.Models;
 using Roshiq.Overlay;
@@ -242,21 +243,152 @@ public partial class HistoryView
             }
         }
 
+        _deathMapSource = all;
+        ShowDeathMap();
+    }
+
+    // ------------------------------------------------------------------ карта смертей
+
+    private IReadOnlyList<MatchRecord> _deathMapSource = Array.Empty<MatchRecord>();
+    private int _deathPhase;          // 0 — все, 1 — до 10:00, 2 — 10–30, 3 — после 30
+    private int _deathHero;           // 0 — все герои
+
+    private static bool InPhase(int clock, int phase) => phase switch
+    {
+        1 => clock < 600,
+        2 => clock is >= 600 and < 1800,
+        3 => clock >= 1800,
+        _ => true
+    };
+
+    private void ShowDeathMap()
+    {
+        var L = Loc.Instance;
         DeathMapPanel.Children.Clear();
-        var deaths = all.Where(m => m.FromGsi).Take(50)
-            .SelectMany(m => m.DeathEvents.Where(d => d.X != null && d.Y != null).Select(d => (m, d))).ToList();
-        if (deaths.Count == 0)
+        DeathMapFilters.Children.Clear();
+        var gsi = _deathMapSource.Where(m => m.FromGsi).Take(50).ToList();
+        var all = gsi.SelectMany(m => m.DeathEvents.Where(d => d.X != null && d.Y != null).Select(d => (m, d))).ToList();
+        if (all.Count == 0)
         {
             DeathMapPanel.Children.Add(Ui.Text(L.Get("deathmap_none"), "MutedText"));
             return;
         }
+
+        // фильтры: фаза игры и герой
+        string[] phases = { "deathmap_all", "deathmap_early", "deathmap_mid", "deathmap_late" };
+        for (int i = 0; i < phases.Length; i++)
+        {
+            int phase = i;
+            var rb = new RadioButton
+            {
+                Content = L.Get(phases[i]), Style = (Style)FindResource("Segment"), GroupName = "DeathPhase",
+                IsChecked = _deathPhase == i, Margin = new Thickness(0, 0, 6, 6)
+            };
+            rb.Checked += (_, _) => { if (_deathPhase != phase) { _deathPhase = phase; ShowDeathMap(); } };
+            DeathMapFilters.Children.Add(rb);
+        }
+        var heroBox = new ComboBox { Width = 190, Margin = new Thickness(12, 0, 0, 6), ToolTip = L.Get("cmp_hero") };
+        Ui.HeroTemplate(heroBox);
+        heroBox.Items.Add(new Choice<int>(0, L.Get("cmp_all_heroes")));
+        foreach (var g in all.GroupBy(x => x.m.HeroId).OrderByDescending(g => g.Count()))
+            if (App.Host.Database.FindHero(g.Key) is { } h)
+                heroBox.Items.Add(new Choice<int>(g.Key, $"{h.DisplayName(L.Language)} ({g.Count()})") { Icon = Roshiq.App.Services.HeroArt.Portrait(h.Key) });
+        heroBox.SelectedItem = heroBox.Items.OfType<Choice<int>>().FirstOrDefault(c => c.Value == _deathHero) ?? heroBox.Items[0];
+        heroBox.SelectionChanged += (_, _) =>
+        {
+            if (Ui.TryValue<int>(heroBox, out var id) && id != _deathHero) { _deathHero = id; ShowDeathMap(); }
+        };
+        DeathMapFilters.Children.Add(heroBox);
+
+        var deaths = all.Where(x => InPhase(x.d.Clock, _deathPhase) && (_deathHero == 0 || x.m.HeroId == _deathHero)).ToList();
         var points = deaths.Select(x =>
         {
             var (px, py) = MiniMap.FromWorld(x.d.X!.Value, x.d.Y!.Value);
-            return new MiniMap.Point2(px, py, Ui.Res(x.d.Clock < 600 ? "Warning" : x.d.Clock < 1800 ? "Red" : "Purple"),
-                GameTimers.Clock(x.d.Clock) + " · " + (App.Host.Database.FindHero(x.m.HeroId)?.Name ?? ""));
+            var tip = $"{GameTimers.Clock(x.d.Clock)} · {App.Host.Database.FindHero(x.m.HeroId)?.Name ?? "?"} · {x.m.StartedUtc.ToLocalTime():dd.MM}"
+                      + (x.d.GoldAtRisk > 0 ? " · " + L.Format("bd_gold", x.d.GoldAtRisk) : "")
+                      + (!x.d.HadTeleport ? " · " + L.Get("deathmap_no_tp") : "");
+            return new MiniMap.Point2(px, py, Ui.Res(x.d.Clock < 600 ? "Warning" : x.d.Clock < 1800 ? "Red" : "Purple"), tip);
+        }).ToList();
+
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.Children.Add(MiniMap.Create(points, 340, heat: true, labels: true));
+
+        var side = new StackPanel { Margin = new Thickness(24, 0, 0, 0) };
+        Grid.SetColumn(side, 1);
+        grid.Children.Add(side);
+        var sum = MapZones.Summarize(deaths.Select(x => (x.m, x.d)));
+        side.Children.Add(new TextBlock
+        {
+            Text = L.Format("deathmap_line", sum.Total, sum.Matches), FontWeight = FontWeights.SemiBold, Foreground = Ui.Res("Text"),
+            Margin = new Thickness(0, 0, 0, 8)
         });
-        DeathMapPanel.Children.Add(MiniMap.Create(points, 260));
-        DeathMapPanel.Children.Add(Ui.Text(L.Format("deathmap_line", deaths.Count, deaths.Select(x => x.m.Id).Distinct().Count()), "MutedText", 6));
+        if (sum.Total == 0) side.Children.Add(Ui.Text(L.Get("deathmap_filter_none"), "MutedText"));
+        else
+        {
+            // по зонам: полоса доли и число
+            foreach (var z in sum.Zones)
+            {
+                var (ru, en) = MapZones.Name(z.Zone);
+                var head = new DockPanel();
+                var count = new TextBlock { Text = $"{z.Count} · {(int)Math.Round(z.Share * 100)}%", Foreground = Ui.Res("Muted") };
+                DockPanel.SetDock(count, Dock.Right);
+                head.Children.Add(count);
+                head.Children.Add(new TextBlock { Text = L.Language == Roshiq.Core.Models.Language.English ? en : ru, Foreground = Ui.Res("Text") });
+                var bar = new Grid { Height = 6, Margin = new Thickness(0, 3, 0, 8) };
+                bar.Children.Add(new Border { Background = Ui.Res("Panel3"), CornerRadius = new CornerRadius(3) });
+                var fill = new Border
+                {
+                    Background = Ui.Res(z.Zone is MapZone.EnemyJungle or MapZone.EnemyBase ? "Red" : z.Zone == MapZone.River ? "Purple" : "Accent"),
+                    CornerRadius = new CornerRadius(3), HorizontalAlignment = HorizontalAlignment.Left, Width = 0
+                };
+                bar.Children.Add(fill);
+                var share = z.Share;
+                bar.SizeChanged += (_, e) => fill.Width = e.NewSize.Width * share;
+                side.Children.Add(head);
+                side.Children.Add(bar);
+            }
+            // фазы и обстоятельства
+            var chips = new WrapPanel { Margin = new Thickness(0, 4, 0, 8) };
+            if (_deathPhase == 0)
+            {
+                chips.Children.Add(Ui.Chip(L.Format("deathmap_early_n", sum.Early), "WarningSoft", "Warning"));
+                chips.Children.Add(Ui.Chip(L.Format("deathmap_mid_n", sum.Mid)));
+                chips.Children.Add(Ui.Chip(L.Format("deathmap_late_n", sum.Late)));
+            }
+            chips.Children.Add(Ui.Chip(L.Format("deathmap_no_tp_n", sum.WithoutTeleport, (int)Math.Round(100.0 * sum.WithoutTeleport / sum.Total))));
+            if (sum.AvgGoldAtRisk > 0) chips.Children.Add(Ui.Chip(L.Format("deathmap_gold_avg", sum.AvgGoldAtRisk)));
+            side.Children.Add(chips);
+            // главный вывод — только факт: где чаще всего, если это заметная доля
+            if (sum.Zones.FirstOrDefault() is { } top && sum.Total >= 5 && top.Share >= 0.3)
+            {
+                var (ru, en) = MapZones.Name(top.Zone);
+                side.Children.Add(new Border
+                {
+                    Style = (Style)FindResource("Callout"), BorderBrush = Ui.Res("Warning"),
+                    Child = new TextBlock
+                    {
+                        Text = L.Format("deathmap_top", L.Language == Roshiq.Core.Models.Language.English ? en : ru, (int)Math.Round(top.Share * 100)),
+                        TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Text")
+                    }
+                });
+            }
+            // легенда
+            var legend = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
+            void Leg(string brush, string text)
+            {
+                var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 4) };
+                sp.Children.Add(new Ellipse { Width = 9, Height = 9, Fill = Ui.Res(brush), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+                sp.Children.Add(new TextBlock { Text = text, Foreground = Ui.Res("Muted"), FontSize = 12 });
+                legend.Children.Add(sp);
+            }
+            Leg("Warning", L.Get("deathmap_early"));
+            Leg("Red", L.Get("deathmap_mid"));
+            Leg("Purple", L.Get("deathmap_late"));
+            side.Children.Add(legend);
+            side.Children.Add(Ui.Text(L.Get("deathmap_legend"), "MutedText", 4));
+        }
+        DeathMapPanel.Children.Add(grid);
     }
 }

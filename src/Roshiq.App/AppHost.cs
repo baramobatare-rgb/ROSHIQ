@@ -228,9 +228,10 @@ public sealed class AppHost : IDisposable
 
             // Распознавание драфта (только тренировочный контекст)
             UpdateAutoDraftSession();
+            TickDraftProblem();
             if (!SafeMode)
             {
-                bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration);
+                bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration, Overlay.GameWindowHandle);
                 if (started) _manualScanRequested = false;
             }
             TickGsiWatchdog();
@@ -295,7 +296,7 @@ public sealed class AppHost : IDisposable
             if (!Settings.Current.Vision.AutoDraftEnabled) return Loc.T("auto_off");
             if (LastGsi == null || DateTime.UtcNow - LastGsi.ReceivedUtc >= TimeSpan.FromSeconds(40)) return Loc.T("auto_need_gsi");
             if (!AutoDraftLive) return Loc.T("auto_wait_draft");
-            if (LastGsi.TeamName is not ("radiant" or "dire")) return Loc.T("auto_need_side");
+            if (!SideKnown) return Loc.T("auto_need_side");
             if (Vision.Matcher.HeroCount == 0) return Loc.T("auto_no_templates");
             if (Vision.LastError != null) return Loc.T("auto_capture_failed");
             if (!Overlay.Game.Foreground && Overlay.Game.Found) return Loc.T("auto_focus");
@@ -318,6 +319,9 @@ public sealed class AppHost : IDisposable
         _autoSessionKey = key;
         AutoDraftGeneration++;
         _autoStartedUtc = DateTime.UtcNow;
+        _inferredSide = null;
+        _countersToasted = "";
+        _draftProblemToasted = false;
         _autoPicks.Reset();
         _notedEnemies.Clear();
         AutoDraftAnalysis = null;
@@ -329,9 +333,57 @@ public sealed class AppHost : IDisposable
         return list.Count == 0 ? "—" : string.Join(", ", list);
     }
 
+    // ------------------------------------------------------------------ авто-драфт: сторона, всплывающие контрпики, подсказка о сбое
+
+    private Side? _inferredSide;
+    private string _countersToasted = "";
+    private bool _draftProblemToasted;
+
+    /// <summary>Сторона известна: из GSI, а если GSI её не прислал — по тому, на чьей половине распознан ваш герой.</summary>
+    private bool SideKnown => LastGsi?.TeamName is "radiant" or "dire" || _inferredSide != null;
+
+    private void InferSide(DraftRecognitionResult result)
+    {
+        if (LastGsi?.TeamName is "radiant" or "dire" || _inferredSide != null) return;
+        if (LastGsi?.HeroId is not int heroId || heroId <= 0 || Database.FindHero(heroId) is not { } mine) return;
+        foreach (var side in new[] { Side.Radiant, Side.Dire })
+            if (result.For(side).Any(s => s.Match.Status == SlotStatus.Recognized && s.Match.HeroKey == mine.Key))
+            {
+                _inferredSide = side;
+                MySide = side;
+                Log.Info($"Авто-драфт: GSI не прислал сторону — по портрету вашего героя это {side}");
+                return;
+            }
+    }
+
+    /// <summary>Новые пики врагов — всплывающее уведомление с лучшими контрпиками (если включено в настройках).</summary>
+    private void AnnounceCounters()
+    {
+        if (!Settings.Current.Automation.DraftCounterToasts || AutoDraftAnalysis is not { Top.Count: > 0 } a) return;
+        var enemies = AutoEnemies;
+        var key = string.Join(",", enemies.Select(h => h.Id).OrderBy(x => x));
+        if (key == _countersToasted) return;
+        _countersToasted = key;
+        var L = Loc.Instance;
+        ShowEventToast(L.Get("auto_toast_header").ToUpperInvariant(),
+            L.Format("auto_toast", string.Join(", ", enemies.Select(h => h.DisplayName(L.Language))),
+                string.Join(", ", a.Top.Take(3).Select(r => r.Hero.DisplayName(L.Language)))),
+            kind: "draft_counters", key: "draft_counters", ttlSec: 30);
+    }
+
+    /// <summary>Через 30 секунд драфта врагов так и не видно — один раз объяснить, что мешает (тем же текстом, что в «Драфте»).</summary>
+    private void TickDraftProblem()
+    {
+        if (!AutoDraftLive || _draftProblemToasted || AutoEnemies.Count > 0 || DateTime.UtcNow - _autoStartedUtc < TimeSpan.FromSeconds(30)) return;
+        _draftProblemToasted = true;
+        var status = AutoDraftStatus;
+        Log.Info("Авто-драфт: за 30 с врагов не распознано — " + status);
+        ShowEventToast(Loc.T("auto_toast_header").ToUpperInvariant(), status, warning: true, kind: "draft_problem", ttlSec: 30);
+    }
+
     private void RecomputeAutoDraft()
     {
-        if (!AutoDraftLive || LastGsi?.TeamName is not ("radiant" or "dire") || AutoEnemies.Count == 0)
+        if (!AutoDraftLive || !SideKnown || AutoEnemies.Count == 0)
         { AutoDraftAnalysis = null; return; }
         var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
         AutoDraftAnalysis = Analyzer.Analyze(new DraftState(allies, AutoEnemies, Settings.Current.Position), countersOnly: true);
@@ -347,9 +399,11 @@ public sealed class AppHost : IDisposable
             SetDraft(Read(MySide), Read(MySide == Side.Radiant ? Side.Dire : Side.Radiant));
             return;
         }
-        if (!AutoDraftLive || LastGsi?.TeamName is not ("radiant" or "dire")) return;
+        InferSide(result);
+        if (!AutoDraftLive || !SideKnown) return;
         _autoPicks.Apply(result);
         RecomputeAutoDraft();
+        AnnounceCounters();
         AnnounceEnemyNotes(AutoEnemies);
         var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
         // Keep the main draft view in sync with confirmed screen picks.
@@ -509,12 +563,13 @@ public sealed class AppHost : IDisposable
             { vm.MainTitle = L.Get("auto_no_counter"); vm.MainDetail = L.Get("auto_no_counter_hint"); }
         }
         else if (s.Automation.AutoOverlayModes && GsiFresh && LastGsi!.IsPostGame && FillPostGameMode(vm, role)) { }
-        else if (s.Automation.AutoOverlayModes && GsiFresh && LastGsi!.IsInProgress && LastGsi.HeroAlive == false
+        else if (s.Automation.AutoOverlayModes && s.Automation.ShowBuild && GsiFresh && LastGsi!.IsInProgress && LastGsi.HeroAlive == false
                  && CurrentHero != null && CurrentBuild != null)
             FillDeadMode(vm, role, LastGsi);
         else if (CurrentHero != null && CurrentBuild != null)
         {
-            vm.Header = (role + " / " + L.Get("sec_build")).ToUpperInvariant();
+            bool showBuild = s.Automation.ShowBuild;
+            vm.Header = (role + " / " + L.Get(showBuild ? "sec_build" : "sec_assistant")).ToUpperInvariant();
             var owned = LastGsi?.InventoryItems;
             var next = CurrentBuild.NextItem(owned, LastGsi?.ClockTime);
             vm.MainTitle = next != null
@@ -530,6 +585,15 @@ public sealed class AppHost : IDisposable
             vm.ReplaceRows(vm.Section1, CurrentBuild[phase].Concat(CurrentBuild[BuildPhase.Situational].Take(2)).Take(5).Select(p =>
                 new OverlayRow(p.Item.DisplayName(L.Language), p.Explain(L.Language),
                     owned != null && owned.Contains(p.Item.Key) ? "✓" : Costs.Cost(p.Item.Key)?.ToString() ?? "") { Icon = HeroArt.ItemIcon(p.Item.Key) }));
+            if (!showBuild)
+            {
+                // сборка выключена в настройках: только герой и советы, без предметов
+                vm.MainTitle = CurrentHero.DisplayName(L.Language);
+                vm.MainDetail = L.PositionName(s.Position);
+                vm.GoldProgress = -1;
+                vm.Section1Title = "";
+                vm.Section1.Clear();
+            }
             var tips = Advisor.HeroTips(CurrentHero, s.Position).Take(2)
                 .Concat(Advisor.TipsFor(s.Position).Take(1).Select(t => new Reason(ReasonKind.Info, 0, t.Ru, t.En)))
                 .ToList();
@@ -655,7 +719,7 @@ public sealed class AppHost : IDisposable
         }
         var core = CurrentBuild == null ? Array.Empty<string>()
             : CurrentBuild[BuildPhase.Mid].Concat(CurrentBuild[BuildPhase.Late]).Select(p => p.Item.Key).ToArray();
-        foreach (var key in PowerSpikes.NewSpikes(owned, _spikeItems, Costs.Cost, core))
+        foreach (var key in PowerSpikes.NewSpikes(owned, _spikeItems, Costs.Cost, core).Where(_ => a.ShowBuild))
         {
             var name = Database.FindItem(key)?.DisplayName(L.Language) ?? key;
             ShowEventToast(L.Get("spike_item_header").ToUpperInvariant(), L.Format("spike_item", name),
@@ -1123,7 +1187,7 @@ public sealed class AppHost : IDisposable
     /// <summary>Цена следующего ещё не купленного предмета сборки (середина и поздняя игра) — чтобы не ругать за «лишнее золото», когда игрок копит.</summary>
     private int? NextBuildItemCost(GameStateSnapshot g)
     {
-        if (CurrentBuild == null || g.InventoryItems is not { } owned) return null;
+        if (!Settings.Current.Automation.ShowBuild || CurrentBuild == null || g.InventoryItems is not { } owned) return null;
         var next = CurrentBuild[BuildPhase.Mid].Concat(CurrentBuild[BuildPhase.Late]).Select(p => p.Item.Key)
             .FirstOrDefault(k => !owned.Contains(k));
         return next == null ? null : Costs.Cost(next);
@@ -1440,7 +1504,7 @@ public sealed class AppHost : IDisposable
         }
         foreach (var (item, at) in cur.ItemTimings.ToList())
         {
-            if (!_paceItemsSeen.Add(item)) continue;
+            if (!_paceItemsSeen.Add(item) || !Settings.Current.Automation.ShowBuild) continue;
             if (at <= 0 || clock - at > 30) continue; // только только что купленные
             var cost = Costs.Cost(item);
             if (cost is < 1500) continue;

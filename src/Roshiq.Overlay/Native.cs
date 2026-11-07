@@ -91,6 +91,11 @@ internal static class Native
     [DllImport("user32.dll")]
     public static extern int ReleaseDC(IntPtr hWnd, IntPtr hDC);
 
+    /// <summary>Отрисовать окно в свой контекст (PW_CLIENTONLY | PW_RENDERFULLCONTENT) — запасной захват, когда экранный кадр чёрный.</summary>
+    [DllImport("user32.dll")]
+    public static extern bool PrintWindow(IntPtr hWnd, IntPtr hdcBlt, uint flags);
+    public const uint PW_CLIENTONLY = 1, PW_RENDERFULLCONTENT = 2;
+
     [DllImport("gdi32.dll")]
     public static extern IntPtr CreateCompatibleDC(IntPtr hdc);
 
