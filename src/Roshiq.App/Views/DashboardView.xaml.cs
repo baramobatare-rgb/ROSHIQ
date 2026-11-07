@@ -337,6 +337,7 @@ public partial class DashboardView : UserControl, IRefreshable
         var key = all.Count + "|" + (all.FirstOrDefault()?.Id ?? "") + "|" + L.Language;
         if (key == _recentKey) return;
         _recentKey = key;
+        ShowWeek(L, all);
         RecentCard.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (all.Count == 0) return;
 
@@ -383,6 +384,51 @@ public partial class DashboardView : UserControl, IRefreshable
             LessonSub.Text = "";
         }
     }
+
+    /// <summary>Неделя: игры, винрейт и KDA, сравнение с прошлой неделей, серия, лучший/худший герой и главная повторяющаяся ошибка.</summary>
+    private void ShowWeek(Loc L, IReadOnlyList<MatchRecord> all)
+    {
+        WeekCard.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (all.Count == 0) return;
+        var w = PlayerReport.Week(all, DateTime.UtcNow);
+        WeekChips.Children.Clear();
+        if (w.Games == 0)
+        {
+            WeekLine.Text = L.Get("week_none");
+            WeekSub.Text = "";
+        }
+        else
+        {
+            WeekLine.Text = L.Format("week_line", w.Games, (int)Math.Round(w.WinRate!.Value * 100), w.Kda.ToString("0.0"));
+            var sub = new List<string> { L.Format("week_kda", w.AvgKills.ToString("0.#"), w.AvgDeaths.ToString("0.#"), w.AvgAssists.ToString("0.#")) };
+            if (w.PrevWinRate is double prev)
+            {
+                int delta = (int)Math.Round((w.WinRate!.Value - prev) * 100);
+                sub.Add(L.Format("week_vs_prev", (delta >= 0 ? "+" : "") + delta + "%"));
+            }
+            WeekSub.Text = string.Join(" · ", sub);
+            string HeroName(int id) => App.Host.Database.FindHero(id)?.DisplayName(L.Language) ?? "?";
+            if (w.Best is { } best) WeekChips.Children.Add(Ui.Chip(L.Format("week_best", HeroName(best.HeroId), best.Wins, best.Games), "AccentSoft", "Accent"));
+            if (w.Worst is { } worst) WeekChips.Children.Add(Ui.Chip(L.Format("week_worst", HeroName(worst.HeroId), worst.Wins, worst.Games)));
+        }
+        if (w.Streak >= 3) WeekChips.Children.Add(Ui.Chip(L.Format("week_streak_win", w.Streak), "AccentSoft", "Accent"));
+        else if (w.Streak <= -3) WeekChips.Children.Add(Ui.Chip(L.Format("week_streak_loss", -w.Streak), "WarningSoft", "Warning"));
+
+        var top = PlayerReport.Recurring(all).FirstOrDefault();
+        if (top != null)
+        {
+            WeekMistake.Text = top.Text(L.Language);
+            WeekMistakeSub.Text = L.Format("rec_line", top.Count, top.Of, (int)Math.Round(top.Rate * 100)) + " · "
+                                  + L.Get(top.Trend < 0 ? "rec_better" : top.Trend > 0 ? "rec_worse" : "rec_same");
+        }
+        else
+        {
+            WeekMistake.Text = L.Get("week_mistake_none");
+            WeekMistakeSub.Text = "";
+        }
+    }
+
+    private void GoStats_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("history/progress");
 
     private bool _updatingPosition;
     private void QuickPosition_Changed(object sender, SelectionChangedEventArgs e)

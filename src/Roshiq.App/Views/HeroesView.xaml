@@ -42,28 +42,28 @@
         <!-- Карточка героя и сборка -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="Details" Margin="0,0,6,0">
-                <!-- Шапка героя: 106 px. Чёткий портрет, имя, роль одной строкой; арт — затемнённый справа, в родном размере -->
-                <Border x:Name="HeroHeader" Style="{StaticResource Card}" Padding="12" Height="106" ClipToBounds="True">
+                <!-- Шапка героя: от 106 px. Чёткий портрет, имя, роль; текст не обрезается — признаки переносятся на следующую строку.
+                     Арт — затемнённый справа, в родном размере (фон без влияния на размеры) -->
+                <Border x:Name="HeroHeader" Style="{StaticResource Card}" Padding="12" MinHeight="106" ClipToBounds="True">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Image x:Name="HeaderArt" Grid.ColumnSpan="3" Height="104" Margin="0,-12,-12,-12" HorizontalAlignment="Right"
-                               VerticalAlignment="Center" Stretch="Uniform" Opacity="0.30" IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality">
-                            <Image.OpacityMask>
+                        <Border x:Name="HeaderArt" Grid.ColumnSpan="3" Margin="0,-12,-12,-12" Opacity="0.30" IsHitTestVisible="False">
+                            <Border.OpacityMask>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="Transparent" Offset="0" />
-                                    <GradientStop Color="#FF000000" Offset="0.75" />
+                                    <GradientStop Color="Transparent" Offset="0.35" />
+                                    <GradientStop Color="#FF000000" Offset="0.85" />
                                 </LinearGradientBrush>
-                            </Image.OpacityMask>
-                        </Image>
-                        <ContentControl x:Name="PortraitHost" Focusable="False" VerticalAlignment="Center" Margin="0,0,16,0" />
+                            </Border.OpacityMask>
+                        </Border>
+                        <ContentControl x:Name="PortraitHost" Focusable="False" VerticalAlignment="Top" Margin="0,0,16,0" />
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                            <TextBlock x:Name="HeroMeta" Style="{StaticResource Eyebrow}" Margin="0,0,0,2" TextTrimming="CharacterEllipsis" />
-                            <TextBlock x:Name="HeroName" Style="{StaticResource Display}" FontSize="23" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
-                            <StackPanel x:Name="TraitPanel" Orientation="Horizontal" Margin="0,6,0,0" ClipToBounds="True" />
+                            <TextBlock x:Name="HeroMeta" Style="{StaticResource Eyebrow}" Margin="0,0,0,2" TextWrapping="Wrap" />
+                            <TextBlock x:Name="HeroName" Style="{StaticResource Display}" FontSize="23" TextWrapping="Wrap" />
+                            <WrapPanel x:Name="TraitPanel" Margin="0,6,0,0" />
                         </StackPanel>
                         <Grid Grid.Column="2" VerticalAlignment="Center" Margin="16,0,0,0">
                             <Grid.RowDefinitions>

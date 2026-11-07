@@ -47,6 +47,7 @@ public partial class MainWindow : Window
         _statusTimer.Start();
         App.Host.StateChanged += (_, _) => UpdateStatus();
         App.Host.StateChanged += (_, _) => Dispatcher.InvokeAsync(RefreshUpdateButton);
+        SizeChanged += (_, _) => ApplyTopBarDensity();
         App.Host.Settings.Changed += (_, _) => Dispatcher.InvokeAsync(() => { ApplyScale(); UpdateChrome(); });
         Loc.Instance.PropertyChanged += (_, _) => UpdateChrome();
         SetupTray();
@@ -198,12 +199,36 @@ public partial class MainWindow : Window
         }
         UpdateButton.Margin = new Thickness(0, 0, 10, 0);
         UpdateButton.Padding = new Thickness(10, 7, 10, 7);
+        ApplyTopBarDensity();
+    }
+
+    /// <summary>
+    /// Плотность верхней панели по ширине окна (в единицах интерфейса, с учётом масштаба).
+    /// Узко — сначала прячем таймер матча и подписи статуса и кнопки обновлений (остаются точка и значки с подсказками),
+    /// ещё уже — надпись логотипа. Меню разделов тогда остаётся в полном размере и не мельчит.
+    /// </summary>
+    private void ApplyTopBarDensity()
+    {
+        var scale = Math.Max(0.5, App.Host.Settings.Current.UiScale);
+        var w = ActualWidth / scale;
+        if (w <= 0) return;
+        bool compact = w < 1560, tight = w < 1280;
+        bool updateAvailable = App.Host.AvailableUpdate != null;
+        MatchPill.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        StatusText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        StatusPill.Padding = compact ? new Thickness(9, 6, 9, 6) : new Thickness(11, 6, 11, 6);
+        UpdateText.Visibility = compact && !updateAvailable && !_updateBusy && !(_updateNoteTimer?.IsEnabled ?? false)
+            ? Visibility.Collapsed : Visibility.Visible;
+        BrandWord.Visibility = tight ? Visibility.Collapsed : Visibility.Visible;
+        // в узком режиме текст статуса — в подсказке у точки
+        StatusPill.ToolTip = compact ? StatusText.Text + "\n" + Loc.T("top_dota_tip") : Loc.T("top_dota_tip");
     }
 
     /// <summary>Короткая надпись на кнопке на 3 секунды («Последняя версия», «Не удалось»).</summary>
     private void FlashUpdateNote(string text)
     {
         UpdateText.Text = text;
+        UpdateText.Visibility = Visibility.Visible;
         _updateNoteTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
         _updateNoteTimer.Tick -= UpdateNoteTick;
         _updateNoteTimer.Tick += UpdateNoteTick;
@@ -230,6 +255,7 @@ public partial class MainWindow : Window
             _updateBusy = true;
             UpdateButton.IsEnabled = false;
             UpdateText.Text = L.Get("top_update_checking");
+            UpdateText.Visibility = Visibility.Visible;
             try
             {
                 var info = await AppUpdater.CheckAsync(d.UpdateRepo!, CancellationToken.None);
@@ -258,6 +284,7 @@ public partial class MainWindow : Window
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         _updateBusy = true;
         UpdateButton.IsEnabled = false;
+        UpdateText.Visibility = Visibility.Visible;
         try
         {
             var path = await AppUpdater.DownloadAsync(upd, new Progress<double>(p => UpdateText.Text = L.Format("top_update_progress", (int)Math.Round(p * 100))),
@@ -405,7 +432,8 @@ public partial class MainWindow : Window
             case >= TrayPresetBase and < TrayPresetBase + 3:
                 var preset = (HintPreset)(new[] { (int)HintPreset.Minimal, (int)HintPreset.Normal, (int)HintPreset.Full }[id - TrayPresetBase]);
                 s.Update(x => HintPresets.Apply(x, preset));
-                App.Host.ShowEventToast("ROSHIQ", Loc.Instance.Format("tray_preset_set", Loc.Instance.Get("preset_" + preset.ToString().ToLowerInvariant())));
+                App.Host.ShowEventToast("ROSHIQ", Loc.Instance.Format("tray_preset_set", Loc.Instance.Get("preset_" + preset.ToString().ToLowerInvariant())),
+                    priority: Roshiq.Recommendations.TipPriority.Urgent, kind: "preset", ttlSec: 10);
                 break;
             case >= TrayRoleBase and < TrayProfileBase:
                 var positions = Enum.GetValues<Position>();
@@ -454,6 +482,11 @@ public partial class MainWindow : Window
             if (Roshiq.App.Views.SettingsHostView.Instance is { } host) host.SelectTab(parts[1]);
             else Roshiq.App.Views.SettingsHostView.PendingTab = parts[1];
         }
+        else if (parts.Length == 2 && parts[0] == "history")
+        {
+            if (Roshiq.App.Views.HistoryView.Instance is { } hist) hist.SelectTab(parts[1]);
+            else Roshiq.App.Views.HistoryView.PendingTab = parts[1];
+        }
         else if (parts.Length == 2 && parts[0] == "assistant")
         {
             if (Roshiq.App.Views.AssistantView.Instance is { } asst) asst.SelectTab(parts[1]);
@@ -479,6 +512,7 @@ public partial class MainWindow : Window
     {
         var s = App.Host.Settings.Current.UiScale;
         RootGrid.LayoutTransform = Math.Abs(s - 1.0) < 0.001 ? Transform.Identity : new ScaleTransform(s, s);
+        ApplyTopBarDensity();
     }
 
     private void UpdateChrome()
@@ -513,6 +547,7 @@ public partial class MainWindow : Window
 
         StatusText.Text = L.Get(key).ToUpperInvariant();
         StatusDot.Fill = (Brush)FindResource(brush);
+        ApplyTopBarDensity();
         if (key != _lastStatus)
         {
             _lastStatus = key;

@@ -205,6 +205,33 @@
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!-- Неделя: результаты, серия, лучший и худший герой, главная повторяющаяся ошибка -->
+            <Border x:Name="WeekCard" Style="{StaticResource Card}" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,24,0">
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T week_title, Upper=True}" /></TextBlock>
+                        <TextBlock x:Name="WeekLine" Style="{StaticResource Value}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <TextBlock x:Name="WeekSub" Style="{StaticResource MutedOptional}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                        <WrapPanel x:Name="WeekChips" Margin="0,10,0,0" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T week_mistake, Upper=True}" /></TextBlock>
+                        <TextBlock x:Name="WeekMistake" Style="{StaticResource Value}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="WeekMistakeSub" Style="{StaticResource MutedOptional}" Margin="0,4,0,10" TextWrapping="Wrap" />
+                        <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Click="GoStats_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{app:T week_go_stats}" VerticalAlignment="Center" />
+                                <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

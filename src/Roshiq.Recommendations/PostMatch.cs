@@ -142,7 +142,7 @@ public static class PostMatch
         (string, int, int)? best = null;
         foreach (var (key, yours) in m.ItemTimings)
         {
-            if (MatchRecorder.IgnoredItems.Contains(key) || yours < 600) continue;
+            if (MatchRecorder.IgnoredItems.Contains(key) || MatchRecorder.IsRecipe(key) || yours < 600) continue;
             var times = sameHero.Where(h => h.ItemTimings.ContainsKey(key)).Select(h => h.ItemTimings[key]).ToList();
             if (times.Count < 3) continue;
             int delta = yours - (int)times.Average();

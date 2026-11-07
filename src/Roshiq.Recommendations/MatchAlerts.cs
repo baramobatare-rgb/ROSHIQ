@@ -12,7 +12,8 @@ public sealed record InventoryState(
     IReadOnlyDictionary<string, string> Slots,
     Position Position,
     int? BuybackCost = null,
-    int? BuybackCooldown = null);
+    int? BuybackCooldown = null,
+    int? SavingFor = null);   // цена следующего предмета сборки: если золота меньше — игрок копит, «много золота» не подсказываем
 
 /// <summary>
 /// Ситуативные подсказки по собственному инвентарю и золоту: нет телепорта, предметы лежат в тайнике,
@@ -45,11 +46,36 @@ public sealed class MatchAlerts
     private readonly Dictionary<string, int> _lastShown = new();
     private int? _lastClock;
     private readonly HashSet<(string Key, int Shown)> _ignoreChecked = new();
+    private readonly Dictionary<string, int> _prevShown = new();
+
+    /// <summary>
+    /// Подсказка, которую вернул <see cref="Tick"/>, так и не попала на экран (очередь, оверлей скрыт, стала неактуальна).
+    /// Откатываем отметку показа — иначе через минуту её бы посчитали проигнорированной, и адаптация показывала бы её реже.
+    /// </summary>
+    public void Unseen(string key)
+    {
+        // оверлей скрыт или уведомления выключены: перерыв оставляем (иначе предлагали бы каждую секунду),
+        // но в статистику «показано/проигнорировано» эта попытка не идёт
+        if (!_lastShown.TryGetValue(key, out var shown)) return;
+        _ignoreChecked.Add((key, shown));
+        if (Counts.TryGetValue(key, out var c)) { if (c <= 1) Counts.Remove(key); else Counts[key] = c - 1; }
+    }
+
+    public void Retract(string key)
+    {
+        if (!_lastShown.TryGetValue(key, out var shown)) return;
+        _ignoreChecked.Add((key, shown));
+        if (_prevShown.TryGetValue(key, out var before)) { _lastShown[key] = before; _prevShown.Remove(key); }
+        else _lastShown.Remove(key);
+        if (Counts.TryGetValue(key, out var c)) { if (c <= 1) Counts.Remove(key); else Counts[key] = c - 1; }
+    }
 
     /// <summary>Множители интервала повтора: часто игнорируемые подсказки показываются реже.</summary>
     public Dictionary<string, double> CooldownMultipliers { get; } = new();
     /// <summary>Сколько раз за матч подсказку проигнорировали.</summary>
     public Dictionary<string, int> Ignored { get; } = new();
+    /// <summary>Подсказка показана, и в течение минуты условие ушло (купил телепорт, забрал из тайника…).</summary>
+    public Dictionary<string, int> Followed { get; } = new();
 
     /// <summary>Сколько раз за матч сработала каждая подсказка (для разбора после игры).</summary>
     public Dictionary<string, int> Counts { get; } = new();
@@ -61,6 +87,8 @@ public sealed class MatchAlerts
         _lastClock = null;
         Counts.Clear();
         Ignored.Clear();
+        Followed.Clear();
+        _prevShown.Clear();
         _ignoreChecked.Clear();
     }
 
@@ -104,7 +132,8 @@ public sealed class MatchAlerts
         }
 
         int atRisk = s.GoldUnreliable ?? s.Gold ?? 0;
-        if (settings.UnspentGold && atRisk >= settings.UnspentGoldThreshold) list.Add(UnspentGold);
+        bool saving = s.SavingFor is int target && target > 0 && (s.Gold ?? 0) < target;
+        if (settings.UnspentGold && atRisk >= settings.UnspentGoldThreshold && !saving) list.Add(UnspentGold);
 
         if (settings.Buyback && s.Clock >= settings.BuybackFromMinute * 60 && s.BuybackCost is int bb && bb > 0
             && s.BuybackCooldown == 0 && s.Gold is int gold && gold < bb)
@@ -122,6 +151,16 @@ public sealed class MatchAlerts
         foreach (var key in _since.Keys.ToList())
             if (!active.Contains(key)) _since.Remove(key);
 
+        // смерть снимает подсказки — это не «выполнил» и не «проигнорировал»: закрываем показы без оценки
+        if (!s.Alive)
+            foreach (var (key, shown) in _lastShown)
+                if (s.Clock - shown < IgnoreAfterSec) _ignoreChecked.Add((key, shown));
+
+        // показали, и в течение минуты условие ушло, пока герой жив, — подсказку выполнили
+        foreach (var (key, shown) in _lastShown)
+            if (s.Alive && !active.Contains(key) && s.Clock - shown < IgnoreAfterSec && _ignoreChecked.Add((key, shown)))
+                Followed[key] = Followed.TryGetValue(key, out var f) ? f + 1 : 1;
+
         // показали, а через минуту условие всё ещё держится — подсказку проигнорировали
         foreach (var key in active)
             if (_lastShown.TryGetValue(key, out var shown) && s.Clock - shown >= IgnoreAfterSec && _since.TryGetValue(key, out var since)
@@ -138,6 +177,7 @@ public sealed class MatchAlerts
             if (_lastShown.TryGetValue(key, out var last) && s.Clock - last < cooldown) continue;
             if (result != null) continue;
             result = key;
+            if (_lastShown.TryGetValue(key, out var before)) _prevShown[key] = before; else _prevShown.Remove(key);
             _lastShown[key] = s.Clock;
             Counts[key] = Counts.TryGetValue(key, out var c) ? c + 1 : 1;
         }

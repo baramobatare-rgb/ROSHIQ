@@ -54,10 +54,11 @@ public sealed class PaceAdvisor
     {
         static List<int> Values(IEnumerable<MatchRecord> src, int c) =>
             src.Select(m => m.LastHitsAt(c)).Where(v => v != null).Select(v => v!.Value).ToList();
+        // медиана и проверка разброса: при шумной выборке на герое берём роль, при шумной роли — молчим
         var h = Values(_hero, clock);
-        if (h.Count >= MinMatches) return ((int)Math.Round(h.Average()), h.Count, true);
+        if (h.Count >= MinMatches && !MatchStats.IsNoisy(h)) return ((int)Math.Round(MatchStats.Median(h)), h.Count, true);
         var r = Values(_role, clock);
-        if (r.Count >= MinMatches) return ((int)Math.Round(r.Average()), r.Count, false);
+        if (r.Count >= MinMatches && !MatchStats.IsNoisy(r)) return ((int)Math.Round(MatchStats.Median(r)), r.Count, false);
         return null;
     }
 
@@ -74,12 +75,12 @@ public sealed class PaceAdvisor
         return null;
     }
 
-    /// <summary>Сравнить время покупки предмета со средним (нужно минимум 2 прошлых матча). Каждый предмет — один раз.</summary>
+    /// <summary>Сравнить время покупки предмета с медианой (нужно минимум 3 прошлых матча). Каждый предмет — один раз.</summary>
     public ItemPace? ItemDue(MatchRecord current, string itemKey, int at)
     {
         if (!_itemsAnnounced.Add(itemKey)) return null;
         var bench = MatchStats.Benchmark(_all, current, itemKey);
-        if (bench == null || bench.Matches < 2) return null;
+        if (bench == null || bench.Matches < MinMatches) return null;
         return new ItemPace(itemKey, at, bench);
     }
 }

@@ -49,6 +49,8 @@
                                 </WrapPanel>
                                 <StackPanel x:Name="TakeawaysPanel" Margin="0,0,0,14" />
                                 <WrapPanel x:Name="SummaryChips" Margin="0,0,0,10" />
+                                <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T bd_title, Upper=True}" />
+                                <StackPanel x:Name="BreakdownPanel" Margin="0,0,0,12" />
                                 <StackPanel x:Name="OdReviewPanel" Margin="0,0,0,12" />
                                 <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T hist_chart, Upper=True}" />
                                 <Border CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Panel2}"
@@ -75,6 +77,32 @@
                 </Grid>
             </StackPanel>
             <StackPanel x:Name="ProgressSection" Visibility="Collapsed">
+
+                <!-- 0.17: повторяющиеся ошибки и сравнение с другими игроками -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="3*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <Border Style="{StaticResource Card}" Margin="0,0,8,16" VerticalAlignment="Top">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T rec_title, Upper=True}" /></TextBlock>
+                            <TextBlock Text="{app:T rec_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,12" TextWrapping="Wrap" />
+                            <StackPanel x:Name="RecurringPanel" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16" VerticalAlignment="Top">
+                        <StackPanel>
+                            <DockPanel>
+                                <ComboBox x:Name="CompareHero" DockPanel.Dock="Right" Width="170" Margin="8,0,0,0" ToolTip="{app:T cmp_hero}"
+                                          SelectionChanged="CompareHero_Changed" />
+                                <TextBlock Style="{StaticResource Eyebrow}" VerticalAlignment="Center"><Run Text="{app:T cmp_title, Upper=True}" /></TextBlock>
+                            </DockPanel>
+                            <TextBlock Text="{app:T cmp_hint}" Style="{StaticResource MutedText}" Margin="0,8,0,12" TextWrapping="Wrap" />
+                            <StackPanel x:Name="ComparePanel" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
 
                 <Grid>
                     <Grid.ColumnDefinitions>

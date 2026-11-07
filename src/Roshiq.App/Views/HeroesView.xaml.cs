@@ -128,15 +128,8 @@ public partial class HeroesView : UserControl, IRefreshable
         HeroMeta.Text = Ui.Up($"{hero.Name} · {L.Get("attr_" + hero.Attribute.ToString().ToLowerInvariant())} · " +
                         string.Join(" / ", hero.Positions.Select(p => "POS " + (int)p)));
         TraitPanel.Children.Clear();
-        // признаки — одной строкой: первые четыре, остальные в подсказке «+N»
-        var traits = hero.Traits.OrderBy(t => t).Select(t => db.TraitText(t, L.Language)).ToList();
-        foreach (var t in traits.Take(4)) TraitPanel.Children.Add(Ui.Chip(t));
-        if (traits.Count > 4)
-        {
-            var more = Ui.Chip("+" + (traits.Count - 4));
-            more.ToolTip = string.Join("\n", traits.Skip(4));
-            TraitPanel.Children.Add(more);
-        }
+        // все признаки целиком: если не помещаются в строку — переносятся, ничего не обрезается
+        foreach (var t in hero.Traits.OrderBy(t => t)) TraitPanel.Children.Add(Ui.Chip(db.TraitText(t, L.Language)));
         if (!string.Equals(NoteBox.Tag as string, hero.Key, StringComparison.OrdinalIgnoreCase))
         {
             NoteBox.Tag = hero.Key;
@@ -276,7 +269,12 @@ public partial class HeroesView : UserControl, IRefreshable
     /// <summary>Арт героя справа в шапке: в родном размере (по высоте шапки), затемнён и растворяется влево — без растягивания.</summary>
     private void SetBackdrop(Hero hero)
     {
-        HeaderArt.Source = Roshiq.App.Services.HeroArt.Portrait(hero.Key);
+        var art = Roshiq.App.Services.HeroArt.Portrait(hero.Key);
+        // Uniform: картинка вписывается по высоте шапки и прижимается вправо — не растягивается и не мылится
+        HeaderArt.Background = art == null ? null : new ImageBrush(art)
+        {
+            Stretch = Stretch.Uniform, AlignmentX = AlignmentX.Right, AlignmentY = AlignmentY.Center
+        };
     }
 
     /// <summary>Ваше среднее время покупки предметов на этом герое (по истории, от двух матчей).</summary>

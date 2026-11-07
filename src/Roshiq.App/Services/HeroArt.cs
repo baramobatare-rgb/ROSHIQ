@@ -113,6 +113,8 @@ public static class HeroArt
     {
         if (string.IsNullOrEmpty(itemKey)) return null;
         var name = itemKey.StartsWith("item_", StringComparison.OrdinalIgnoreCase) ? itemKey[5..] : itemKey;
+        // у рецептов своих иконок на CDN нет (404) — показываем общий свиток рецепта
+        if (name.StartsWith("recipe_", StringComparison.OrdinalIgnoreCase)) name = "recipe";
         if (name.Any(c => !(char.IsLetterOrDigit(c) || c == '_'))) return null;
         lock (Sync)
         {

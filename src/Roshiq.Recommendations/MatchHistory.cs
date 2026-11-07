@@ -60,6 +60,10 @@ public sealed class MatchRecord
     public Dictionary<string, int> Alerts { get; set; } = new();
     /// <summary>Сколько раз подсказку проигнорировали (условие держалось ещё минуту после показа).</summary>
     public Dictionary<string, int> AlertsIgnored { get; set; } = new();
+    /// <summary>Сколько раз подсказку выполнили (условие ушло в течение минуты после показа).</summary>
+    public Dictionary<string, int> AlertsFollowed { get; set; } = new();
+    /// <summary>Исходы советов диспетчера: «вид:исход» → сколько раз (показан, истёк, неактуален…). Для проверки пользы.</summary>
+    public Dictionary<string, int> TipOutcomes { get; set; } = new();
     public List<DeathEvent> DeathEvents { get; set; } = new();
 
     /// <summary>Добивания к моменту clock (по ближайшей точке графика в пределах 40 секунд).</summary>
@@ -121,6 +125,9 @@ public sealed class MatchRecorder
         "item_dust", "item_blood_grenade", "item_tango_single", "item_famango", "item_great_famango", "item_greater_famango",
         "item_aegis", "item_cheese", "item_refresher_shard", "item_roshans_banner"
     };
+
+    /// <summary>Рецепт в инвентаре (item_recipe_…) — не предмет, а заготовка: в тайминги не пишем.</summary>
+    public static bool IsRecipe(string? item) => item != null && item.StartsWith("item_recipe_", StringComparison.OrdinalIgnoreCase);
 
     private readonly HashSet<string> _finished = new(StringComparer.Ordinal);
     private int _lastSampleClock = int.MinValue;
@@ -203,7 +210,7 @@ public sealed class MatchRecorder
                 {
                     if (!(kv.Key.StartsWith("slot", StringComparison.Ordinal) || kv.Key.StartsWith("stash", StringComparison.Ordinal))) continue;
                     var item = kv.Value;
-                    if (item == "empty" || IgnoredItems.Contains(item) || r.ItemTimings.ContainsKey(item)) continue;
+                    if (item == "empty" || IgnoredItems.Contains(item) || IsRecipe(item) || r.ItemTimings.ContainsKey(item)) continue;
                     r.ItemTimings[item] = Math.Max(0, clock);
                 }
             }
@@ -387,10 +394,37 @@ public static class MatchStats
     {
         var others = records.Where(m => m.Id != current.Id && m.ItemTimings.ContainsKey(itemKey)).ToList();
         var sameHero = others.Where(m => m.HeroId == current.HeroId).ToList();
-        if (sameHero.Count > 0) return new ItemBenchmark((int)Math.Round(sameHero.Average(m => m.ItemTimings[itemKey])), sameHero.Count, true);
+        if (sameHero.Count > 0) return new ItemBenchmark((int)Math.Round(Median(sameHero.Select(m => m.ItemTimings[itemKey]))), sameHero.Count, true);
         var samePos = others.Where(m => current.Position != null && m.Position == current.Position).ToList();
-        if (samePos.Count > 0) return new ItemBenchmark((int)Math.Round(samePos.Average(m => m.ItemTimings[itemKey])), samePos.Count, false);
+        if (samePos.Count > 0) return new ItemBenchmark((int)Math.Round(Median(samePos.Select(m => m.ItemTimings[itemKey]))), samePos.Count, false);
         return null;
+    }
+
+    /// <summary>Медиана: одна неудачная игра не сдвигает «обычное» так, как сдвигает среднее.</summary>
+    public static double Median(IEnumerable<int> values)
+    {
+        var list = values.OrderBy(v => v).ToList();
+        if (list.Count == 0) return 0;
+        int mid = list.Count / 2;
+        return list.Count % 2 == 1 ? list[mid] : (list[mid - 1] + list[mid]) / 2.0;
+    }
+
+    /// <summary>
+    /// Слишком большой разброс, чтобы называть медиану «обычным»: межквартильный размах больше 60% медианы.
+    /// Тогда сравнение не показываем — честнее промолчать, чем сравнить с шумом.
+    /// </summary>
+    public static bool IsNoisy(IReadOnlyCollection<int> values)
+    {
+        if (values.Count < 3) return true;
+        var list = values.OrderBy(v => v).ToList();
+        double Q(double p)
+        {
+            double pos = p * (list.Count - 1);
+            int lo = (int)Math.Floor(pos), hi = (int)Math.Ceiling(pos);
+            return list[lo] + (list[hi] - list[lo]) * (pos - lo);
+        }
+        double med = Median(list);
+        return med <= 0 || (Q(0.75) - Q(0.25)) / med > 0.6;
     }
 
     /// <summary>Сколько раз в среднем за матч срабатывала каждая подсказка (по матчам, записанным через GSI).</summary>

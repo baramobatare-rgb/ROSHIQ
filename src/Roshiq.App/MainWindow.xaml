@@ -55,6 +55,7 @@
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                     <Image Source="{DynamicResource AppLogo}" Width="34" Height="34" Margin="0,0,12,0" VerticalAlignment="Center"
                            RenderOptions.BitmapScalingMode="HighQuality" />
+                    <StackPanel x:Name="BrandWord" Orientation="Horizontal">
                     <TextBlock Text="ROSHI" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="Bold" VerticalAlignment="Center" />
                     <TextBlock Text="Q" FontFamily="{StaticResource DisplayFont}" FontSize="21" FontWeight="Bold" VerticalAlignment="Center"
                                Foreground="{DynamicResource Accent}" />
@@ -63,10 +64,12 @@
                         <TextBlock x:Name="VersionText" Text="v0.1" FontFamily="{StaticResource MonoFont}" FontSize="10.5"
                                    Foreground="{DynamicResource Muted}" />
                     </Border>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Нумерованная навигация -->
-                <!-- 6 разделов: при узком окне навигация плавно уменьшается, а не обрезается -->
+                <!-- 6 разделов. При узком окне сначала прячутся подписи справа (ApplyTopBarDensity), и только в крайнем случае
+                     навигация уменьшается — так текст меню не мельчает в окне не на весь экран -->
                 <Viewbox Grid.Column="1" StretchDirection="DownOnly" Stretch="Uniform" HorizontalAlignment="Center" Margin="20,0">
                 <ListBox x:Name="Nav" VerticalAlignment="Stretch"
                          Background="Transparent" BorderThickness="0" Padding="0"
@@ -106,14 +109,14 @@
                             <TextBlock x:Name="UpdateText" Margin="7,0,0,0" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Border Style="{StaticResource Pill}" ToolTip="{app:T top_dota_tip}">
+                    <Border x:Name="StatusPill" Style="{StaticResource Pill}" ToolTip="{app:T top_dota_tip}">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" />
                             <TextBlock x:Name="StatusText" Margin="8,0,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="11.5"
                                        FontWeight="SemiBold" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
-                    <Border Style="{StaticResource Pill}">
+                    <Border x:Name="MatchPill" Style="{StaticResource Pill}">
                         <StackPanel Orientation="Horizontal">
                             <ov:Icon Glyph="{StaticResource I.Clock}" Size="14" Brush="{DynamicResource Muted}" VerticalAlignment="Center" />
                             <TextBlock x:Name="MatchText" Margin="7,0,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="11.5"

@@ -18,13 +18,29 @@ public partial class HistoryView : UserControl, IRefreshable
 
     /// <summary>Матч, который выбрать при следующем обновлении (переход из итога матча).</summary>
     public static string? PendingSelectId { get; set; }
+    /// <summary>Вкладка, которую открыть при следующем показе («progress», «import», «matches»).</summary>
+    public static string? PendingTab { get; set; }
+    public static HistoryView? Instance { get; private set; }
+
+    public void SelectTab(string tab)
+    {
+        (tab switch { "progress" => TabProgress, "import" => TabImport, _ => TabMatches }).IsChecked = true;
+    }
 
     public HistoryView()
     {
         InitializeComponent();
+        Instance = this;
+        Loaded += (_, _) => { if (PendingTab is { } tab) { PendingTab = null; SelectTab(tab); } };
         Ui.HeroTemplate(MatchList);
+        Ui.HeroTemplate(CompareHero);
         App.Host.History.Changed += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) Refresh(); });
-        App.Host.Reviews.Saved += (_, id) => Dispatcher.InvokeAsync(() => { if (IsLoaded && _selected?.MatchId == id && !_reviewBusy) ShowMatch(_selected); });
+        App.Host.Reviews.Saved += (_, id) => Dispatcher.InvokeAsync(() =>
+        {
+            if (!IsLoaded) return;
+            FillCompareHeroes();
+            if (_selected?.MatchId == id && !_reviewBusy) ShowMatch(_selected);
+        });
         App.Host.SteamChanged += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) ShowPatterns(App.Host.History.All()); });
         App.Host.Goals.Changed += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) ShowGoals(); });
         Loc.Instance.PropertyChanged += (_, _) => { if (IsLoaded) Refresh(); };
@@ -68,6 +84,8 @@ public partial class HistoryView : UserControl, IRefreshable
         MatchList.SelectedItem = toSelect;
         if (toSelect == null) ShowMatch(null);
         ShowStats(all);
+        ShowRecurring(all);
+        FillCompareHeroes();
         ShowGoals();
         ShowTrends(all);
         ShowPatterns(all);
@@ -231,13 +249,14 @@ public partial class HistoryView : UserControl, IRefreshable
         SummaryChips.Children.Add(Ui.Chip($"LH {m.LastHits}" + (m.Denies > 0 ? $" / DN {m.Denies}" : "")));
         if (m.Level > 0) SummaryChips.Children.Add(Ui.Chip(L.Format("hist_level", m.Level)));
         ShowOdReview(m);
+        ShowBreakdown(m);
 
         DrawChart();
 
         ItemsPanel.Children.Clear();
         var history = App.Host.History.All();
         int i = 1;
-        foreach (var (key, at) in m.ItemTimings.OrderBy(x => x.Value))
+        foreach (var (key, at) in m.ItemTimings.Where(x => !MatchRecorder.IsRecipe(x.Key)).OrderBy(x => x.Value))
         {
             var item = App.Host.Database.FindItem(key);
             string name = item?.Name ?? Pretty(key);
@@ -257,10 +276,161 @@ public partial class HistoryView : UserControl, IRefreshable
         else if (m.Alerts.Count == 0) AlertsPanel.Children.Add(Ui.Text(L.Get("hist_alerts_none"), "MutedText"));
         else
             foreach (var (key, count) in m.Alerts.OrderByDescending(x => x.Value))
-                AlertsPanel.Children.Add(Ui.Row(AlertName(key), "", "×" + count, "Warning"));
+                AlertsPanel.Children.Add(Ui.Row(AlertName(key),
+                    m.AlertsFollowed.TryGetValue(key, out var done) && done > 0 ? L.Format("alerts_followed", done) : "", "×" + count, "Warning"));
     }
 
     private static string AlertName(string key) => Loc.T(key + "_name");
+
+    // ------------------------------------------------------------------ 0.17: ошибки, сравнение, фазы
+
+    private static string Clock(int s) => $"{s / 60}:{s % 60:00}";
+
+    /// <summary>Матч по фазам: смерти и золото под риском, добивания и GPM против обычного, поздние предметы.</summary>
+    private void ShowBreakdown(MatchRecord m)
+    {
+        var L = Loc.Instance;
+        BreakdownPanel.Children.Clear();
+        var bd = PlayerReport.Breakdown(m, App.Host.History.All());
+        if (bd == null) { BreakdownPanel.Children.Add(Ui.Text(L.Get("bd_none"), "MutedText")); return; }
+        BreakdownPanel.Children.Add(new TextBlock
+        {
+            Text = L.Format("bd_hint", bd.Compared), Style = (Style)FindResource("MutedText"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8)
+        });
+        foreach (var p in bd.Phases)
+        {
+            var parts = new List<string> { L.Format("bd_deaths", p.Deaths) };
+            if (p.GoldLost > 0) parts.Add(L.Format("bd_gold", p.GoldLost));
+            if (p.LastHits is int lh) parts.Add(L.Format("bd_lh", lh) + (p.LastHitsUsual is int ul ? L.Format("bd_usual", ul) : ""));
+            if (p.Gpm is int g) parts.Add(L.Format("bd_gpm", g) + (p.GpmUsual is int ug ? L.Format("bd_usual", ug) : ""));
+            bool bad = p.Deaths >= 3 || (p.LastHits is int a && p.LastHitsUsual is int b && a < b * 0.85)
+                       || (p.Gpm is int c && p.GpmUsual is int d && c < d * 0.85);
+            bool good = !bad && p.Deaths == 0 && p.Gpm is int e && p.GpmUsual is int f && e >= f;
+            var panel = new StackPanel();
+            var title = Ui.Text(p.Text(L.Language), "Value");
+            title.FontWeight = FontWeights.SemiBold;
+            panel.Children.Add(title);
+            panel.Children.Add(new TextBlock { Text = string.Join(" · ", parts), Style = (Style)FindResource("MutedText"), TextWrapping = TextWrapping.Wrap });
+            BreakdownPanel.Children.Add(new Border
+            {
+                Style = (Style)FindResource("Callout"), Margin = new Thickness(0, 0, 0, 8),
+                BorderBrush = Ui.Res(bad ? "Warning" : good ? "Success" : "LineStrong"), Child = panel
+            });
+        }
+        if (bd.LateItems.Count > 0)
+        {
+            BreakdownPanel.Children.Add(new TextBlock { Text = L.Get("bd_late"), FontWeight = FontWeights.SemiBold, Foreground = Ui.Res("Text"), Margin = new Thickness(0, 4, 0, 4) });
+            foreach (var it in bd.LateItems)
+            {
+                var name = App.Host.Database.FindItem(it.ItemKey)?.DisplayName(L.Language) ?? it.ItemKey.Replace("item_", "");
+                var line = L.Format("bd_late_line", name, Clock(it.Yours), Clock(it.Usual), (int)Math.Round(it.Delta / 60.0));
+                var row = Ui.WithImage(Ui.ItemIcon(it.ItemKey, 40), Ui.Text(line, "Value"));
+                row.Margin = new Thickness(0, 0, 0, 6);
+                BreakdownPanel.Children.Add(row);
+            }
+        }
+    }
+
+    /// <summary>Топ повторяющихся ошибок за 20 игр: доля, тренд и примеры (клик по примеру открывает матч).</summary>
+    private void ShowRecurring(IReadOnlyList<MatchRecord> all)
+    {
+        var L = Loc.Instance;
+        RecurringPanel.Children.Clear();
+        var list = PlayerReport.Recurring(all);
+        if (list.Count == 0) { RecurringPanel.Children.Add(new TextBlock { Text = L.Get("rec_none"), Style = (Style)FindResource("MutedText"), TextWrapping = TextWrapping.Wrap }); return; }
+        foreach (var r in list)
+        {
+            var panel = new StackPanel();
+            var title = Ui.Text(r.Text(L.Language), "Value");
+            title.FontWeight = FontWeights.SemiBold;
+            panel.Children.Add(title);
+            var trendKey = r.Trend < 0 ? "rec_better" : r.Trend > 0 ? "rec_worse" : "rec_same";
+            var meta = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 4) };
+            meta.Inlines.Add(new System.Windows.Documents.Run(L.Format("rec_line", r.Count, r.Of, (int)Math.Round(r.Rate * 100)) + " · ") { Foreground = Ui.Res("Muted") });
+            meta.Inlines.Add(new System.Windows.Documents.Run(L.Get(trendKey)) { Foreground = Ui.Res(r.Trend < 0 ? "Success" : r.Trend > 0 ? "Warning" : "Muted") });
+            panel.Children.Add(meta);
+            var examples = new WrapPanel();
+            foreach (var m in r.Examples)
+            {
+                var b = new Button
+                {
+                    Content = $"{HeroName(m)} · {m.StartedUtc.ToLocalTime():dd.MM}", Style = (Style)FindResource("GhostButton"),
+                    Margin = new Thickness(0, 0, 6, 0), Padding = new Thickness(8, 3, 8, 3)
+                };
+                var id = m.Id;
+                b.Click += (_, _) => { PendingSelectId = id; TabMatches.IsChecked = true; Refresh(); };
+                examples.Children.Add(b);
+            }
+            panel.Children.Add(examples);
+            RecurringPanel.Children.Add(new Border
+            {
+                Style = (Style)FindResource("Callout"), BorderBrush = Ui.Res(r.Trend > 0 ? "Warning" : r.Trend < 0 ? "Success" : "LineStrong"), Child = panel
+            });
+        }
+    }
+
+    private bool _fillingCompare;
+
+    private void FillCompareHeroes()
+    {
+        var L = Loc.Instance;
+        _fillingCompare = true;
+        var keep = Ui.TryValue<int>(CompareHero, out var was) ? was : 0;
+        var reviews = App.Host.Reviews.Recent(200);
+        CompareHero.Items.Clear();
+        CompareHero.Items.Add(new Choice<int>(0, L.Get("cmp_all_heroes")));
+        foreach (var g in reviews.GroupBy(r => r.HeroId).OrderByDescending(g => g.Count()))
+        {
+            var hero = App.Host.Database.FindHero(g.Key);
+            if (hero == null) continue;
+            CompareHero.Items.Add(new Choice<int>(g.Key, $"{hero.DisplayName(L.Language)} ({g.Count()})") { Icon = Roshiq.App.Services.HeroArt.Portrait(hero.Key) });
+        }
+        CompareHero.SelectedItem = CompareHero.Items.OfType<Choice<int>>().FirstOrDefault(c => c.Value == keep) ?? CompareHero.Items[0];
+        _fillingCompare = false;
+        ShowCompare();
+    }
+
+    private void CompareHero_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_fillingCompare) ShowCompare();
+    }
+
+    /// <summary>Процентили OpenDota по разобранным матчам: полоса 0–100% и пометки сильной / слабой стороны.</summary>
+    private void ShowCompare()
+    {
+        var L = Loc.Instance;
+        ComparePanel.Children.Clear();
+        int? heroId = Ui.TryValue<int>(CompareHero, out var id) && id > 0 ? id : null;
+        var rows = PlayerReport.Percentiles(App.Host.Reviews.Recent(200), heroId);
+        if (rows.Count == 0) { ComparePanel.Children.Add(new TextBlock { Text = L.Get("cmp_none"), Style = (Style)FindResource("MutedText"), TextWrapping = TextWrapping.Wrap }); return; }
+        var best = rows.MaxBy(r => r.AvgPct);
+        var worst = rows.MinBy(r => r.AvgPct);
+        foreach (var r in rows)
+        {
+            int pct = (int)Math.Round(r.AvgPct * 100);
+            var head = new DockPanel();
+            var value = new TextBlock { Text = pct + "%", FontWeight = FontWeights.SemiBold, Foreground = Ui.Res(pct >= 60 ? "Success" : pct < 40 ? "Warning" : "Text") };
+            DockPanel.SetDock(value, Dock.Right);
+            head.Children.Add(value);
+            var label = r.Text(L.Language);
+            if (rows.Count >= 3 && ReferenceEquals(r, best) && pct >= 50) label += " · " + L.Get("cmp_strong");
+            else if (rows.Count >= 3 && ReferenceEquals(r, worst) && pct < 50) label += " · " + L.Get("cmp_weak");
+            head.Children.Add(new TextBlock { Text = label, Foreground = Ui.Res("Text"), TextTrimming = TextTrimming.CharacterEllipsis });
+            var bar = new Grid { Height = 6, Margin = new Thickness(0, 4, 0, 2) };
+            bar.Children.Add(new Border { Background = Ui.Res("Panel3"), CornerRadius = new CornerRadius(3) });
+            bar.Children.Add(new Border
+            {
+                Background = Ui.Res(pct >= 60 ? "Success" : pct < 40 ? "Warning" : "Accent"), CornerRadius = new CornerRadius(3),
+                HorizontalAlignment = HorizontalAlignment.Left, Width = 0, Tag = r.AvgPct
+            });
+            bar.SizeChanged += (s, _) => { var g = (Grid)s; ((Border)g.Children[1]).Width = g.ActualWidth * Math.Clamp((double)((Border)g.Children[1]).Tag, 0, 1); };
+            var block = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
+            block.Children.Add(head);
+            block.Children.Add(bar);
+            block.Children.Add(new TextBlock { Text = L.Format("cmp_matches", r.Matches), Style = (Style)FindResource("MutedText"), FontSize = 11.5 });
+            ComparePanel.Children.Add(block);
+        }
+    }
 
     /// <summary>Разбор смертей: когда и с каким золотом, был ли телепорт и байбэк.</summary>
     private void ShowDeaths(MatchRecord m)

@@ -29,7 +29,9 @@ public sealed class AppHost : IDisposable
     private readonly TimerAnnouncer _timerAnnouncer = new();
     private readonly MatchRecorder _recorder = new();
     private readonly HashSet<int> _notedEnemies = new();
-    private DateTime _lastEventToastUtc = DateTime.MinValue;
+    /// <summary>Единый диспетчер всплывающих советов: очередь, срочность, срок жизни, снятие неактуального.</summary>
+    public TipDispatcher Tips { get; } = new();
+    private IReadOnlyList<string> _alertActive = Array.Empty<string>();
     private bool _onlineCheckRunning;
     private PaceAdvisor? _pace;
     private string? _paceMatchId;
@@ -94,6 +96,7 @@ public sealed class AppHost : IDisposable
                 Sound.Play(SoundKind.Reminder);
         };
         Reminders.Hidden += (_, _) => Overlay.HideToast();
+        Tips.Outcome += OnTipOutcome;
         Vision.Recognized += (_, r) => _dispatcher.InvokeAsync(() => OnVisionResult(r));
         Settings.Changed += (_, _) => ApplySettings();
         Overlay.DraftRoleRequested += (_, _) => Settings.Update(s => s.Position = (Position)((int)s.Position % 5 + 1));
@@ -231,6 +234,7 @@ public sealed class AppHost : IDisposable
                 if (started) _manualScanRequested = false;
             }
             TickGsiWatchdog();
+            PumpTips();
 
             RefreshOverlay();
         }
@@ -240,9 +244,16 @@ public sealed class AppHost : IDisposable
         }
     }
 
+    private string? _lastGameState;
+
     private void OnGsi(GameStateSnapshot snap)
     {
         LastGsi = snap;
+        if (snap.GameState != _lastGameState)
+        {
+            _lastGameState = snap.GameState;
+            Log.Info("GSI: стадия игры " + (snap.GameState ?? "нет данных"));
+        }
         try
         {
             var completed = _recorder.Observe(ToTick(snap));
@@ -255,6 +266,8 @@ public sealed class AppHost : IDisposable
             _lastMatchId = snap.MatchId;
             Reminders.Reset();
             Alerts.Reset();
+            Tips.Clear(t => t.InGameOnly);          // советы прошлого матча не переносим
+            _alertActive = Array.Empty<string>();
             _timerAnnouncer.Reset();
             Roshan.Clear();
             _roleDetector.Reset();
@@ -297,12 +310,23 @@ public sealed class AppHost : IDisposable
     {
         string? key = AutoDraftLive ? (LastGsi!.MatchId ?? "unidentified") + ":" + LastGsi.TeamName : null;
         if (key == _autoSessionKey) return;
+        if (key == null && _autoSessionKey != null)
+            Log.Info($"Авто-драфт: закончился. Союзники: {Names(_autoPicks.Heroes(MySide))}; враги: {Names(AutoEnemies.Select(h => h.Key))}");
+        if (key != null)
+            Log.Info($"Авто-драфт: начался (сторона {LastGsi!.TeamName ?? "?"}, шаблонов {Vision.Matcher.HeroCount}, окно Dota " +
+                     $"{(Overlay.Game.Found ? (Overlay.Game.Foreground ? "активно" : "не активно") : "не найдено")})");
         _autoSessionKey = key;
         AutoDraftGeneration++;
         _autoStartedUtc = DateTime.UtcNow;
         _autoPicks.Reset();
         _notedEnemies.Clear();
         AutoDraftAnalysis = null;
+    }
+
+    private static string Names(IEnumerable<string> keys)
+    {
+        var list = keys.ToList();
+        return list.Count == 0 ? "—" : string.Join(", ", list);
     }
 
     private void RecomputeAutoDraft()
@@ -608,17 +632,17 @@ public sealed class AppHost : IDisposable
             var advice = LaneAdvice.Where(x => x.Tips.Count > 0).Take(2).ToList();
             if (advice.Count > 0)
             {
-                _lastEventToastUtc = DateTime.MinValue;
                 ShowEventToast(L.Get("lane_title").ToUpperInvariant(), string.Join("  ", advice.Select(x =>
-                    x.Hero.DisplayName(L.Language) + ": " + (L.Language == Language.Russian ? x.Tips[0].Ru : x.Tips[0].En))));
+                    x.Hero.DisplayName(L.Language) + ": " + (L.Language == Language.Russian ? x.Tips[0].Ru : x.Tips[0].En))),
+                    kind: "lane", ttlSec: 90, inGame: true);
             }
         }
 
         if (!a.PowerSpikes) return;
         if (CurrentTiming is { } timing && PowerSpikes.ClockReminder(timing, clock) is { } r && _spikesShown.Add(r.Key))
         {
-            _lastEventToastUtc = DateTime.MinValue;
-            ShowEventToast(L.Get("spike_header").ToUpperInvariant(), L.Language == Language.Russian ? r.Ru : r.En);
+            ShowEventToast(L.Get("spike_header").ToUpperInvariant(), L.Language == Language.Russian ? r.Ru : r.En,
+                kind: "spike", key: "spike:" + r.Key, ttlSec: 60, inGame: true);
         }
 
         var owned = snap.InventoryItems;
@@ -634,8 +658,8 @@ public sealed class AppHost : IDisposable
         foreach (var key in PowerSpikes.NewSpikes(owned, _spikeItems, Costs.Cost, core))
         {
             var name = Database.FindItem(key)?.DisplayName(L.Language) ?? key;
-            _lastEventToastUtc = DateTime.MinValue;
-            ShowEventToast(L.Get("spike_item_header").ToUpperInvariant(), L.Format("spike_item", name));
+            ShowEventToast(L.Get("spike_item_header").ToUpperInvariant(), L.Format("spike_item", name),
+                kind: "spike_item", key: "spike_item:" + key, ttlSec: 45, inGame: true);
             break; // за раз — одно уведомление
         }
     }
@@ -713,9 +737,8 @@ public sealed class AppHost : IDisposable
         if (guess.Position == Settings.Current.Position) return;
         var L = Loc.Instance;
         Settings.Update(s => s.Position = guess.Position);
-        _lastEventToastUtc = DateTime.MinValue;
         ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
-            L.Format("role_auto_changed", L.PositionName(guess.Position), guess.Reason(L.Language)));
+            L.Format("role_auto_changed", L.PositionName(guess.Position), guess.Reason(L.Language)), kind: "role", ttlSec: 60);
     }
 
     private async Task StartupImportAsync()
@@ -890,8 +913,8 @@ public sealed class AppHost : IDisposable
             {
                 var L = Loc.Instance;
                 var top = review.Problems.FirstOrDefault() ?? review.Good.FirstOrDefault();
-                _lastEventToastUtc = DateTime.MinValue;
-                ShowEventToast(L.Get("review_ready").ToUpperInvariant(), top != null ? top.Text(L.Language) : L.Get("review_no_insights"));
+                ShowEventToast(L.Get("review_ready").ToUpperInvariant(), top != null ? top.Text(L.Language) : L.Get("review_no_insights"),
+                    priority: TipPriority.Background, kind: "review", ttlSec: 1800);
                 RaiseChanged();
             }
         }
@@ -908,8 +931,8 @@ public sealed class AppHost : IDisposable
         if (Settings.Current.Data.SteamAccountId != null || string.IsNullOrEmpty(snap.SteamId)) return;
         if (SteamIds.ToAccountId(snap.SteamId) is null) return;
         LinkSteam(snap.SteamId!, "gsi", snap.PlayerName);
-        _lastEventToastUtc = DateTime.MinValue;
-        ShowEventToast(Loc.T("steam_header").ToUpperInvariant(), Loc.Instance.Format("steam_linked_gsi", snap.PlayerName ?? snap.SteamId!));
+        ShowEventToast(Loc.T("steam_header").ToUpperInvariant(), Loc.Instance.Format("steam_linked_gsi", snap.PlayerName ?? snap.SteamId!),
+            priority: TipPriority.Background, kind: "steam", ttlSec: 1800);
     }
 
     /// <summary>После матча: OpenDota обычно видит игру через несколько минут — пробуем через 2, 8 и 25 минут.</summary>
@@ -1068,17 +1091,21 @@ public sealed class AppHost : IDisposable
         if (!t.Enabled) return;
         var L = Loc.Instance;
         foreach (var e in _timerAnnouncer.Due(Database.Timers, clock, TimerOn))
-            if (t.Toasts) ShowEventToast(L.Get("timer_header").ToUpperInvariant(), L.Format("timer_soon", TimerName(e.Rule), e.InSec));
+            if (t.Toasts) ShowEventToast(L.Get("timer_header").ToUpperInvariant(), L.Format("timer_soon", TimerName(e.Rule), e.InSec),
+                priority: TipPriority.Urgent, kind: "timer", key: "timer:" + TimerName(e.Rule), ttlSec: Math.Max(5, e.InSec), inGame: true, allowWhenDead: true);
         foreach (var key in Roshan.Due(clock))
-            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get(key));
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get(key), priority: TipPriority.Urgent, kind: "rosh", key: "rosh:" + key,
+                ttlSec: 30, inGame: true, allowWhenDead: true);
     }
 
     private void TickAlerts(int clock)
     {
         var g = LastGsi!;
         var state = new InventoryState(clock, g.HeroAlive != false, g.Gold, g.GoldUnreliable, g.ItemSlots, Settings.Current.Position,
-            g.BuybackCost, g.BuybackCooldown);
-        var key = Alerts.Tick(state, Settings.Current.Alerts, Costs.Cost("item_tpscroll") ?? 100);
+            g.BuybackCost, g.BuybackCooldown, NextBuildItemCost(g));
+        int tpCost = Costs.Cost("item_tpscroll") ?? 100;
+        _alertActive = MatchAlerts.Conditions(state, Settings.Current.Alerts, tpCost);
+        var key = Alerts.Tick(state, Settings.Current.Alerts, tpCost);
         if (key == null) return;
         var L = Loc.Instance;
         var text = key switch
@@ -1087,7 +1114,19 @@ public sealed class AppHost : IDisposable
             MatchAlerts.NoBuyback => L.Format(key, (g.BuybackCost ?? 0) - (g.Gold ?? 0)),
             _ => L.Get(key)
         };
-        ShowEventToast(L.Get("alert_header").ToUpperInvariant(), text, warning: true);
+        // срочно — то, что стоит жизни или выкупа; остальное — обычным порядком. Снимается, как только условие ушло.
+        var urgent = key is MatchAlerts.NoTeleport or MatchAlerts.NoBuyback;
+        ShowEventToast(L.Get("alert_header").ToUpperInvariant(), text, warning: true, priority: urgent ? TipPriority.Urgent : TipPriority.Normal,
+            kind: key, ttlSec: 45, inGame: true, stillValid: () => _alertActive.Contains(key), tag: key);
+    }
+
+    /// <summary>Цена следующего ещё не купленного предмета сборки (середина и поздняя игра) — чтобы не ругать за «лишнее золото», когда игрок копит.</summary>
+    private int? NextBuildItemCost(GameStateSnapshot g)
+    {
+        if (CurrentBuild == null || g.InventoryItems is not { } owned) return null;
+        var next = CurrentBuild[BuildPhase.Mid].Concat(CurrentBuild[BuildPhase.Late]).Select(p => p.Item.Key)
+            .FirstOrDefault(k => !owned.Contains(k));
+        return next == null ? null : Costs.Cost(next);
     }
 
     /// <summary>Применить профиль оверлея (режим, положение, масштаб, прозрачность) — из трея.</summary>
@@ -1102,7 +1141,7 @@ public sealed class AppHost : IDisposable
             x.ActiveOverlayProfile = id;
             name = p.Name;
         });
-        if (name != null) ShowEventToast("ROSHIQ", Loc.Instance.Format("prof_applied", name));
+        if (name != null) ShowEventToast("ROSHIQ", Loc.Instance.Format("prof_applied", name), priority: TipPriority.Urgent, kind: "profile", ttlSec: 10);
     }
 
     private void TickGsiWatchdog()
@@ -1111,9 +1150,9 @@ public sealed class AppHost : IDisposable
         if (problem == GsiProblem.None) return;
         Log.Warn("Сторож GSI: Dota 2 запущена, а данных нет (" + problem + ")");
         var L = Loc.Instance;
-        _lastEventToastUtc = DateTime.MinValue;
         ShowEventToast(L.Get("gsi_watch_header").ToUpperInvariant(),
-            L.Get(problem == GsiProblem.BadToken ? "gsi_watch_token" : Settings.Current.Gsi.Enabled ? "gsi_watch_nodata" : "gsi_watch_off"), warning: true);
+            L.Get(problem == GsiProblem.BadToken ? "gsi_watch_token" : Settings.Current.Gsi.Enabled ? "gsi_watch_nodata" : "gsi_watch_off"), warning: true,
+            priority: TipPriority.Urgent, kind: "gsi_watch", ttlSec: 120);
         GsiProblemDetected?.Invoke(this, problem);
     }
 
@@ -1128,14 +1167,63 @@ public sealed class AppHost : IDisposable
         catch (OperationCanceledException) { }
     }
 
-    /// <summary>Показать всплывающее уведомление, не перебивая напоминание саппорту и не чаще раза в 4 секунды.</summary>
-    public bool ShowEventToast(string header, string text, bool warning = false)
+    /// <summary>
+    /// Поставить уведомление в очередь диспетчера советов. Диспетчер сам выберет момент: не перебьёт напоминание саппорту,
+    /// срочное покажет первым, служебное отложит до конца матча, неактуальное снимет без показа.
+    /// </summary>
+    public bool ShowEventToast(string header, string text, bool warning = false, TipPriority priority = TipPriority.Normal,
+        string kind = "event", int ttlSec = 30, bool inGame = false, Func<bool>? stillValid = null, object? tag = null, string? key = null,
+        bool allowWhenDead = false)
     {
-        if (Reminders.Active != null) return false;
-        if (DateTime.UtcNow - _lastEventToastUtc < TimeSpan.FromSeconds(4)) return false;
-        _lastEventToastUtc = DateTime.UtcNow;
-        if (Overlay.ShowToast(header, text, warning)) Sound.Play(warning ? SoundKind.Warning : SoundKind.Event);
+        Tips.Enqueue(new Tip
+        {
+            Kind = kind, Key = key, Header = header, Text = text, Warning = warning, Priority = priority,
+            Ttl = TimeSpan.FromSeconds(ttlSec), InGameOnly = inGame, StillValid = stillValid, Tag = tag, AllowWhenDead = allowWhenDead
+        }, DateTime.UtcNow);
+        PumpTips();
         return true;
+    }
+
+    /// <summary>Раз в секунду (и сразу при новом совете): выбрать совет и показать его в оверлее.</summary>
+    private void PumpTips()
+    {
+        var g = LastGsi;
+        bool fresh = g != null && DateTime.UtcNow - g.ReceivedUtc < TimeSpan.FromSeconds(5);
+        var ctx = new TipContext(
+            Blocked: Reminders.Active != null,
+            InGame: fresh && g!.IsInProgress,
+            Paused: g?.Paused == true,
+            Stale: !fresh,
+            Dead: g?.HeroAlive == false);
+        var now = DateTime.UtcNow;
+        if (Tips.Next(ctx, now) is not { } tip) return;
+        bool shown = Overlay.ShowToast(tip.Header, tip.Text, tip.Warning);
+        Tips.Report(tip, shown, now);
+        if (shown) Sound.Play(tip.Warning ? SoundKind.Warning : SoundKind.Event);
+    }
+
+    /// <summary>
+    /// Исход совета: в журнал (кроме обычных показов), в запись матча (для проверки пользы) и обратно в подсказки инвентаря —
+    /// не показанная подсказка откатывается, чтобы не считаться проигнорированной.
+    /// </summary>
+    private void OnTipOutcome(Tip tip, TipOutcome outcome)
+    {
+        if (tip.Tag is string alertKey && outcome != TipOutcome.Shown)
+        {
+            if (outcome == TipOutcome.Dropped) Alerts.Unseen(alertKey);
+            else Alerts.Retract(alertKey);
+        }
+        if (tip.InGameOnly && _recorder.Current is MatchRecord cur)
+        {
+            var k = tip.Kind + ":" + outcome.ToString().ToLowerInvariant();
+            cur.TipOutcomes[k] = cur.TipOutcomes.TryGetValue(k, out var n) ? n + 1 : 1;
+        }
+        if (outcome != TipOutcome.Shown) Log.Info($"Совет «{tip.Kind}»: {outcome switch {
+            TipOutcome.Dropped => "не показан (оверлей скрыт или уведомления выключены)",
+            TipOutcome.Expired => "истёк, не дождавшись показа",
+            TipOutcome.Invalidated => "снят — уже неактуален",
+            TipOutcome.Merged => "заменён более свежим",
+            _ => outcome.ToString() }}");
     }
 
     /// <summary>Горячая клавиша «Рошан убит»: отметить; повторное нажатие в течение 10 секунд снимает отметку.</summary>
@@ -1145,22 +1233,20 @@ public sealed class AppHost : IDisposable
         var clock = GameClock;
         if (clock == null)
         {
-            _lastEventToastUtc = DateTime.MinValue;
-            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get("rosh_need_clock"), warning: true);
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get("rosh_need_clock"), warning: true, priority: TipPriority.Urgent, kind: "rosh_mark", ttlSec: 8);
             return;
         }
         if (Roshan.KilledAt is int k && clock.Value - k < 10)
         {
             Roshan.Clear();
-            _lastEventToastUtc = DateTime.MinValue;
-            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get("rosh_cleared"));
+            ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get("rosh_cleared"), priority: TipPriority.Urgent, kind: "rosh_mark", ttlSec: 8);
         }
         else
         {
             Roshan.MarkKilled(clock.Value);
-            _lastEventToastUtc = DateTime.MinValue;
             ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Format("rosh_marked",
-                GameTimers.Clock(clock.Value + RoshanTracker.RespawnMinSec), GameTimers.Clock(clock.Value + RoshanTracker.RespawnMaxSec)));
+                GameTimers.Clock(clock.Value + RoshanTracker.RespawnMinSec), GameTimers.Clock(clock.Value + RoshanTracker.RespawnMaxSec)),
+                priority: TipPriority.Urgent, kind: "rosh_mark", ttlSec: 8);
         }
         RefreshOverlay();
         RaiseChanged();
@@ -1239,8 +1325,7 @@ public sealed class AppHost : IDisposable
         foreach (var hero in enemies)
         {
             if (NoteFor(hero) is not string note || !_notedEnemies.Add(hero.Id)) continue;
-            _lastEventToastUtc = DateTime.MinValue;
-            ShowEventToast((Loc.T("notes_toast") + " · " + hero.Name).ToUpperInvariant(), Short(note, 120));
+            ShowEventToast((Loc.T("notes_toast") + " · " + hero.Name).ToUpperInvariant(), Short(note, 120), kind: "notes", key: "notes:" + hero.Key, ttlSec: 90);
         }
     }
 
@@ -1271,6 +1356,7 @@ public sealed class AppHost : IDisposable
         {
             record.Alerts = new Dictionary<string, int>(Alerts.Counts);
             record.AlertsIgnored = new Dictionary<string, int>(Alerts.Ignored);
+            record.AlertsFollowed = new Dictionary<string, int>(Alerts.Followed);
         }
         History.Save(record);
         _lastSaved = record;
@@ -1283,9 +1369,9 @@ public sealed class AppHost : IDisposable
             var outcome = Goals.OnMatchSaved(record, History.All());
             if (outcome is { } o)
             {
-                _lastEventToastUtc = DateTime.MinValue;
                 ShowEventToast(Loc.T("goal_header").ToUpperInvariant(),
-                    Loc.Instance.Format(o.Result.Achieved ? "goal_done_toast" : "goal_failed_toast", GoalText(o.Goal)));
+                    Loc.Instance.Format(o.Result.Achieved ? "goal_done_toast" : "goal_failed_toast", GoalText(o.Goal)),
+                    priority: TipPriority.Background, kind: "goal_result", ttlSec: 900);
             }
         }
         catch (Exception ex) { Log.Error("Цели: ошибка проверки", ex); }
@@ -1315,8 +1401,8 @@ public sealed class AppHost : IDisposable
             PendingPostMatch = summary;
             var L = Loc.Instance;
             var line = summary.MainMistake ?? summary.Good.FirstOrDefault();
-            _lastEventToastUtc = DateTime.MinValue;
-            if (line != null) ShowEventToast(L.Get("pm_header").ToUpperInvariant(), line.Text(L.Language) + " " + L.Get("pm_toast_more"));
+            if (line != null) ShowEventToast(L.Get("pm_header").ToUpperInvariant(), line.Text(L.Language) + " " + L.Get("pm_toast_more"),
+                priority: TipPriority.Background, kind: "post_match", ttlSec: 900);
             PostMatchReady?.Invoke(this, summary);
         }
         catch (Exception ex) { Log.Error("Итог матча", ex); }
@@ -1335,8 +1421,7 @@ public sealed class AppHost : IDisposable
         foreach (var (k, v) in MatchAlerts.AdaptiveMultipliers(history)) Alerts.CooldownMultipliers[k] = v;
         if (Goals.Active is CoachGoal goal)
         {
-            _lastEventToastUtc = DateTime.MinValue;
-            ShowEventToast(Loc.T("goal_header").ToUpperInvariant(), GoalText(goal));
+            ShowEventToast(Loc.T("goal_header").ToUpperInvariant(), GoalText(goal), kind: "goal_start", ttlSec: 120);
         }
     }
 
@@ -1347,8 +1432,11 @@ public sealed class AppHost : IDisposable
         if (_pace.CheckpointDue(clock, LastGsi?.LastHits) is PaceCheck check)
         {
             var key = check.Delta >= 0 ? "pace_lh_ahead" : "pace_lh_behind";
+            // основание вывода — словами: «по 5 вашим играм на этом герое»
+            var basis = L.Format(check.SameHero ? "pace_basis_hero" : "pace_basis_role", check.Matches);
             ShowEventToast(L.Get("pace_header").ToUpperInvariant(),
-                L.Format(key, GameTimers.Clock(check.Clock), check.Current, check.Usual, Math.Abs(check.Delta)), warning: check.Delta < 0);
+                L.Format(key, GameTimers.Clock(check.Clock), check.Current, check.Usual, Math.Abs(check.Delta)) + " · " + basis, warning: check.Delta < 0,
+                kind: "pace_lh", key: "pace_lh:" + check.Clock, ttlSec: 60, inGame: true);
         }
         foreach (var (item, at) in cur.ItemTimings.ToList())
         {
@@ -1359,7 +1447,9 @@ public sealed class AppHost : IDisposable
             if (_pace.ItemDue(cur, item, at) is not ItemPace pace || Math.Abs(pace.Delta) < 60) continue;
             var name = Database.FindItem(item)?.DisplayName(L.Language) ?? item;
             ShowEventToast(L.Get("pace_header").ToUpperInvariant(), L.Format(pace.Delta > 0 ? "pace_item_late" : "pace_item_early",
-                name, GameTimers.Clock(at), GameTimers.Clock(Math.Abs(pace.Delta)), GameTimers.Clock(pace.Bench.AvgSec)), warning: pace.Delta > 0);
+                name, GameTimers.Clock(at), GameTimers.Clock(Math.Abs(pace.Delta)), GameTimers.Clock(pace.Bench.AvgSec))
+                + " · " + L.Format(pace.Bench.SameHero ? "pace_basis_hero" : "pace_basis_role", pace.Bench.Matches), warning: pace.Delta > 0,
+                kind: "pace_item", key: "pace_item:" + item, ttlSec: 45, inGame: true);
         }
     }
 
@@ -1519,8 +1609,8 @@ public sealed class AppHost : IDisposable
                             await _dispatcher.InvokeAsync(() =>
                             {
                                 ReloadDatabase();
-                                _lastEventToastUtc = DateTime.MinValue;
-                                ShowEventToast(Loc.T("data_updated_header").ToUpperInvariant(), Loc.Instance.Format("data_updated", result.Version ?? ""));
+                                ShowEventToast(Loc.T("data_updated_header").ToUpperInvariant(), Loc.Instance.Format("data_updated", result.Version ?? ""),
+                                    priority: TipPriority.Background, kind: "data_updated", ttlSec: 1800);
                             });
                     }
                     catch (Exception ex) { error ??= ex.Message; DataUpdateMessage = ex.Message; Log.Warn("Обновление данных: " + ex.Message); }
