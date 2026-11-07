@@ -1,4 +1,9 @@
 # Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.13.0|Диагностика в один клик: что не работает и кнопка «Исправить» рядом (Настройки → Диагностика или меню в трее).|One-click diagnostics: what is broken, with a Fix button next to it (Settings → Diagnostics or the tray menu).
+0.13.0|Если Dota 2 запущена, а данные из игры не приходят, ROSHIQ сразу подскажет, что сделать.|If Dota 2 is running but sends no data, ROSHIQ tells you right away what to do.
+0.13.0|Отчёт о сбое с кнопками «Скопировать» и «Сообщить на GitHub»; после повторных сбоев — безопасный режим.|Crash reports with Copy and Report on GitHub; safe mode after repeated crashes.
+0.13.0|Меню в трее: режим подсказок, роль и профиль оверлея в два клика.|Tray menu: hint mode, role and overlay profile in two clicks.
+0.13.0|Горячие клавиши записываются нажатием, с проверкой повторов и пересечений с Dota 2.|Hotkeys are recorded by pressing them, with duplicate and Dota 2 clash checks.
 0.12.0|Мастер первого запуска: язык, роль, связь с игрой, Steam и режим подсказок за минуту.|First-run wizard: language, role, game connection, Steam and hint mode in a minute.
 0.12.0|Режимы подсказок «Минимум», «Обычный», «Всё» и скрытые расширенные настройки.|Hint modes Minimal, Normal and Full, plus advanced settings hidden by default.
 0.12.0|Данные (герои, таймеры, правила) обновляются с GitHub сами — без переустановки после патча.|Data (heroes, timers, rules) now updates from GitHub automatically — no reinstall after a patch.

@@ -152,8 +152,26 @@ public sealed class AppHost : IDisposable
     /// <summary>Последний сохранённый матч (для итога в оверлее).</summary>
     public MatchRecord? LastSavedMatch => _lastSaved;
 
+    /// <summary>Безопасный режим: без оверлея, распознавания и фоновых загрузок (после повторных сбоев при запуске).</summary>
+    public bool SafeMode { get; set; }
+
+    /// <summary>Сторож связи с игрой (Dota запущена, а данных GSI нет).</summary>
+    public GsiWatchdog GsiWatch { get; } = new();
+
+    /// <summary>Dota запущена, а данные GSI не приходят (или приходят с чужим ключом).</summary>
+    public event EventHandler<GsiProblem>? GsiProblemDetected;
+
     public void Start()
     {
+        _ = MarkStableLaterAsync();
+        if (SafeMode)
+        {
+            Log.Warn("Безопасный режим: оверлей, распознавание и фоновые загрузки выключены");
+            RestartGsiIfNeeded(force: true);
+            RecomputeBuild();
+            _tick.Start();
+            return;
+        }
         Overlay.Start();
         _lastToggleHotkey = Settings.Current.Overlay.ToggleHotkey;
         _lastEditHotkey = Settings.Current.Overlay.EditHotkey;
@@ -201,8 +219,12 @@ public sealed class AppHost : IDisposable
 
             // Распознавание драфта (только тренировочный контекст)
             UpdateAutoDraftSession();
-            bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration);
-            if (started) _manualScanRequested = false;
+            if (!SafeMode)
+            {
+                bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration);
+                if (started) _manualScanRequested = false;
+            }
+            TickGsiWatchdog();
 
             RefreshOverlay();
         }
@@ -1058,6 +1080,44 @@ public sealed class AppHost : IDisposable
             _ => L.Get(key)
         };
         ShowEventToast(L.Get("alert_header").ToUpperInvariant(), text, warning: true);
+    }
+
+    /// <summary>Применить профиль оверлея (режим, положение, масштаб, прозрачность) — из трея.</summary>
+    public void ApplyOverlayProfile(string id)
+    {
+        string? name = null;
+        Settings.Update(x =>
+        {
+            var p = x.OverlayProfiles.FirstOrDefault(pp => pp.Id == id);
+            if (p == null) return;
+            p.ApplyTo(x.Overlay);
+            x.ActiveOverlayProfile = id;
+            name = p.Name;
+        });
+        if (name != null) ShowEventToast("ROSHIQ", Loc.Instance.Format("prof_applied", name));
+    }
+
+    private void TickGsiWatchdog()
+    {
+        var problem = GsiWatch.Tick(Overlay.Game.Found, Settings.Current.Gsi.Enabled, Gsi?.LastPacketUtc, Gsi?.PacketsRejected ?? 0, DateTime.UtcNow);
+        if (problem == GsiProblem.None) return;
+        Log.Warn("Сторож GSI: Dota 2 запущена, а данных нет (" + problem + ")");
+        var L = Loc.Instance;
+        _lastEventToastUtc = DateTime.MinValue;
+        ShowEventToast(L.Get("gsi_watch_header").ToUpperInvariant(),
+            L.Get(problem == GsiProblem.BadToken ? "gsi_watch_token" : Settings.Current.Gsi.Enabled ? "gsi_watch_nodata" : "gsi_watch_off"), warning: true);
+        GsiProblemDetected?.Invoke(this, problem);
+    }
+
+    /// <summary>Минута без сбоя — запуск удачный, счётчик сбоев обнуляется.</summary>
+    private async Task MarkStableLaterAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromSeconds(60), _backgroundCts.Token);
+            CrashGuard.MarkStable(AppPaths.StartupGuard);
+        }
+        catch (OperationCanceledException) { }
     }
 
     /// <summary>Показать всплывающее уведомление, не перебивая напоминание саппорту и не чаще раза в 4 секунды.</summary>

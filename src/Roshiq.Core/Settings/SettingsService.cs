@@ -97,6 +97,54 @@ public sealed class SettingsService
         }
     }
 
+    /// <summary>Резервная копия текущих настроек в папку backups (хранятся последние 10). Возвращает путь или null.</summary>
+    public string? Backup(string reason)
+    {
+        try
+        {
+            if (!File.Exists(_path)) return null;
+            var dir = Path.Combine(Path.GetDirectoryName(_path)!, "backups");
+            Directory.CreateDirectory(dir);
+            var target = Path.Combine(dir, $"settings-{DateTime.Now:yyyyMMdd-HHmmss}-{reason}.json");
+            File.Copy(_path, target, overwrite: true);
+            foreach (var old in Directory.GetFiles(dir, "settings-*.json").OrderByDescending(f => f, StringComparer.Ordinal).Skip(10))
+            {
+                try { File.Delete(old); } catch { }
+            }
+            return target;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Резервная копия настроек: " + ex.Message);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Сбросить настройки к значениям по умолчанию (предварительно сохранив копию).
+    /// Язык, привязка Steam и отметка о пройденном мастере сохраняются.
+    /// </summary>
+    public string? ResetToDefaults()
+    {
+        var backup = Backup("reset");
+        var keep = Current;
+        var fresh = new AppSettings
+        {
+            Language = keep.Language,
+            SetupVersion = keep.SetupVersion,
+            LastSeenVersion = keep.LastSeenVersion
+        };
+        fresh.Data.SteamAccountId = keep.Data.SteamAccountId;
+        fresh.Data.SteamLinkedVia = keep.Data.SteamLinkedVia;
+        fresh.Data.SteamName = keep.Data.SteamName;
+        fresh.Data.SteamAvatarUrl = keep.Data.SteamAvatarUrl;
+        fresh.Data.AllowOnlineStats = keep.Data.AllowOnlineStats;
+        Current = fresh.Normalize();
+        Save();
+        Log.Info("Настройки сброшены к значениям по умолчанию" + (backup != null ? ", копия: " + backup : ""));
+        return backup;
+    }
+
     private void TryBackupBroken()
     {
         try { File.Copy(_path, _path + ".broken", overwrite: true); } catch { /* ignore */ }
@@ -169,6 +217,12 @@ public static class AppPaths
     /// <summary>Файлы данных, скачанные с GitHub (обновление данных без новой версии программы).</summary>
     public static string DataRemote => Path.Combine(DataRoot, "data-remote");
     public static string Logs => Path.Combine(DataRoot, "logs");
+    /// <summary>Отчёты о сбоях (crash-*.txt).</summary>
+    public static string CrashReports => Path.Combine(DataRoot, "logs", "crashes");
+    /// <summary>Счётчик неудачных запусков подряд (для безопасного режима).</summary>
+    public static string StartupGuard => Path.Combine(DataRoot, "startup-guard.txt");
+    /// <summary>Резервные копии настроек.</summary>
+    public static string Backups => Path.Combine(DataRoot, "backups");
     public static string DataOverrides => Path.Combine(DataRoot, "data");
     public static string Matches => Path.Combine(DataRoot, "matches");
 }

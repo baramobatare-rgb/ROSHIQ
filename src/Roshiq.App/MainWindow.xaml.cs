@@ -185,14 +185,7 @@ public partial class MainWindow : Window
             _tray = new TrayIcon();
             _tray.Activated += (_, _) => RestoreFromTray();
             _tray.MenuCommand += (_, id) => OnTrayCommand(id);
-            _tray.Menu = () => new List<TrayIcon.MenuItem>
-            {
-                new(1, Loc.T("tray_open")),
-                new(2, Loc.T("tray_overlay") + "\t" + App.Host.Settings.Current.Overlay.ToggleHotkey),
-                new(3, Loc.T("tray_roshan") + "\t" + App.Host.Settings.Current.Overlay.RoshanHotkey),
-                new(0, "", Separator: true),
-                new(9, Loc.T("tray_exit"))
-            };
+            _tray.Menu = BuildTrayMenu;
             UpdateTrayIcon();
             ThemeManager.Applied += (_, _) => Dispatcher.InvokeAsync(UpdateTrayIcon);
         }
@@ -220,14 +213,64 @@ public partial class MainWindow : Window
         Activate();
     }
 
+    // Id пунктов меню трея: 1–9 действия, 10–12 режим подсказок, 20–24 роль, 30+ профили оверлея
+    private const int TrayPresetBase = 10, TrayRoleBase = 20, TrayProfileBase = 30;
+
+    /// <summary>Меню трея (собирается при каждом открытии — текст и галочки всегда актуальны).</summary>
+    private IReadOnlyList<TrayIcon.MenuItem> BuildTrayMenu()
+    {
+        var L = Loc.Instance;
+        var s = App.Host.Settings.Current;
+        var presets = new[] { HintPreset.Minimal, HintPreset.Normal, HintPreset.Full }
+            .Select((p, i) => new TrayIcon.MenuItem(TrayPresetBase + i, L.Get("preset_" + p.ToString().ToLowerInvariant()), Checked: s.Preset == p)).ToList();
+        var roles = Enum.GetValues<Position>()
+            .Select((p, i) => new TrayIcon.MenuItem(TrayRoleBase + i, L.PositionName(p), Checked: s.Position == p)).ToList();
+        var profiles = s.OverlayProfiles.Select((p, i) => new TrayIcon.MenuItem(TrayProfileBase + i, p.Name, Checked: p.Id == s.ActiveOverlayProfile)).ToList();
+        bool overlayShown = !App.Host.SafeMode && App.Host.Overlay.IsVisible;
+
+        var items = new List<TrayIcon.MenuItem>
+        {
+            new(1, L.Get("tray_open")),
+            new(0, "", Separator: true),
+            new(2, L.Get(overlayShown ? "tray_overlay_hide" : "tray_overlay_show") + "\t" + s.Overlay.ToggleHotkey, Enabled: !App.Host.SafeMode),
+            new(3, L.Get("tray_roshan") + "\t" + s.Overlay.RoshanHotkey),
+            new(0, L.Get("preset_title"), Children: presets),
+            new(0, L.Get("tray_role"), Children: roles),
+        };
+        if (profiles.Count > 0) items.Add(new(0, L.Get("tray_profile"), Children: profiles));
+        items.Add(new(0, "", Separator: true));
+        items.Add(new(4, L.Get("tray_diagnostics")));
+        items.Add(new(5, L.Get("tray_settings")));
+        items.Add(new(0, "", Separator: true));
+        items.Add(new(9, L.Get("tray_exit")));
+        return items;
+    }
+
     private void OnTrayCommand(int id)
     {
+        var s = App.Host.Settings;
         switch (id)
         {
             case 1: RestoreFromTray(); break;
             case 2: App.Host.Overlay.ToggleHidden(); break;
             case 3: App.Host.ToggleRoshanMark(); break;
+            case 4: Roshiq.App.Views.DiagnosticsWindow.Open(); break;
+            case 5: Navigate("settings"); break;
             case 9: RequestExit(); break;
+            case >= TrayPresetBase and < TrayPresetBase + 3:
+                var preset = (HintPreset)(new[] { (int)HintPreset.Minimal, (int)HintPreset.Normal, (int)HintPreset.Full }[id - TrayPresetBase]);
+                s.Update(x => HintPresets.Apply(x, preset));
+                App.Host.ShowEventToast("ROSHIQ", Loc.Instance.Format("tray_preset_set", Loc.Instance.Get("preset_" + preset.ToString().ToLowerInvariant())));
+                break;
+            case >= TrayRoleBase and < TrayProfileBase:
+                var positions = Enum.GetValues<Position>();
+                int ri = id - TrayRoleBase;
+                if (ri < positions.Length) s.Update(x => x.Position = positions[ri]);
+                break;
+            case >= TrayProfileBase:
+                int pi = id - TrayProfileBase;
+                if (pi < s.Current.OverlayProfiles.Count) App.Host.ApplyOverlayProfile(s.Current.OverlayProfiles[pi].Id);
+                break;
         }
     }
 
@@ -258,7 +301,16 @@ public partial class MainWindow : Window
     /// <summary>Перейти к разделу (используется кнопками быстрого доступа).</summary>
     public static void Navigate(string key)
     {
-        if (Application.Current.MainWindow is MainWindow w) w.Select(key);
+        if (Application.Current.MainWindow is not MainWindow w) return;
+        // "settings/overlay" — раздел и вкладка внутри него
+        var parts = key.Split('/', 2);
+        if (parts.Length == 2 && parts[0] == "settings")
+        {
+            if (Roshiq.App.Views.SettingsHostView.Instance is { } host) host.SelectTab(parts[1]);
+            else Roshiq.App.Views.SettingsHostView.PendingTab = parts[1];
+        }
+        w.Select(parts[0]);
+        w.RestoreFromTray();
     }
 
     public void Select(string key)

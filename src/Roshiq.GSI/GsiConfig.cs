@@ -139,3 +139,85 @@ public static class SteamLocator
         return null;
     }
 }
+
+/// <summary>
+/// Параметры запуска Dota 2 из Steam (userdata\&lt;id&gt;\config\localconfig.vdf, только чтение).
+/// Нужны, чтобы подсказать про -gamestateintegration: без него новые версии Dota 2 не отправляют данные.
+/// </summary>
+public static class DotaLaunchOptions
+{
+    public const string AppId = "570";
+    public const string GsiFlag = "-gamestateintegration";
+
+    /// <summary>Параметры запуска приложения appId из текста localconfig.vdf; null — если запись не найдена.</summary>
+    public static string? Parse(string vdfText, string appId = AppId)
+    {
+        // Минимальный разбор KeyValues: строки в кавычках и фигурные скобки.
+        var path = new List<string>();
+        string? pendingKey = null;
+        int i = 0;
+        while (i < vdfText.Length)
+        {
+            char c = vdfText[i];
+            if (c == '"')
+            {
+                var sb = new System.Text.StringBuilder();
+                i++;
+                while (i < vdfText.Length && vdfText[i] != '"')
+                {
+                    if (vdfText[i] == '\\' && i + 1 < vdfText.Length) { sb.Append(vdfText[i + 1]); i += 2; continue; }
+                    sb.Append(vdfText[i++]);
+                }
+                i++;
+                var token = sb.ToString();
+                if (pendingKey == null) pendingKey = token;
+                else
+                {
+                    if (pendingKey.Equals("LaunchOptions", StringComparison.OrdinalIgnoreCase) && path.Count >= 2
+                        && path[^1] == appId && path[^2].Equals("apps", StringComparison.OrdinalIgnoreCase))
+                        return token;
+                    pendingKey = null;
+                }
+            }
+            else if (c == '{') { path.Add(pendingKey ?? ""); pendingKey = null; i++; }
+            else if (c == '}') { if (path.Count > 0) path.RemoveAt(path.Count - 1); pendingKey = null; i++; }
+            else if (c == '/' && i + 1 < vdfText.Length && vdfText[i + 1] == '/') { while (i < vdfText.Length && vdfText[i] != '\n') i++; }
+            else i++;
+        }
+        return null;
+    }
+
+    public static bool HasGsiFlag(string? options) =>
+        options != null && options.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries)
+            .Any(o => o.Equals(GsiFlag, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Есть ли -gamestateintegration у Dota 2 хотя бы в одном аккаунте Steam на этом ПК.
+    /// true/false — найдено/не найдено; null — Steam или настройки Dota не найдены.
+    /// </summary>
+    public static bool? CheckInstalled()
+    {
+        try
+        {
+            var steam = SteamLocator.FindSteamRoot();
+            var userdata = steam == null ? null : Path.Combine(steam, "userdata");
+            if (userdata == null || !Directory.Exists(userdata)) return null;
+            bool any = false;
+            foreach (var dir in Directory.GetDirectories(userdata))
+            {
+                var file = Path.Combine(dir, "config", "localconfig.vdf");
+                if (!File.Exists(file)) continue;
+                var text = File.ReadAllText(file);
+                if (!text.Contains("\"" + AppId + "\"")) continue;
+                any = true;
+                if (HasGsiFlag(Parse(text))) return true;
+            }
+            return any ? false : null;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Steam: не удалось прочитать параметры запуска: " + ex.Message);
+            return null;
+        }
+    }
+}

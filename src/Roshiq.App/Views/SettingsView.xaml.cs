@@ -313,6 +313,8 @@ public partial class SettingsView : UserControl, IRefreshable
         GsiAdvanced.Visibility = v;
     }
 
+    private void Diagnostics_Click(object sender, RoutedEventArgs e) => DiagnosticsWindow.Open();
+
     private void RunWizard_Click(object sender, RoutedEventArgs e)
     {
         new FirstRunWindow { Owner = Window.GetWindow(this) }.ShowDialog();

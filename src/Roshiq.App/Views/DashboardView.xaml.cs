@@ -78,7 +78,13 @@ public partial class DashboardView : UserControl, IRefreshable
         }
     }
 
-    private void NoticeOpen_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("settings");
+    private bool _noticeDiagnostics;
+
+    private void NoticeOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (_noticeDiagnostics) DiagnosticsWindow.Open();
+        else MainWindow.Navigate("settings");
+    }
 
     private void GoalOpen_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("history");
 
@@ -179,6 +185,9 @@ public partial class DashboardView : UserControl, IRefreshable
 
         // --- уведомления о патче и обновлении
         var notices = new List<string>();
+        _noticeDiagnostics = h.SafeMode || h.GsiWatch.Current != Roshiq.Core.Diagnostics.GsiProblem.None;
+        if (h.SafeMode) notices.Add(L.Get("dash_notice_safe"));
+        if (h.GsiWatch.Current != Roshiq.Core.Diagnostics.GsiProblem.None) notices.Add(L.Get("dash_notice_gsi"));
         if (h.NewPatchNotice is string patch) notices.Add(L.Format("dash_notice_patch", patch));
         if (h.AvailableUpdate is { } upd) notices.Add(L.Format("dash_notice_update", upd.Tag));
         NoticeCard.Visibility = notices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

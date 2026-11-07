@@ -10,10 +10,21 @@ public partial class SettingsHostView : UserControl, IRefreshable
 {
     private readonly Dictionary<string, UserControl> _tabs = new();
 
+    /// <summary>Вкладка, которую открыть при создании (для перехода из диагностики и трея).</summary>
+    public static string? PendingTab { get; set; }
+    public static SettingsHostView? Instance { get; private set; }
+
     public SettingsHostView()
     {
         InitializeComponent();
-        TabGeneral.IsChecked = true;
+        Instance = this;
+        SelectTab(PendingTab ?? "general");
+        PendingTab = null;
+    }
+
+    public void SelectTab(string key)
+    {
+        (key switch { "overlay" => TabOverlay, "data" => TabData, _ => TabGeneral }).IsChecked = true;
     }
 
     public void Refresh()

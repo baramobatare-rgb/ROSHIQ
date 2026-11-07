@@ -45,6 +45,10 @@ public sealed class OverlayController : IDisposable
     }
     public bool ToggleHotkeyOk { get; private set; }
     public bool RoshanHotkeyOk { get; private set; }
+    /// <summary>Сочетания, которые не удалось зарегистрировать (заняты другой программой или не распознаны).</summary>
+    public IReadOnlyList<string> FailedHotkeys { get; private set; } = Array.Empty<string>();
+    /// <summary>Горячие клавиши уже регистрировались (после Start).</summary>
+    public bool HotkeysRegistered => _hotkeys != null;
 
     /// <summary>Нажата клавиша «Рошан убит» — приложение запускает таймер возрождения.</summary>
     public event EventHandler? RoshanKillMarked;
@@ -69,10 +73,14 @@ public sealed class OverlayController : IDisposable
             _hotkeys?.Dispose();
             _hotkeys = new HotkeyManager();
             var o = _settings.Current.Overlay;
+            var failed = new List<string>();
             ToggleHotkeyOk = _hotkeys.Register(o.ToggleHotkey, ToggleHidden);
-            _hotkeys.Register(o.EditHotkey, () => SetEditMode(!EditMode));
-            _hotkeys.Register(o.DetailsHotkey, ToggleDetails);
+            if (!ToggleHotkeyOk) failed.Add(o.ToggleHotkey);
+            if (!_hotkeys.Register(o.EditHotkey, () => SetEditMode(!EditMode))) failed.Add(o.EditHotkey);
+            if (!_hotkeys.Register(o.DetailsHotkey, ToggleDetails)) failed.Add(o.DetailsHotkey);
             RoshanHotkeyOk = _hotkeys.Register(o.RoshanHotkey, () => RoshanKillMarked?.Invoke(this, EventArgs.Empty));
+            if (!RoshanHotkeyOk) failed.Add(o.RoshanHotkey);
+            FailedHotkeys = failed;
         }
         catch (Exception ex)
         {

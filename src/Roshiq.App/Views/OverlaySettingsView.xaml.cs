@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Roshiq.Core.Diagnostics;
 using Roshiq.Core.Layout;
 using Roshiq.Core.Localization;
 using Roshiq.Core.Models;
@@ -137,16 +138,34 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         UpdateButtons();
     }
 
-    private void SaveHotkeys_Click(object sender, RoutedEventArgs e)
+    private void SaveHotkeys_Click(object sender, RoutedEventArgs e) => SaveHotkeys(
+        HotkeyRules.Normalize(ToggleHotkey.Text), HotkeyRules.Normalize(DetailsHotkey.Text),
+        HotkeyRules.Normalize(EditHotkey.Text), HotkeyRules.Normalize(RoshanHotkey.Text));
+
+    private void ResetHotkeys_Click(object sender, RoutedEventArgs e)
     {
-        var toggle = ToggleHotkey.Text.Trim();
-        var details = DetailsHotkey.Text.Trim();
-        var edit = EditHotkey.Text.Trim();
-        var roshan = RoshanHotkey.Text.Trim();
-        if (!HotkeyManager.TryParse(toggle, out _, out _) || !HotkeyManager.TryParse(details, out _, out _) || !HotkeyManager.TryParse(edit, out _, out _)
-            || !HotkeyManager.TryParse(roshan, out _, out _))
+        var d = new Roshiq.Core.Settings.OverlaySettings();
+        ToggleHotkey.Text = d.ToggleHotkey;
+        DetailsHotkey.Text = d.DetailsHotkey;
+        EditHotkey.Text = d.EditHotkey;
+        RoshanHotkey.Text = d.RoshanHotkey;
+        SaveHotkeys(d.ToggleHotkey, d.DetailsHotkey, d.EditHotkey, d.RoshanHotkey);
+    }
+
+    /// <summary>Проверка (формат, повторы), сохранение и отчёт: что занято другой программой и что пересекается с Dota.</summary>
+    private void SaveHotkeys(string toggle, string details, string edit, string roshan)
+    {
+        var L = Loc.Instance;
+        var all = new Dictionary<string, string> { ["toggle"] = toggle, ["details"] = details, ["edit"] = edit, ["roshan"] = roshan };
+        if (all.Values.Any(g => !HotkeyManager.TryParse(g, out _, out _)))
         {
-            HotkeyStatus.Text = Loc.T("ov_hotkey_invalid");
+            HotkeyStatus.Text = L.Get("ov_hotkey_invalid");
+            return;
+        }
+        var dup = HotkeyRules.Duplicates(all);
+        if (dup.Count > 0)
+        {
+            HotkeyStatus.Text = L.Format("hk_duplicate", string.Join(", ", dup));
             return;
         }
         App.Host.Settings.Update(s =>
@@ -156,7 +175,16 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
             s.Overlay.EditHotkey = edit;
             s.Overlay.RoshanHotkey = roshan;
         });
-        HotkeyStatus.Text = Loc.T("saved");
+        // перерегистрация идёт через диспетчер — результат смотрим чуть позже
+        Dispatcher.InvokeAsync(() =>
+        {
+            var notes = new List<string>();
+            var busy = App.Host.Overlay.FailedHotkeys;
+            if (busy.Count > 0) notes.Add(L.Format("hk_busy", string.Join(", ", busy)));
+            var clash = all.Values.Where(HotkeyRules.ClashesWithDota).ToList();
+            if (clash.Count > 0) notes.Add(L.Format("hk_dota_clash", string.Join(", ", clash)));
+            HotkeyStatus.Text = notes.Count == 0 ? L.Get("hk_saved_ok") : string.Join(" ", notes);
+        }, System.Windows.Threading.DispatcherPriority.ContextIdle);
     }
 
     /// <summary>Кнопки профилей: выбор применяет режим, положение, масштаб и прозрачность.</summary>

@@ -27,6 +27,7 @@
                     <TextBlock x:Name="PresetDescription" Style="{StaticResource MutedText}" TextWrapping="Wrap" />
                     <DockPanel Margin="0,10,0,0">
                         <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_run_wizard, Upper=True}" Click="RunWizard_Click" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_diagnostics, Upper=True}" Click="Diagnostics_Click" />
                         <CheckBox x:Name="AdvancedBox" Content="{app:T set_show_advanced}" Checked="Advanced_Changed" Unchecked="Advanced_Changed" VerticalAlignment="Center" />
                     </DockPanel>
                 </StackPanel>

@@ -1,0 +1,31 @@
+<Window x:Class="Roshiq.App.Views.DiagnosticsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:Roshiq.App"
+        Title="ROSHIQ" Icon="{DynamicResource AppIcon}" Width="720" Height="640" MinWidth="560" MinHeight="420"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
+    <Grid Margin="28,24,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <StackPanel>
+            <TextBlock x:Name="VersionLabel" Style="{StaticResource Eyebrow}" />
+            <TextBlock Text="{app:T diag_title}" Style="{StaticResource H1}" />
+            <TextBlock x:Name="Summary" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,2,0,14" />
+        </StackPanel>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="ChecksPanel" />
+        </ScrollViewer>
+        <DockPanel Grid.Row="2" Margin="0,16,0,0">
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close, Upper=True}" Click="Close_Click" IsCancel="True" />
+            <WrapPanel>
+                <Button x:Name="RunButton" Style="{StaticResource GhostButton}" Content="{app:T diag_rerun, Upper=True}" Click="Run_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_copy, Upper=True}" Click="Copy_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_logs, Upper=True}" Click="Logs_Click" />
+            </WrapPanel>
+        </DockPanel>
+    </Grid>
+</Window>

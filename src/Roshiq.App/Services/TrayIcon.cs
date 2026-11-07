@@ -11,7 +11,9 @@ namespace Roshiq.App.Services;
 /// </summary>
 public sealed class TrayIcon : IDisposable
 {
-    public sealed record MenuItem(int Id, string Text, bool Separator = false);
+    /// <summary>Пункт меню: Checked — галочка, Children — подменю (Id подменю не используется), Enabled=false — серый.</summary>
+    public sealed record MenuItem(int Id, string Text, bool Separator = false, bool Checked = false,
+        IReadOnlyList<MenuItem>? Children = null, bool Enabled = true);
 
     private const int WM_APP_TRAY = 0x8000 + 0x51;
     private const int WM_LBUTTONUP = 0x0202;
@@ -23,7 +25,7 @@ public sealed class TrayIcon : IDisposable
     private const int IMAGE_ICON = 1;
     private const int LR_LOADFROMFILE = 0x10;
     private const int SM_CXSMICON = 49, SM_CYSMICON = 50;
-    private const uint MF_STRING = 0x0, MF_SEPARATOR = 0x800;
+    private const uint MF_STRING = 0x0, MF_SEPARATOR = 0x800, MF_CHECKED = 0x8, MF_POPUP = 0x10, MF_GRAYED = 0x1;
     private const uint TPM_RETURNCMD = 0x100, TPM_RIGHTBUTTON = 0x2, TPM_BOTTOMALIGN = 0x20;
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -160,11 +162,7 @@ public sealed class TrayIcon : IDisposable
         var menu = CreatePopupMenu();
         try
         {
-            foreach (var item in items)
-            {
-                if (item.Separator) AppendMenuW(menu, MF_SEPARATOR, IntPtr.Zero, null);
-                else AppendMenuW(menu, MF_STRING, new IntPtr(item.Id), item.Text);
-            }
+            Fill(menu, items);
             GetCursorPos(out var pt);
             // без этого меню не закрывается при клике мимо (документированное поведение Windows)
             SetForegroundWindow(_source.Handle);
@@ -175,6 +173,23 @@ public sealed class TrayIcon : IDisposable
         finally
         {
             DestroyMenu(menu);
+        }
+    }
+
+    /// <summary>Заполнить меню; подменю уничтожаются вместе с родительским (DestroyMenu рекурсивен).</summary>
+    private static void Fill(IntPtr menu, IReadOnlyList<MenuItem> items)
+    {
+        foreach (var item in items)
+        {
+            if (item.Separator) { AppendMenuW(menu, MF_SEPARATOR, IntPtr.Zero, null); continue; }
+            uint flags = MF_STRING | (item.Checked ? MF_CHECKED : 0) | (item.Enabled ? 0 : MF_GRAYED);
+            if (item.Children is { Count: > 0 } children)
+            {
+                var sub = CreatePopupMenu();
+                Fill(sub, children);
+                AppendMenuW(menu, flags | MF_POPUP, sub, item.Text);
+            }
+            else AppendMenuW(menu, flags, new IntPtr(item.Id), item.Text);
         }
     }
 
