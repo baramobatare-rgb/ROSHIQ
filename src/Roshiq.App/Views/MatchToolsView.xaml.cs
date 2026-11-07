@@ -45,12 +45,22 @@ public partial class MatchToolsView : UserControl, IRefreshable
         TimerKinds.Children.Clear();
         foreach (var rule in App.Host.Database.Timers)
         {
+            // чип: название и как часто — «Лотос · каждые 3:00»
+            var content = new StackPanel { Orientation = Orientation.Horizontal };
+            content.Children.Add(new TextBlock { Text = rule.Name(Loc.Instance.Language), VerticalAlignment = VerticalAlignment.Center });
+            if (rule.IntervalSec > 0)
+                content.Children.Add(new TextBlock
+                {
+                    Text = " · " + Loc.Instance.Format("timer_every", $"{rule.IntervalSec / 60}:{rule.IntervalSec % 60:00}"),
+                    Foreground = Ui.Res("Muted"), FontWeight = FontWeights.Normal, VerticalAlignment = VerticalAlignment.Center
+                });
             var box = new CheckBox
             {
-                Content = rule.Name(Loc.Instance.Language),
+                Style = (Style)FindResource("Chip"),
+                Content = content,
                 IsChecked = !s.Timers.Disabled.Contains(rule.Key, StringComparer.OrdinalIgnoreCase),
-                Margin = new Thickness(0, 4, 18, 4),
-                Tag = rule.Key
+                Tag = rule.Key,
+                ToolTip = Loc.Instance.Format("timer_chip_tip", $"{rule.FirstSec / 60}:{rule.FirstSec % 60:00}")
             };
             box.Checked += TimerKind_Changed;
             box.Unchecked += TimerKind_Changed;

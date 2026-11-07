@@ -14,8 +14,8 @@
     <SolidColorBrush x:Key="Line" Color="#232925" />
     <SolidColorBrush x:Key="LineStrong" Color="#303830" />
     <SolidColorBrush x:Key="Text" Color="#F5F7F5" />
-    <SolidColorBrush x:Key="Muted" Color="#898F89" />
-    <SolidColorBrush x:Key="Faint" Color="#5A605A" />
+    <SolidColorBrush x:Key="Muted" Color="#A2A9A2" />
+    <SolidColorBrush x:Key="Faint" Color="#6F766F" />
     <SolidColorBrush x:Key="Accent" Color="#B5FF4D" />
     <SolidColorBrush x:Key="AccentHover" Color="#C7FF7A" />
     <SolidColorBrush x:Key="AccentSoft" Color="#1C2612" />
@@ -24,6 +24,7 @@
     <SolidColorBrush x:Key="Purple" Color="#A99BFF" />
     <SolidColorBrush x:Key="Success" Color="#B5FF4D" />
     <SolidColorBrush x:Key="Warning" Color="#FFC24D" />
+    <SolidColorBrush x:Key="WarningSoft" Color="#2A2312" />
 
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="DisplayFont">Bahnschrift, Segoe UI Variable Display, Segoe UI</FontFamily>
@@ -45,7 +46,7 @@
     </Style>
     <Style x:Key="Eyebrow" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12.5" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         <Setter Property="Margin" Value="0,0,0,10" />
@@ -53,7 +54,7 @@
     <Style x:Key="H1" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="26" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="Margin" Value="0,0,0,8" />
@@ -61,21 +62,21 @@
     <Style x:Key="H2" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
-        <Setter Property="FontSize" Value="15.5" />
+        <Setter Property="FontSize" Value="16.5" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="Margin" Value="0,0,0,10" />
     </Style>
     <Style x:Key="MutedText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-        <Setter Property="FontSize" Value="12.5" />
-        <Setter Property="LineHeight" Value="19" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="LineHeight" Value="20" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style x:Key="Value" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
-        <Setter Property="FontSize" Value="13.5" />
-        <Setter Property="LineHeight" Value="21" />
+        <Setter Property="FontSize" Value="14.5" />
+        <Setter Property="LineHeight" Value="22" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
     <Style x:Key="BigValue" TargetType="TextBlock">
@@ -390,6 +391,45 @@
     </Style>
 
     <!-- Сегментированный выбор (радиокнопка-«таблетка») -->
+    <!-- Чип-флажок: компактный переключатель для набора однотипных опций (таймеры, фильтры) -->
+    <Style x:Key="Chip" TargetType="CheckBox">
+        <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Margin" Value="0,0,8,8" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="CheckBox">
+                    <Border x:Name="B" CornerRadius="10" Padding="12,8" Background="{DynamicResource Panel2}"
+                            BorderBrush="{DynamicResource Line}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal">
+                            <Border x:Name="Dot" Width="8" Height="8" CornerRadius="4" Margin="0,0,10,0" VerticalAlignment="Center"
+                                    Background="{DynamicResource Faint}" />
+                            <ContentPresenter VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource LineStrong}" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="B" Property="Background" Value="{DynamicResource AccentSoft}" />
+                            <Setter TargetName="B" Property="BorderBrush" Value="{DynamicResource Accent}" />
+                            <Setter TargetName="Dot" Property="Background" Value="{DynamicResource Accent}" />
+                            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style x:Key="Segment" TargetType="RadioButton">
         <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />

@@ -30,14 +30,14 @@
         <!-- Карточка героя и сборка -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="Details" Margin="0,0,6,0">
-                <Border Style="{StaticResource Card}" Padding="26,22">
+                <Border x:Name="HeroHeader" Style="{StaticResource Card}" Padding="26,26" MinHeight="190">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <!-- портрет героя -->
+                        <!-- портрет героя (арт героя растянут фоном карточки — см. HeroesView.SetBackdrop) -->
                         <ContentControl x:Name="PortraitHost" Focusable="False" VerticalAlignment="Top" Margin="0,2,22,0" />
                         <StackPanel Grid.Column="1">
                             <TextBlock x:Name="HeroMeta" Style="{StaticResource Eyebrow}" />

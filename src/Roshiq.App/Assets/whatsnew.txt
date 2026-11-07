@@ -1,4 +1,8 @@
 # Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.15.0|Новый «Обзор»: один статус вместо четырёх, последние матчи с портретами и главный вывод из прошлой игры.|New Overview: one status instead of four, recent matches with portraits and the key takeaway from your last game.
+0.15.0|Драфт как в Доте: 5 + 5 слотов с портретами и выбор героя сеткой с поиском.|Draft like in Dota: 5 + 5 portrait slots and a hero grid picker with search.
+0.15.0|Сборка: крупные иконки предметов, цена и твой тайминг; арт героя в шапке.|Builds: big item icons, cost and your timing; hero art in the header.
+0.15.0|Крупнее и светлее текст, предупреждения жёлтые даже в красной теме.|Larger, brighter text; warnings are yellow even in the red theme.
 0.14.0|Поиск по программе: Ctrl+K или значок лупы — герои, предметы, таймеры и настройки, в любой раскладке.|Search anywhere: Ctrl+K or the magnifier — heroes, items, timers and settings, any keyboard layout.
 0.14.0|Итог сразу после матча: что получилось и одна главная ошибка — по вашей истории, без интернета.|Summary right after a match: what went well and one main mistake — from your history, offline.
 0.14.0|Оверлей запоминает положение для каждого разрешения и прилипает к краям; «Расставить» — в меню трея.|The overlay remembers its position per resolution and snaps to edges; Arrange is in the tray menu.

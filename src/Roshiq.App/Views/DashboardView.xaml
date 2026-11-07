@@ -4,6 +4,28 @@
              xmlns:app="clr-namespace:Roshiq.App"
              xmlns:ov="clr-namespace:Roshiq.Overlay;assembly=Roshiq.Overlay">
     <UserControl.Resources>
+        <Style x:Key="StatusPill" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Panel2}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="9" />
+            <Setter Property="Padding" Value="12,7" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+        </Style>
+        <Style x:Key="PillLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource Faint}" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="PillValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
         <Style x:Key="TileValue" TargetType="TextBlock" BasedOn="{StaticResource BigValue}">
             <Setter Property="FontSize" Value="17" />
             <Setter Property="Margin" Value="0,2,0,4" />
@@ -87,7 +109,46 @@
                                 </StackPanel>
                             </Button>
                             <Button x:Name="TestModeButton" Style="{StaticResource GhostButton}" Click="TestMode_Click" />
+                            <Button x:Name="FixButton" Style="{StaticResource GhostButton}" Click="Fix_Click" Visibility="Collapsed" Foreground="{DynamicResource Warning}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ov:Icon Glyph="{StaticResource I.Alert}" Size="15" Brush="{DynamicResource Warning}" Margin="0,0,8,0" />
+                                    <TextBlock Text="{app:T dash_fix, Upper=True}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
                         </WrapPanel>
+
+                        <!-- Состояние одной строкой; подробности — в подсказке при наведении -->
+                        <WrapPanel Margin="0,22,0,0">
+                            <Border Style="{StaticResource StatusPill}" ToolTip="{Binding Text, ElementName=GameStatus}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="DOTA 2" Style="{StaticResource PillLabel}" />
+                                    <TextBlock x:Name="GameValue" Style="{StaticResource PillValue}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatusPill}" ToolTip="{Binding Text, ElementName=GsiStatus}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="GSI" Style="{StaticResource PillLabel}" />
+                                    <TextBlock x:Name="GsiValue" Style="{StaticResource PillValue}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatusPill}" ToolTip="{Binding Text, ElementName=OverlayStatus}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{app:T dash_overlay, Upper=True}" Style="{StaticResource PillLabel}" />
+                                    <TextBlock x:Name="OverlayValue" Style="{StaticResource PillValue}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatusPill}" ToolTip="{Binding Text, ElementName=ContextHint}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{app:T dash_mode, Upper=True}" Style="{StaticResource PillLabel}" />
+                                    <TextBlock x:Name="ModeValue" Style="{StaticResource PillValue}" />
+                                </StackPanel>
+                            </Border>
+                        </WrapPanel>
+                        <!-- тексты подсказок для строки состояния -->
+                        <TextBlock x:Name="GameStatus" Visibility="Collapsed" />
+                        <TextBlock x:Name="GsiStatus" Visibility="Collapsed" />
+                        <TextBlock x:Name="OverlayStatus" Visibility="Collapsed" />
+                        <TextBlock x:Name="ContextHint" Visibility="Collapsed" />
                     </StackPanel>
 
                     <Border Grid.Column="1" Style="{StaticResource InnerCard}" Padding="20,18">
@@ -118,49 +179,31 @@
                 <ContentControl x:Name="StateHost" Focusable="False" />
             </Border>
 
-            <!-- Показатели -->
-            <UniformGrid Columns="4">
-                <Border Style="{StaticResource Card}" Margin="0,0,8,16">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="DOTA 2" /></TextBlock>
-                        <TextBlock x:Name="GameValue" Style="{StaticResource TileValue}" />
-                        <TextBlock x:Name="GameStatus" Style="{StaticResource MutedText}" />
+            <!-- Последние матчи: результаты, винрейт и главная ошибка прошлой игры -->
+            <Border x:Name="RecentCard" Style="{StaticResource Card}" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="0,0,24,0">
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_recent, Upper=True}" /></TextBlock>
+                        <WrapPanel x:Name="RecentStrip" Margin="0,2,0,10" />
+                        <TextBlock x:Name="RecentSummary" Style="{StaticResource Value}" />
+                        <TextBlock x:Name="RecentSub" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                     </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Margin="8,0,8,16">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="GSI" /></TextBlock>
-                        <TextBlock x:Name="GsiValue" Style="{StaticResource TileValue}" />
-                        <TextBlock x:Name="GsiStatus" Style="{StaticResource MutedText}" />
+                    <StackPanel Grid.Column="1">
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_last_lesson, Upper=True}" /></TextBlock>
+                        <TextBlock x:Name="LessonText" Style="{StaticResource Value}" TextWrapping="Wrap" />
+                        <TextBlock x:Name="LessonSub" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
+                        <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Click="GoHistory_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{app:T dash_go_history, Upper=True}" VerticalAlignment="Center" />
+                                <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Margin="8,0,8,16">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_overlay, Upper=True}" /></TextBlock>
-                        <TextBlock x:Name="OverlayValue" Style="{StaticResource TileValue}" />
-                        <TextBlock x:Name="OverlayStatus" Style="{StaticResource MutedText}" />
-                    </StackPanel>
-                </Border>
-                <Border Style="{StaticResource Card}" Margin="8,0,0,16">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_mode, Upper=True}" /></TextBlock>
-                        <TextBlock x:Name="ModeValue" Style="{StaticResource TileValue}" />
-                        <TextBlock x:Name="ContextHint" Style="{StaticResource MutedText}" />
-                    </StackPanel>
-                </Border>
-            </UniformGrid>
-
-            <!-- Нагрузка и журнал -->
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_perf, Upper=True}" /></TextBlock>
-                    <TextBlock x:Name="Perf" Style="{StaticResource Value}" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
-                    <TextBlock x:Name="VisionStatus" Style="{StaticResource MutedText}" Margin="0,6,0,8" />
-                    <Expander Header="{app:T dash_log, Upper=True}" FontFamily="{StaticResource DisplayFont}">
-                        <TextBox x:Name="LogBox" IsReadOnly="True" Height="170" Margin="0,8,0,0" FontFamily="{StaticResource MonoFont}" FontSize="11"
-                                 VerticalScrollBarVisibility="Auto" TextWrapping="NoWrap" HorizontalScrollBarVisibility="Auto" />
-                    </Expander>
-                </StackPanel>
+                </Grid>
             </Border>
         </StackPanel>
     </ScrollViewer>

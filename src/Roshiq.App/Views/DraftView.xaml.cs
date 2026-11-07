@@ -60,28 +60,94 @@ public partial class DraftView : UserControl, IRefreshable
         Loc.Instance.PropertyChanged += (_, _) => { FillCombos(); Refresh(); };
     }
 
+    /// <summary>
+    /// Пять слотов-плиток с портретами, как в экране пиков Dota. Щелчок — выбор героя сеткой, × — очистить.
+    /// Под плиткой хранится обычный ComboBox (скрытый): на нём держится вся прежняя логика выбора и распознавания.
+    /// </summary>
     private void BuildSlots(Panel host, List<Slot> list)
     {
+        bool ally = ReferenceEquals(host, AllySlots);
         for (int i = 0; i < 5; i++)
         {
-            var grid = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var box = new ComboBox { IsEditable = true, IsTextSearchEnabled = true, Margin = new Thickness(0, 2, 6, 2) };
-            var status = new TextBlock { Foreground = Ui.Res("Muted"), FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 8, 0), MinWidth = 90, TextWrapping = TextWrapping.Wrap, MaxWidth = 200 };
-            var teach = new Button { Content = Ui.Up(Loc.T("draft_teach")), Visibility = Visibility.Collapsed, Padding = new Thickness(10, 6, 10, 6), Margin = new Thickness(0) };
-            Grid.SetColumn(status, 1);
-            Grid.SetColumn(teach, 2);
-            grid.Children.Add(box);
-            grid.Children.Add(status);
-            grid.Children.Add(teach);
+            var box = new ComboBox { IsEditable = true, IsTextSearchEnabled = true, Visibility = Visibility.Collapsed };
+            var status = new TextBlock { Foreground = Ui.Res("Muted"), FontSize = 11.5, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+            var teach = new Button { Content = Ui.Up(Loc.T("draft_teach")), Visibility = Visibility.Collapsed, Padding = new Thickness(8, 5, 8, 5), Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
+
+            var portrait = new Border
+            {
+                CornerRadius = new CornerRadius(8), Height = 74, Background = Ui.Res("Panel2"), BorderBrush = Ui.Res("Line"),
+                BorderThickness = new Thickness(1), Cursor = System.Windows.Input.Cursors.Hand, ClipToBounds = true
+            };
+            var plus = new TextBlock
+            {
+                Text = "+", FontSize = 26, FontWeight = FontWeights.Light, Foreground = Ui.Res("Faint"),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
+            };
+            var clear = new Button
+            {
+                Content = "×", Style = (Style)FindResource("GhostButton"), Padding = new Thickness(6, 0, 6, 2), Margin = new Thickness(0),
+                FontSize = 14, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top,
+                Visibility = Visibility.Collapsed, ToolTip = Loc.T("picker_clear"), Background = new SolidColorBrush(Color.FromArgb(0xB0, 0, 0, 0))
+            };
+            var face = new Grid();
+            face.Children.Add(portrait);
+            face.Children.Add(plus);
+            face.Children.Add(clear);
+            var name = new TextBlock
+            {
+                Text = Loc.T("picker_empty"), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = Ui.Res("Faint"),
+                TextAlignment = TextAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 6, 0, 0)
+            };
+            var tile = new StackPanel { Margin = new Thickness(i == 0 ? 0 : 5, 0, i == 4 ? 0 : 5, 4) };
+            tile.Children.Add(face);
+            tile.Children.Add(name);
+            tile.Children.Add(status);
+            tile.Children.Add(teach);
+            tile.Children.Add(box);
+
             var slot = new Slot { Box = box, Status = status, Teach = teach };
             teach.Click += (_, _) => TeachSlot(slot);
-            box.SelectionChanged += (_, _) => { if (_ready) { slot.Status.Text = slot.Crop != null ? Loc.T("draft_manual") : ""; } };
+            void Paint()
+            {
+                var hero = (box.SelectedItem as Choice<Hero?>)?.Value;
+                var img = hero == null ? null : Roshiq.App.Services.HeroArt.Portrait(hero.Key);
+                portrait.Background = img != null ? new ImageBrush(img) { Stretch = Stretch.UniformToFill } : Ui.Res("Panel2");
+                portrait.BorderBrush = hero == null ? Ui.Res("Line") : Ui.AttributeBrush(hero.Attribute);
+                portrait.BorderThickness = new Thickness(hero == null ? 1 : 0, hero == null ? 1 : 0, hero == null ? 1 : 0, hero == null ? 1 : 3);
+                plus.Visibility = hero == null ? Visibility.Visible : Visibility.Collapsed;
+                clear.Visibility = hero == null ? Visibility.Collapsed : Visibility.Visible;
+                name.Text = hero == null ? Loc.T("picker_empty") : hero.DisplayName(Loc.Instance.Language);
+                name.Foreground = Ui.Res(hero == null ? "Faint" : "Text");
+            }
+            box.SelectionChanged += (_, _) =>
+            {
+                Paint();
+                if (_ready) slot.Status.Text = slot.Crop != null ? Loc.T("draft_manual") : "";
+            };
+            clear.Click += (_, e) => { e.Handled = true; box.SelectedIndex = 0; };
+            face.MouseLeftButtonUp += (_, e) =>
+            {
+                if (e.OriginalSource is DependencyObject d && IsInside(d, clear)) return;
+                var taken = _allies.Concat(_enemies).Where(o => !ReferenceEquals(o, slot))
+                    .Select(o => (o.Box.SelectedItem as Choice<Hero?>)?.Value?.Id).Where(id => id != null).Select(id => id!.Value).ToHashSet();
+                var picker = new HeroPicker(Loc.T(ally ? "draft_allies" : "draft_enemies") + " · " + (list.IndexOf(slot) + 1), taken,
+                    (box.SelectedItem as Choice<Hero?>)?.Value != null,
+                    hero => { if (hero == null) box.SelectedIndex = 0; else Ui.SelectValue(box, (Hero?)hero); })
+                { Owner = Window.GetWindow(this) };
+                picker.Show();
+            };
+            portrait.MouseEnter += (_, _) => { if ((box.SelectedItem as Choice<Hero?>)?.Value == null) portrait.BorderBrush = Ui.Res("Accent"); };
+            portrait.MouseLeave += (_, _) => Paint();
             list.Add(slot);
-            host.Children.Add(grid);
+            host.Children.Add(tile);
         }
+    }
+
+    private static bool IsInside(DependencyObject d, DependencyObject container)
+    {
+        for (var cur = d; cur != null; cur = cur is Visual ? VisualTreeHelper.GetParent(cur) : LogicalTreeHelper.GetParent(cur))
+            if (ReferenceEquals(cur, container)) return true;
+        return false;
     }
 
     private void FillCombos()

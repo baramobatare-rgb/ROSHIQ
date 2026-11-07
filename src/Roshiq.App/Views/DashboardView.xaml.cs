@@ -306,22 +306,80 @@ public partial class DashboardView : UserControl, IRefreshable
             StateHost.Content = Ui.State(UiState.Error, L.Get("state_gsi_error_title"), L.Format("dash_gsi_error", h.Gsi.LastError ?? "?"));
             StateCard.Visibility = Visibility.Visible;
         }
-        else if (!game.Found)
-        {
-            StateHost.Content = Ui.State(UiState.Disconnected, L.Get("state_disconnected_title"), L.Get("state_disconnected_text"));
-            StateCard.Visibility = Visibility.Visible;
-        }
         else
         {
             StateCard.Visibility = Visibility.Collapsed;
         }
 
-        Perf.Text = L.Format("dash_perf_line", h.Monitor.CpuPercent.ToString("0.0"), h.Monitor.WorkingSetMb.ToString("0"),
-            h.Monitor.ManagedHeapMb.ToString("0.0"), h.Monitor.ThreadCount);
-        VisionStatus.Text = L.Format("dash_vision_line", h.Vision.Matcher.TemplateCount, h.Vision.Matcher.HeroCount,
-            h.Vision.LastRunUtc?.ToLocalTime().ToString("HH:mm:ss") ?? "—");
-        LogBox.Text = string.Join(Environment.NewLine, Log.RecentLines.Reverse().Take(60));
+        // «Что делать?» — только когда что-то действительно не так (а не просто «Dota не запущена»)
+        bool problem = (h.Gsi != null && !h.Gsi.IsRunning) || h.Gsi == null
+                       || h.GsiWatch.Current != Roshiq.Core.Diagnostics.GsiProblem.None
+                       || (game.Found && h.Gsi?.LastPacketUtc == null);
+        FixButton.Visibility = problem ? Visibility.Visible : Visibility.Collapsed;
+
+        ShowRecent(L);
     }
+
+    private string? _recentKey;
+
+    /// <summary>Последние матчи: полоса побед и поражений, винрейт, KDA и главный урок прошлой игры.</summary>
+    private void ShowRecent(Loc L)
+    {
+        var all = App.Host.History.All();
+        var known = all.Where(m => m.Result != MatchResult.Unknown).Take(20).ToList();
+        var key = all.Count + "|" + (all.FirstOrDefault()?.Id ?? "") + "|" + L.Language;
+        if (key == _recentKey) return;
+        _recentKey = key;
+        RecentCard.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (all.Count == 0) return;
+
+        RecentStrip.Children.Clear();
+        foreach (var m in all.Take(10).Reverse())
+        {
+            var hero = App.Host.Database.FindHero(m.HeroId) ?? App.Host.Database.FindHero(m.HeroKey);
+            bool win = m.Result == MatchResult.Win, loss = m.Result == MatchResult.Loss;
+            var cell = new Border
+            {
+                Width = 52, Height = 30, CornerRadius = new CornerRadius(6), Margin = new Thickness(0, 0, 6, 6), ClipToBounds = true,
+                BorderThickness = new Thickness(0, 0, 0, 3),
+                BorderBrush = Ui.Res(win ? "Success" : loss ? "Red" : "Faint"),
+                Background = Roshiq.App.Services.HeroArt.Portrait(hero?.Key) is { } img
+                    ? new System.Windows.Media.ImageBrush(img) { Stretch = System.Windows.Media.Stretch.UniformToFill }
+                    : Ui.Res("Panel3"),
+                ToolTip = $"{hero?.DisplayName(L.Language) ?? "?"} · {L.Get(win ? "hist_win" : loss ? "hist_loss" : "hist_unknown")} · {m.Kills}/{m.Deaths}/{m.Assists}"
+            };
+            RecentStrip.Children.Add(cell);
+        }
+        if (known.Count > 0)
+        {
+            int wins = known.Count(m => m.Result == MatchResult.Win);
+            double kda = known.Average(m => (m.Kills + m.Assists) / Math.Max(1.0, m.Deaths));
+            RecentSummary.Text = L.Format("dash_recent_line", wins * 100 / known.Count, known.Count, kda.ToString("0.0"));
+            int streak = 0; var first = known[0].Result;
+            foreach (var m in known) { if (m.Result != first) break; streak++; }
+            RecentSub.Text = streak >= 2 ? L.Format(first == MatchResult.Win ? "dash_streak_win" : "dash_streak_loss", streak) : "";
+        }
+        else { RecentSummary.Text = L.Get("dash_recent_noresults"); RecentSub.Text = ""; }
+
+        // главный урок — по последнему записанному матчу (итог матча считается без интернета)
+        var last = all.FirstOrDefault(PostMatch.Worth);
+        if (last != null && PostMatch.Build(last, all, k => App.Host.Database.FindItem(k)?.Name) is { } sum && (sum.MainMistake ?? sum.Good.FirstOrDefault()) is { } lesson)
+        {
+            var hero = App.Host.Database.FindHero(last.HeroId);
+            LessonText.Text = lesson.Text(L.Language);
+            LessonSub.Text = (hero?.DisplayName(L.Language) ?? "?") + " · " + last.StartedUtc.ToLocalTime().ToString("dd.MM HH:mm")
+                             + (sum.MainMistake != null ? " · " + L.Get("dash_lesson_fix") : " · " + L.Get("dash_lesson_good"));
+        }
+        else
+        {
+            LessonText.Text = L.Get("dash_lesson_none");
+            LessonSub.Text = "";
+        }
+    }
+
+    private void GoHistory_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("history");
+
+    private void Fix_Click(object sender, RoutedEventArgs e) => DiagnosticsWindow.Open();
 
     private void GoDraft_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("draft");
 

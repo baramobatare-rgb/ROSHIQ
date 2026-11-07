@@ -23,7 +23,7 @@
 
         <Border Style="{StaticResource Card}" Margin="0,0,8,16">
             <StackPanel>
-                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T asst_reminders, Upper=True}" /></TextBlock>
+                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T asst_reminders, Upper=True}" /></TextBlock>
                 <CheckBox x:Name="Enabled" FontWeight="SemiBold" Content="{app:T notif_enabled}" />
                 <TextBlock Text="{app:T notif_hint}" Style="{StaticResource MutedText}" Margin="0,2,0,14" />
                 <Grid>
@@ -78,7 +78,7 @@
 
         <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
             <StackPanel>
-                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T notif_timer, Upper=True}" /></TextBlock>
+                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T notif_timer, Upper=True}" /></TextBlock>
                 <TextBlock Text="{app:T notif_timer_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,14" />
                 <Button x:Name="TimerButton" Style="{StaticResource PrimaryButton}" HorizontalAlignment="Left" Click="Timer_Click" />
                 <Border Height="1" Background="{DynamicResource Line}" Margin="0,16,0,12" />

@@ -209,7 +209,7 @@ internal static class Ui
             Background = Res(brushKey),
             Padding = new Thickness(9, 4, 9, 4),
             Margin = new Thickness(0, 0, 6, 6),
-            Child = new TextBlock { Text = text, FontSize = 12, Foreground = Res(textBrush ?? "Text") }
+            Child = new TextBlock { Text = text, FontSize = 12.5, Foreground = Res(textBrush ?? "Text") }
         };
     }
 
@@ -222,7 +222,7 @@ internal static class Ui
         var sp = new StackPanel();
         sp.Children.Add(new TextBlock { Text = title, FontWeight = FontWeights.SemiBold, Foreground = Res("Text"), TextWrapping = TextWrapping.Wrap });
         if (!string.IsNullOrWhiteSpace(detail))
-            sp.Children.Add(new TextBlock { Text = detail, Foreground = Res("Muted"), FontSize = 12.5, LineHeight = 19, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            sp.Children.Add(new TextBlock { Text = detail, Foreground = Res("Muted"), FontSize = 13.5, LineHeight = 20, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
         grid.Children.Add(sp);
         if (!string.IsNullOrEmpty(badge))
         {
@@ -234,7 +234,7 @@ internal static class Ui
                 Padding = new Thickness(7, 2, 7, 2),
                 Margin = new Thickness(12, 1, 0, 0),
                 VerticalAlignment = VerticalAlignment.Top,
-                Child = new TextBlock { Text = Up(badge), Foreground = Res(badgeBrush), FontSize = 10.5, FontWeight = FontWeights.SemiBold, FontFamily = DisplayFont }
+                Child = new TextBlock { Text = Up(badge), Foreground = Res(badgeBrush), FontSize = 11, FontWeight = FontWeights.SemiBold, FontFamily = DisplayFont }
             };
             Grid.SetColumn(b, 1);
             grid.Children.Add(b);
@@ -322,7 +322,7 @@ internal static class Ui
             TextWrapping = TextWrapping.Wrap
         });
         if (!string.IsNullOrWhiteSpace(text))
-            textPanel.Children.Add(new TextBlock { Text = text, Foreground = Res("Muted"), FontSize = 12.5, LineHeight = 19, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
+            textPanel.Children.Add(new TextBlock { Text = text, Foreground = Res("Muted"), FontSize = 13.5, LineHeight = 20, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 3, 0, 0) });
         var dock = new DockPanel { Margin = new Thickness(0, 6, 0, 6) };
         DockPanel.SetDock(iconBox, Dock.Left);
         dock.Children.Add(iconBox);

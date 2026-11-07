@@ -124,7 +124,8 @@
         </Border>
 
         <!-- ===== Заголовок раздела и содержимое ===== -->
-        <Grid Grid.Row="1" Margin="40,30,40,0">
+        <!-- Контент не шире 1600 px: на широких мониторах он по центру, без пустых полос внутри карточек -->
+        <Grid Grid.Row="1" Margin="40,30,40,0" MaxWidth="1600">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />

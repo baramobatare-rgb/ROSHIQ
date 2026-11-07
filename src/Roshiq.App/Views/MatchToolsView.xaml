@@ -12,7 +12,7 @@
         <!-- Таймеры событий и Рошан -->
         <Border Style="{StaticResource Card}" Margin="0,0,8,16">
             <StackPanel>
-                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T timers_title, Upper=True}" /></TextBlock>
+                <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T timers_title, Upper=True}" /></TextBlock>
                 <CheckBox x:Name="TimersEnabled" FontWeight="SemiBold" Content="{app:T timers_enabled}" Checked="Timers_Changed" Unchecked="Timers_Changed" />
                 <CheckBox x:Name="TimerToasts" Content="{app:T timers_toasts}" Margin="0,6,0,0" Checked="Timers_Changed" Unchecked="Timers_Changed" />
                 <TextBlock Text="{app:T timers_hint}" Style="{StaticResource MutedText}" Margin="0,6,0,10" />
@@ -26,7 +26,7 @@
         <StackPanel Grid.Column="1" Margin="8,0,0,0">
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="06 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T rosh_title, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T rosh_title, Upper=True}" /></TextBlock>
                     <TextBlock x:Name="RoshanHint" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                     <TextBlock x:Name="RoshanStatusText" Style="{StaticResource BigValue}" FontSize="22" Margin="0,0,0,10" />
                     <WrapPanel>
@@ -43,7 +43,7 @@
 
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="07 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T alerts_title, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T alerts_title, Upper=True}" /></TextBlock>
                     <CheckBox x:Name="AlertsEnabled" FontWeight="SemiBold" Content="{app:T alerts_enabled}" Checked="Alerts_Changed" Unchecked="Alerts_Changed" />
                     <TextBlock Text="{app:T alerts_hint}" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
                     <CheckBox x:Name="AlertTp" Content="{app:T alert_opt_tp}" Checked="Alerts_Changed" Unchecked="Alerts_Changed" />

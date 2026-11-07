@@ -37,7 +37,8 @@ public static class ThemeManager
         res["AccentHover"] = Brush(p.Hover);
         res["AccentSoft"] = Brush(p.Soft);
         res["OnAccent"] = Brush(p.OnAccent);
-        res["Success"] = Brush(p.Accent);
+        // «Хорошо» всегда зелёное, а не цвет темы: в Crimson красный «успех» путается с ошибкой
+        res["Success"] = Brush(p.Key == "lime" ? p.Accent : Hex("#7EE08A"));
         CurrentBrand = p.Brand;
         ApplyBrand(p.Brand);
         Applied?.Invoke(null, EventArgs.Empty);

@@ -150,7 +150,13 @@ public static class DiagnosticsRunner
         else
             list.Add(new(CheckStatus.Ok, L.Get("diag_errors"), L.Get("diag_errors_none")));
 
-        // 10. Интернет
+        // 10. Нагрузка самого ROSHIQ (раньше была на «Обзоре»)
+        var mon = host.Monitor;
+        list.Add(new(CheckStatus.Info, L.Get("diag_perf"), L.Format("dash_perf_line", mon.CpuPercent.ToString("0.0"), mon.WorkingSetMb.ToString("0"),
+            mon.ManagedHeapMb.ToString("0.0"), mon.ThreadCount) + " · " + L.Format("dash_vision_line", host.Vision.Matcher.TemplateCount,
+            host.Vision.Matcher.HeroCount, host.Vision.LastRunUtc?.ToLocalTime().ToString("HH:mm:ss") ?? "—")));
+
+        // 11. Интернет
         if (!s.Data.AllowOnlineStats)
             list.Add(new(CheckStatus.Info, L.Get("diag_net"), L.Get("diag_net_off")));
         else
