@@ -172,9 +172,9 @@ public partial class HistoryView
         var (ru, en) = MatchReviewBuilder.BenchmarkNames[b.Key];
         int pct = (int)Math.Round(b.Pct * 100);
         var grid = new Grid { Margin = new Thickness(0, 3, 0, 3) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(190) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(155) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(145) });
         grid.Children.Add(new TextBlock { Text = L.Language == Roshiq.Core.Models.Language.English ? en : ru, Foreground = Ui.Res("Muted"), VerticalAlignment = VerticalAlignment.Center });
         var track = new Border { Height = 8, CornerRadius = new CornerRadius(4), Background = Ui.Res("Panel3"), VerticalAlignment = VerticalAlignment.Center };
         var fill = new Border

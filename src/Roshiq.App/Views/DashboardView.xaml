@@ -77,15 +77,15 @@
             </Border>
 
             <!-- Главный блок: состояние игры + последний герой -->
-            <Border Style="{StaticResource Card}" Padding="28,26">
+            <Border Style="{StaticResource Card}" Padding="22,20">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="300" />
+                        <ColumnDefinition Width="280" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,28,0">
                         <TextBlock x:Name="HeroEyebrow" Style="{StaticResource Eyebrow}" />
-                        <TextBlock x:Name="Headline" Style="{StaticResource Display}" FontSize="34" />
+                        <TextBlock x:Name="Headline" Style="{StaticResource Display}" FontSize="26" />
                         <TextBlock x:Name="HeadlineSub" Style="{StaticResource MutedText}" FontSize="13.5" Margin="0,8,0,14" MaxWidth="620" HorizontalAlignment="Left" />
                         <!-- Что важно прямо сейчас: таймеры и золото в матче, сводка в драфте, итог прошлой игры -->
                         <StackPanel x:Name="FocusPanel" Margin="0,0,0,16" MaxWidth="620" HorizontalAlignment="Left" />
@@ -118,8 +118,8 @@
                         </WrapPanel>
 
                         <!-- Состояние одной строкой; подробности — в подсказке при наведении -->
-                        <WrapPanel Margin="0,22,0,0">
-                            <Border Style="{StaticResource StatusPill}" ToolTip="{Binding Text, ElementName=GameStatus}">
+                        <WrapPanel Margin="0,12,0,0">
+                            <Border Style="{StaticResource StatusPill}" Visibility="Collapsed" ToolTip="{Binding Text, ElementName=GameStatus}">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="DOTA 2" Style="{StaticResource PillLabel}" />
                                     <TextBlock x:Name="GameValue" Style="{StaticResource PillValue}" />
@@ -151,24 +151,24 @@
                         <TextBlock x:Name="ContextHint" Visibility="Collapsed" />
                     </StackPanel>
 
-                    <Border Grid.Column="1" Style="{StaticResource InnerCard}" Padding="20,18">
+                    <Border Grid.Column="1" Style="{StaticResource InnerCard}" Padding="16,14" VerticalAlignment="Top">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T dash_current, Upper=True}" />
-                            <ContentControl x:Name="HeroPortraitHost" Focusable="False" HorizontalAlignment="Left" Margin="0,2,0,10" />
-                            <TextBlock x:Name="HeroName" Style="{StaticResource BigValue}" FontSize="24" />
-                            <TextBlock x:Name="HeroMeta" Style="{StaticResource MutedText}" Margin="0,4,0,14" />
-                            <Border Height="1" Background="{DynamicResource Line}" Margin="0,0,0,14" />
-                            <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T dash_next_item, Upper=True}" />
-                            <Grid Margin="0,2,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border x:Name="NextItemIcon" Width="44" Height="32" CornerRadius="5" Margin="0,0,12,0"
-                                        Visibility="Collapsed" VerticalAlignment="Center" SnapsToDevicePixels="True" />
-                                <TextBlock x:Name="NextItem" Grid.Column="1" Style="{StaticResource Value}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            </Grid>
-                            <TextBlock x:Name="NextItemWhy" Style="{StaticResource MutedText}" Margin="0,3,0,0" />
+                            <Button Content="{app:T quick_hero}" Click="ChooseHero_Click" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Margin="0,0,0,6" />
+                            <ComboBox x:Name="QuickPosition" SelectionChanged="QuickPosition_Changed" Margin="0,0,0,10" />
+                            <DockPanel Margin="0,0,0,12">
+                                <ContentControl x:Name="HeroPortraitHost" DockPanel.Dock="Left" Focusable="False" Margin="0,0,12,0" VerticalAlignment="Center" />
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="HeroName" Style="{StaticResource BigValue}" FontSize="21" />
+                                    <TextBlock x:Name="HeroMeta" Style="{StaticResource MutedText}" Margin="0,3,0,0" />
+                                </StackPanel>
+                            </DockPanel>
+                            <Border Height="1" Background="{DynamicResource Line}" Margin="0,0,0,12" />
+                            <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T dash_next_item, Upper=True}" Margin="0,0,0,6" />
+                            <DockPanel>
+                                <Border x:Name="NextItemIcon" DockPanel.Dock="Left" Width="44" Height="32" CornerRadius="5" Margin="0,0,10,0" Visibility="Collapsed" VerticalAlignment="Center" />
+                                <TextBlock x:Name="NextItem" Style="{StaticResource Value}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            </DockPanel>
+                            <TextBlock x:Name="NextItemWhy" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -187,13 +187,13 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,24,0">
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_recent, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T dash_recent, Upper=True}" /></TextBlock>
                         <WrapPanel x:Name="RecentStrip" Margin="0,2,0,10" />
                         <TextBlock x:Name="RecentSummary" Style="{StaticResource Value}" />
                         <TextBlock x:Name="RecentSub" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="1">
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T dash_last_lesson, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T dash_last_lesson, Upper=True}" /></TextBlock>
                         <TextBlock x:Name="LessonText" Style="{StaticResource Value}" TextWrapping="Wrap" />
                         <TextBlock x:Name="LessonSub" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
                         <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Click="GoHistory_Click">

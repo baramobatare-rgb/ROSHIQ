@@ -434,7 +434,12 @@ public partial class MainWindow : Window
             view = _factories[key]();
             _cache[key] = view;
         }
+        System.Windows.Input.Keyboard.ClearFocus();
         Host.Content = view;
+        Dispatcher.InvokeAsync(() =>
+        {
+            if (ReferenceEquals(Host.Content, view)) ResetPageScroll(view);
+        }, DispatcherPriority.Loaded);
         if (view is IRefreshable r) r.Refresh();
         UpdateChrome();
         Motion.Enter(Host, direction * 22, 0);
@@ -442,6 +447,17 @@ public partial class MainWindow : Window
         Motion.Enter(PageSubtitle, 0, 6, 50);
     }
 
+    private static void ResetPageScroll(DependencyObject parent)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            // Lists keep their selected item and independent scroll position.
+            if (child is System.Windows.Controls.Primitives.Selector) continue;
+            if (child is ScrollViewer scroll) { scroll.ScrollToTop(); scroll.ScrollToLeftEnd(); }
+            ResetPageScroll(child);
+        }
+    }
 
 }
 

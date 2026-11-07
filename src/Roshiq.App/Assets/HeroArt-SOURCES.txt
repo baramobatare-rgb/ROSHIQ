@@ -1,0 +1,6 @@
+Native hero portraits for the interface, separate from 96x54 vision templates.
+Source: https://cdn.akamai.steamstatic.com/apps/dota2/images/dota_react/heroes/{heroKey}.png
+Copyright: Valve Corporation.
+127 PNG portraits at their original resolution (128x72 or 256x144). No generated detail or upscaling.
+Refresh: build.ps1 does it automatically (tools/fetch-hero-art.ps1; tools/fetch-hero-art.py does the same).
+Not committed to the repository: Assets/HeroArt/ and Assets/HeroArt.zip are in .gitignore.

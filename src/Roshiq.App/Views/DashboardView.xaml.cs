@@ -182,6 +182,14 @@ public partial class DashboardView : UserControl, IRefreshable
         bool gsiFresh = gsi != null && DateTime.UtcNow - gsi.ReceivedUtc < TimeSpan.FromSeconds(40);
 
         RefreshProfile(s, L);
+        _updatingPosition = true;
+        if (QuickPosition.Tag as string != L.Language.ToString())
+        {
+            QuickPosition.ItemsSource = Ui.Positions().ToList();
+            QuickPosition.Tag = L.Language.ToString();
+        }
+        Ui.SelectValue(QuickPosition, s.Position);
+        _updatingPosition = false;
 
         // --- уведомления о патче и обновлении
         var notices = new List<string>();
@@ -205,7 +213,6 @@ public partial class DashboardView : UserControl, IRefreshable
 
         // --- главный заголовок: что происходит прямо сейчас
         HeroEyebrow.Inlines.Clear();
-        HeroEyebrow.Inlines.Add(new System.Windows.Documents.Run("00 / ") { Foreground = Ui.Res("Accent") });
         HeroEyebrow.Inlines.Add(new System.Windows.Documents.Run(Ui.Up(L.Get("dash_now"))));
         if (gsiFresh && gsi!.IsHeroSelection)
         {
@@ -242,7 +249,7 @@ public partial class DashboardView : UserControl, IRefreshable
         {
             if (h.CurrentHero != null)
             {
-                var pic = Ui.Portrait(h.CurrentHero, 200);
+                var pic = Ui.Portrait(h.CurrentHero, 88);
                 pic.Tag = heroKey;
                 HeroPortraitHost.Content = pic;
                 Motion.Enter(pic, 0, 8);
@@ -375,6 +382,22 @@ public partial class DashboardView : UserControl, IRefreshable
             LessonText.Text = L.Get("dash_lesson_none");
             LessonSub.Text = "";
         }
+    }
+
+    private bool _updatingPosition;
+    private void QuickPosition_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingPosition || !Ui.TryValue<Position>(QuickPosition, out var position)) return;
+        App.Host.Settings.Update(s => s.Position = position);
+        App.Host.RecomputeBuild();
+        Refresh();
+    }
+    private void ChooseHero_Click(object sender, RoutedEventArgs e)
+    {
+        new HeroPicker(Loc.T("quick_hero"), new HashSet<int>(), false, hero =>
+        {
+            if (hero != null) { App.Host.SelectHero(hero); Refresh(); }
+        }) { Owner = Window.GetWindow(this) }.Show();
     }
 
     private void GoHistory_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("history");

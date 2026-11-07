@@ -1,4 +1,9 @@
 # Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.16.0|Портреты героев в родном качестве Valve — чётче на больших экранах; программа запускается быстрее.|Hero portraits in Valve's native quality — sharper on big screens; the app starts faster.
+0.16.0|Драфт пересчитывается сам при каждом выборе героя и после сканирования; статус сканирования снова на виду.|The draft updates by itself on every pick and after a scan; the scan status is visible again.
+0.16.0|В «Сборках» — блок «Под этих противников»: до пяти врагов и до трёх предметов против них с причиной.|Builds: "Adapt to these opponents" — up to five enemies and up to three counter items with reasons.
+0.16.0|После матча и в истории — три вывода: что получилось, что исправить и цель на следующую игру.|After a match and in History — three takeaways: what went well, what to fix and a goal for next game.
+0.16.0|Выбор героя: избранные и недавние сверху; на «Обзоре» — быстрый выбор героя и позиции.|Hero picker: favorites and recent on top; quick hero and position choice on the Overview.
 0.15.0|Новый «Обзор»: один статус вместо четырёх, последние матчи с портретами и главный вывод из прошлой игры.|New Overview: one status instead of four, recent matches with portraits and the key takeaway from your last game.
 0.15.0|Драфт как в Доте: 5 + 5 слотов с портретами и выбор героя сеткой с поиском.|Draft like in Dota: 5 + 5 portrait slots and a hero grid picker with search.
 0.15.0|Сборка: крупные иконки предметов, цена и твой тайминг; арт героя в шапке.|Builds: big item icons, cost and your timing; hero art in the header.

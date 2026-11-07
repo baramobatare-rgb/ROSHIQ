@@ -122,7 +122,11 @@ public partial class DraftView : UserControl, IRefreshable
             box.SelectionChanged += (_, _) =>
             {
                 Paint();
-                if (_ready) slot.Status.Text = slot.Crop != null ? Loc.T("draft_manual") : "";
+                if (_ready)
+                {
+                    slot.Status.Text = slot.Crop != null ? Loc.T("draft_manual") : "";
+                    if (!App.Host.AutoDraftLive) Analyze_Click(this, new RoutedEventArgs());
+                }
             };
             clear.Click += (_, e) => { e.Handled = true; box.SelectedIndex = 0; };
             face.MouseLeftButtonUp += (_, e) =>
@@ -340,7 +344,8 @@ public partial class DraftView : UserControl, IRefreshable
         if (!_ready || !Ui.TryValue<Position>(PositionBox, out var p)) return;
         App.Host.Settings.Update(s => s.Position = p);
         ShowMyHero();
-        ShowAnalysis(App.Host.AutoDraftLive ? App.Host.AutoDraftAnalysis : App.Host.LastDraftAnalysis);
+        if (!App.Host.AutoDraftLive) Analyze_Click(this, new RoutedEventArgs());
+        else ShowAnalysis(App.Host.AutoDraftAnalysis);
     }
 
     private void Side_Changed(object sender, SelectionChangedEventArgs e)
@@ -387,8 +392,9 @@ public partial class DraftView : UserControl, IRefreshable
         _ready = true;
         ModeNote.Text = L.Format("draft_scan_done", result.Slots.Count(s => s.Match.Status == SlotStatus.Recognized),
             result.UncertainCount, (int)result.Elapsed.TotalMilliseconds);
-        ShowTeam(Selected(_allies));
-        ShowAnalysis(App.Host.AutoDraftLive ? App.Host.AutoDraftAnalysis : App.Host.LastDraftAnalysis);
+        // ручное сканирование заполняет ячейки без пересчёта (_ready = false) — пересчитываем один раз здесь
+        if (!App.Host.AutoDraftLive) Analyze_Click(this, new RoutedEventArgs());
+        else { ShowTeam(Selected(_allies)); ShowAnalysis(App.Host.AutoDraftAnalysis); }
     }
 
     private void TeachSlot(Slot slot)
@@ -469,7 +475,10 @@ public partial class DraftView : UserControl, IRefreshable
             var pic = Ui.Portrait(rec.Hero, 72);
             pic.Margin = new Thickness(0, 0, 14, 0);
             sp.Children.Add(Ui.WithImage(pic, headRow));
-            foreach (var r in rec.Positives.Take(5)) sp.Children.Add(ReasonLine("I.Check", "Accent", r.Text(L.Language)));
+            foreach (var r in rec.Positives.Where(r => r.Kind != ReasonKind.RoleFit).Take(2)) sp.Children.Add(ReasonLine("I.Check", "Accent", r.Text(L.Language)));
+            var details = new StackPanel();
+            foreach (var reason in rec.Positives.Where(r => r.Kind != ReasonKind.RoleFit).Skip(2)) details.Children.Add(ReasonLine("I.Check", "Muted", reason.Text(L.Language)));
+            if (details.Children.Count > 0) sp.Children.Add(new Expander { Header = L.Get("pm_more"), Content = details });
             foreach (var r in rec.Risks.Take(3)) sp.Children.Add(ReasonLine("I.Alert", "Red", r.Text(L.Language)));
             Grid.SetColumn(sp, 1);
             grid.Children.Add(sp);

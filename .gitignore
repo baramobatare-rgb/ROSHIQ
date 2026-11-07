@@ -13,3 +13,7 @@ src/Roshiq.App/Assets/ItemIcons/
 src/Roshiq.App/Assets/ItemIcons.zip
 github-update.log
 github-release.log
+
+# Native hero portraits downloaded by tools/fetch-hero-art.py
+src/Roshiq.App/Assets/HeroArt/
+src/Roshiq.App/Assets/HeroArt.zip

@@ -9,6 +9,8 @@ public sealed record ItemPick(Item Item, double Score, IReadOnlyList<Reason> Rea
         Item.Purpose(lang) + (Reasons.Count > 0 ? ". " + string.Join("; ", Reasons.Select(r => r.Text(lang))) : "");
 }
 
+public sealed record ItemAdaptation(ItemPick Pick, Item? Replace, bool AlreadyIncluded);
+
 public sealed class BuildRecommendation
 {
     public required Hero Hero { get; init; }
@@ -107,6 +109,31 @@ public sealed class ItemBuildEngine
             EnemyAware = enemyList.Count > 0,
             HasCuratedBase = _db.HasCuratedBuild(hero, position)
         };
+    }
+
+    /// <summary>Up to three distinct counter options, including items already in the baseline.</summary>
+    public IReadOnlyList<ItemAdaptation> Adaptations(Hero hero, Position position, IReadOnlyList<Hero> enemies, BuildRecommendation baseline)
+    {
+        var unique = enemies.DistinctBy(e => e.Id).Take(5).ToList();
+        if (unique.Count == 0) return Array.Empty<ItemAdaptation>();
+        var core = new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late }
+            .SelectMany(p => baseline[p]).Select(p => p.Item).ToList();
+        return _db.Items.Where(i => i.Counters.Count > 0 && i.SuitsPosition(position) && i.SuitsHero(hero))
+            .Select(i =>
+            {
+                var hits = unique.Where(e => i.Counters.Any(e.Has)).ToList();
+                var reasons = hits.Select(e => new Reason(ReasonKind.Counter, 1,
+                    $"Против {e.DisplayName(Language.Russian)}: {string.Join(", ", i.Counters.Where(e.Has).Select(t => _db.TraitText(t, Language.Russian)))}",
+                    $"Against {e.DisplayName(Language.English)}: {string.Join(", ", i.Counters.Where(e.Has).Select(t => _db.TraitText(t, Language.English)))}")).ToList();
+                var (fit, _) = Score(i, hero, position);
+                return new ItemPick(i, hits.Count * 3 + fit * 0.2, reasons, false);
+            })
+            .Where(p => p.Reasons.Count > 0)
+            .OrderByDescending(p => p.Score).ThenBy(p => p.Item.Key, StringComparer.Ordinal)
+            .GroupBy(p => p.Item.Group ?? p.Item.Key).Select(g => g.First()).Take(3)
+            .Select(p => new ItemAdaptation(p,
+                p.Item.Group == null ? null : core.LastOrDefault(i => i.Group == p.Item.Group && i.Key != p.Item.Key),
+                core.Any(i => i.Key == p.Item.Key))).ToList();
     }
 
     /// <summary>Оценка предмета для героя и позиции с объяснением вклада.</summary>

@@ -41,7 +41,7 @@
                 </Grid.ColumnDefinitions>
                 <Border Style="{StaticResource Card}" Margin="0,0,8,16">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_appearance, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_appearance, Upper=True}" /></TextBlock>
                         <TextBlock Text="{app:T set_theme}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
                         <WrapPanel x:Name="ThemePanel" Margin="0,0,0,12" />
                         <CheckBox x:Name="ReduceMotionBox" Content="{app:T set_reduce_motion}" ToolTip="{app:T set_reduce_motion_hint}" Checked="Motion_Changed" Unchecked="Motion_Changed" Margin="0,0,0,8" />
@@ -57,7 +57,7 @@
                 </Border>
                 <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_general, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_general, Upper=True}" /></TextBlock>
                         <TextBlock Text="{app:T set_language}" Style="{StaticResource FieldLabel}" />
                         <ComboBox x:Name="LanguageBox" Width="200" HorizontalAlignment="Left" SelectionChanged="Language_Changed" />
                         <CheckBox x:Name="AutostartBox" Content="{app:T set_autostart}" Margin="0,12,0,0" Checked="Autostart_Changed" Unchecked="Autostart_Changed" />
@@ -70,7 +70,7 @@
             <!-- Режим допуска -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_context, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_context}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_context, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_context}" /></InlineUIContainer></TextBlock>
                     <UniformGrid Columns="2">
                         <Border Style="{StaticResource InnerCard}" Margin="0,0,8,0">
                             <StackPanel>
@@ -95,7 +95,7 @@
             <!-- Game State Integration -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="GAME STATE INTEGRATION" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_gsi}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="GAME STATE INTEGRATION" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_gsi}" /></InlineUIContainer></TextBlock>
                     <CheckBox x:Name="GsiEnabled" Content="{app:T set_gsi_enabled}" />
                     <Grid x:Name="GsiAdvanced" Margin="0,6,0,0">
                         <Grid.ColumnDefinitions>
@@ -129,7 +129,7 @@
             <!-- Распознавание драфта -->
             <Border x:Name="VisionCard" Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_vision, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_vision}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_vision, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_vision}" /></InlineUIContainer></TextBlock>
                     <CheckBox x:Name="VisionEnabled" Content="{app:T set_vision_enabled}" />
                     <TextBlock Text="{app:T set_vision_hint}" Style="{StaticResource MutedText}" Margin="0,2,0,12" />
                     <UniformGrid Columns="4">
@@ -153,7 +153,7 @@
             <!-- Работа с игрой -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="06 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_automation, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_automation}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_automation, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_automation}" /></InlineUIContainer></TextBlock>
                     <CheckBox x:Name="AutoWatchBox" Content="{app:T set_auto_watch}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
                     <CheckBox x:Name="AutoHideBox" Content="{app:T set_auto_hide}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,6" />
                     <CheckBox x:Name="AutoShowBox" Content="{app:T set_auto_show}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,12" />
@@ -207,7 +207,7 @@
             <!-- Steam -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="07 / " Foreground="{DynamicResource Accent}" /><Run Text="STEAM" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_steam}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="STEAM" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_steam}" /></InlineUIContainer></TextBlock>
                     <DockPanel Margin="0,2,0,12">
                         <Border x:Name="SteamAvatar" DockPanel.Dock="Left" Width="52" Height="52" CornerRadius="10" Margin="0,0,14,0"
                                 Background="{DynamicResource Panel3}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1">
@@ -240,7 +240,7 @@
             <!-- Локальные данные -->
             <Border x:Name="StorageCard" Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="08 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T set_storage, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_storage, Upper=True}" /></TextBlock>
                     <TextBlock x:Name="StoragePath" Style="{StaticResource Value}" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
                     <TextBlock Text="{app:T set_storage_hint}" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
                     <WrapPanel>

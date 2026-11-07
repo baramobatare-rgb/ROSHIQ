@@ -117,6 +117,23 @@ public static class PostMatch
         return new PostMatchSummary(m, good.OrderByDescending(g => g.Severity).Take(2).ToList(), main, pool.Count);
     }
 
+    /// <summary>One concrete next-game action tied to the observed main issue.</summary>
+    public static Insight NextGoal(PostMatchSummary summary)
+    {
+        var (ru, en) = summary.MainMistake?.Kind switch
+        {
+            "deaths" => ("Перед выходом на опасную линию проверьте мини-карту и доступность пути отхода.", "Before entering a dangerous lane, check the minimap and your escape route."),
+            "lh10" => ("На следующей линии следите за добиваниями к 10-й минуте; сравните результат с этим матчем.", "Track last hits at 10:00 next game and compare with this match."),
+            "gpm" => ("После каждой драки выбирайте ближайший безопасный источник фарма, чтобы сократить простой.", "After each fight, choose a safe farming route to reduce idle time."),
+            "item" => ("Заранее выберите ключевой предмет и после игры сравните время его покупки с этим матчем.", "Choose a key item in advance and compare its purchase time after the next game."),
+            "no_tp" => ("Перед выходом с базы проверяйте наличие свитка телепорта.", "Check that you have a teleport scroll before leaving base."),
+            "gold_risk" => ("Перед дракой проверяйте запас золота и покупайте запланированные компоненты.", "Before fighting, check your gold and buy planned components."),
+            "ignored" => ("При появлении подсказки проверьте ситуацию и решите, какое действие сейчас нужно.", "When a tip appears, check the situation and choose the appropriate action."),
+            _ => ("Выберите одну цель перед игрой и после матча проверьте, удалось ли её выполнить.", "Choose one goal before the game and check it after the match.")
+        };
+        return new Insight("next_goal", 0, ru, en);
+    }
+
     /// <summary>Самый заметный ключевой предмет: разница с вашим средним временем на этом герое (сек).</summary>
     private static (string Name, int Yours, int Delta)? ItemTimingDelta(MatchRecord m, IReadOnlyList<MatchRecord> pool, Func<string, string?>? itemName)
     {

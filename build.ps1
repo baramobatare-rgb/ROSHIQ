@@ -106,6 +106,12 @@ Write-Host "==> Иконки предметов" -ForegroundColor Magenta
 try { & (Join-Path $PSScriptRoot 'tools\fetch-item-icons.ps1') 2>&1 | Tee-Object -FilePath $log -Append }
 catch { Write-Host "Иконки не обновлены: $($_.Exception.Message)" -ForegroundColor Yellow }
 $global:LASTEXITCODE = 0
+# Портреты героев для интерфейса (тоже картинки Valve — в репозиторий не кладём)
+Write-Host ""
+Write-Host "==> Портреты героев" -ForegroundColor Magenta
+try { & (Join-Path $PSScriptRoot 'tools\fetch-hero-art.ps1') 2>&1 | Tee-Object -FilePath $log -Append }
+catch { Write-Host "Портреты не обновлены: $($_.Exception.Message)" -ForegroundColor Yellow }
+$global:LASTEXITCODE = 0
 
 Step "Восстановление пакетов" { dotnet restore Roshiq.sln }
 Step "Сборка (Release)" { dotnet build Roshiq.sln -c Release --no-restore }

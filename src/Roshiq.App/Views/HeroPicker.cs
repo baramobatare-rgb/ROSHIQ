@@ -36,6 +36,7 @@ public sealed class HeroPicker : Window
         ResizeMode = ResizeMode.NoResize;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         FontFamily = new FontFamily("Segoe UI");
+        RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
 
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
         if (canClear)
@@ -94,6 +95,22 @@ public sealed class HeroPicker : Window
         _groups.Children.Clear();
         var list = Filtered().ToList();
         bool searching = _search.Text.Trim().Length > 0;
+        if (!searching)
+        {
+            var favorites = list.Where(h => App.Host.Settings.Current.FavoriteHeroKeys.Contains(h.Key)).ToList();
+            var recentIds = App.Host.History.All().OrderByDescending(m => m.StartedUtc).Select(m => m.HeroId).Distinct().Take(6).ToList();
+            var recent = recentIds.Select(id => list.FirstOrDefault(h => h.Id == id)).OfType<Hero>().Where(h => favorites.All(f => f.Id != h.Id)).ToList();
+            foreach (var section in new[] { ("picker_favorites", favorites), ("picker_recent", recent) })
+            {
+                if (section.Item2.Count == 0) continue;
+                _groups.Children.Add(new TextBlock { Text = L.Get(section.Item1), Style = (Style)Application.Current.FindResource("Eyebrow"), Margin = new Thickness(2, 10, 0, 6) });
+                var shortcuts = new WrapPanel();
+                foreach (var h in section.Item2) shortcuts.Children.Add(Tile(h));
+                _groups.Children.Add(shortcuts);
+            }
+            var shown = favorites.Concat(recent).Select(h => h.Id).ToHashSet();
+            list = list.Where(h => !shown.Contains(h.Id)).ToList();
+        }
         var groups = searching
             ? new[] { (Title: (string?)null, Heroes: list) }
             : Enum.GetValues<PrimaryAttribute>().Select(a => (Title: (string?)L.Get("attr_" + a.ToString().ToLowerInvariant()),

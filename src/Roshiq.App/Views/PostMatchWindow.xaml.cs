@@ -35,6 +35,7 @@ public partial class PostMatchWindow : Window
         if (summary.MainMistake is { } bad) MistakeText.Text = bad.Text(L.Language);
         else MistakeBlock.Visibility = Visibility.Collapsed;
 
+        NextGoalText.Text = PostMatch.NextGoal(summary).Text(L.Language);
         BasisText.Text = summary.Compared >= 3 ? L.Format("pm_basis", summary.Compared) : L.Get("pm_basis_few");
     }
 

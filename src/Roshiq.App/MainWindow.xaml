@@ -6,8 +6,8 @@
         Title="ROSHIQ" Width="1280" Height="820" MinWidth="1040" MinHeight="660"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
-        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="13.5"
-        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True"
+        FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="14"
+        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" RenderOptions.BitmapScalingMode="HighQuality"
         Icon="{DynamicResource AppIcon}">
     <Window.Resources>
         <Style x:Key="TabNumber" TargetType="TextBlock">
@@ -77,22 +77,22 @@
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBoxItem Tag="dashboard" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabNumber}" Text="01" /><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_dashboard, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_dashboard, Upper=True}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="draft" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabNumber}" Text="02" /><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_draft, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_draft, Upper=True}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="build" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabNumber}" Text="03" /><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_build, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_build, Upper=True}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="assistant" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabNumber}" Text="04" /><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_assistant, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_assistant, Upper=True}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="history" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabNumber}" Text="05" /><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_history, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_history, Upper=True}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="settings" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabNumber}" Text="06" /><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_settings, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_settings, Upper=True}" /></StackPanel>
                     </ListBoxItem>
                 </ListBox>
                 </Viewbox>
@@ -125,23 +125,23 @@
 
         <!-- ===== Заголовок раздела и содержимое ===== -->
         <!-- Контент не шире 1600 px: на широких мониторах он по центру, без пустых полос внутри карточек -->
-        <Grid Grid.Row="1" Margin="40,30,40,0" MaxWidth="1600">
+        <Grid Grid.Row="1" Margin="32,22,32,0" MaxWidth="1600">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Grid Margin="0,0,0,24">
+            <Grid Margin="0,0,0,18">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <TextBlock x:Name="PageNumber" Style="{StaticResource PageNumber}" Text="01 /" Margin="0,8,14,0" VerticalAlignment="Top" />
+                <TextBlock x:Name="PageNumber" Visibility="Collapsed" Style="{StaticResource PageNumber}" Text="01 /" Margin="0,8,14,0" VerticalAlignment="Top" />
                 <StackPanel Grid.Column="1">
                     <TextBlock x:Name="PageTitle" Style="{StaticResource Display}" />
-                    <TextBlock x:Name="PageSubtitle" Style="{StaticResource MutedText}" FontSize="13.5" Margin="0,4,0,0" />
+                    <TextBlock x:Name="PageSubtitle" Style="{StaticResource MutedText}" FontSize="14" Margin="0,4,0,0" />
                 </StackPanel>
             </Grid>
-            <ContentControl x:Name="Host" Grid.Row="1" Focusable="False" />
+            <ContentControl x:Name="Host" Grid.Row="1" Focusable="False" ClipToBounds="True" />
         </Grid>
 
         <!-- ===== Нижняя строка ===== -->

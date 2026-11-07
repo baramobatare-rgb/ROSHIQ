@@ -216,6 +216,12 @@ public partial class HistoryView : UserControl, IRefreshable
         MatchMeta.Text = $"{m.StartedUtc.ToLocalTime():g} · {role} · {(m.Team ?? "?").ToUpperInvariant()} · {L.Get(m.FromGsi ? "hist_source_gsi" : "hist_source_od")}" +
                          (m.MatchId != null ? $" · ID {m.MatchId}" : "");
 
+        TakeawaysPanel.Children.Clear();
+        if (m.DurationSec >= PostMatch.MinDurationSec)
+        {
+            var summary = PostMatch.Build(m, App.Host.History.All(), k => App.Host.Database.FindItem(k)?.Name);
+            TakeawaysPanel.Children.Add(new MatchTakeaways(summary));
+        }
         SummaryChips.Children.Clear();
         SummaryChips.Children.Add(Ui.Chip(Ui.Up(ResultText(m.Result)), m.Result == MatchResult.Win ? "AccentSoft" : "Panel3",
             m.Result == MatchResult.Win ? "Accent" : m.Result == MatchResult.Loss ? "Red" : "Muted"));

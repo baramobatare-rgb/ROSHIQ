@@ -8,17 +8,6 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,6,20">
 
-            <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <DockPanel>
-                        <Button DockPanel.Dock="Right" Content="{app:T auto_setup}" Click="SetupAutoDraft_Click" Margin="12,0,0,0" />
-                        <CheckBox x:Name="AutoDraftBox" Content="{app:T auto_enabled}" Checked="AutoDraft_Changed" Unchecked="AutoDraft_Changed" />
-                    </DockPanel>
-                    <TextBlock Text="{app:T auto_help}" Style="{StaticResource MutedText}" Margin="0,10,0,6" />
-                    <TextBlock x:Name="AutoStatus" Style="{StaticResource Value}" />
-                    <TextBlock x:Name="SetupStatus" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0" />
-                </StackPanel>
-            </Border>
             <!-- Параметры и действия -->
             <Border Style="{StaticResource Card}">
                 <Grid>
@@ -30,15 +19,15 @@
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,16,0">
                         <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T draft_my_position, Upper=True}" Margin="0,0,0,4" />
-                        <ComboBox x:Name="PositionBox" Width="200" SelectionChanged="Position_Changed" />
+                        <ComboBox x:Name="PositionBox" Width="160" SelectionChanged="Position_Changed" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" Margin="0,0,16,0">
                         <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T draft_my_side, Upper=True}" Margin="0,0,0,4" />
-                        <ComboBox x:Name="SideBox" Width="150" SelectionChanged="Side_Changed" />
+                        <ComboBox x:Name="SideBox" Width="125" SelectionChanged="Side_Changed" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Margin="0,0,16,0">
                         <TextBlock Style="{StaticResource Eyebrow}" Margin="0,0,0,4"><Run Text="{app:T pool_label, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_pool}" /></InlineUIContainer></TextBlock>
-                        <ComboBox x:Name="PoolBox" Width="210" SelectionChanged="Pool_Changed" ToolTip="{app:T pool_hint}" />
+                        <ComboBox x:Name="PoolBox" Width="180" SelectionChanged="Pool_Changed" ToolTip="{app:T pool_hint}" />
                     </StackPanel>
                     <WrapPanel Grid.Column="3" VerticalAlignment="Bottom" HorizontalAlignment="Right">
                         <Button x:Name="ScanButton" Click="Scan_Click">
@@ -57,36 +46,6 @@
                     </WrapPanel>
                 </Grid>
             </Border>
-            <Border x:Name="ModeCard" Style="{StaticResource InnerCard}" Margin="0,-4,0,16" Padding="14,10">
-                <DockPanel>
-                    <ov:Icon x:Name="ModeIcon" DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Margin="0,1,10,0"
-                             VerticalAlignment="Top" Brush="{DynamicResource Muted}" />
-                    <TextBlock x:Name="ModeNote" Style="{StaticResource MutedText}" />
-                </DockPanel>
-            </Border>
-
-            <!-- Мой герой + состав команды -->
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="320" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Border Style="{StaticResource Card}" Margin="0,0,8,16">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T draft_my_hero, Upper=True}" /></TextBlock>
-                        <TextBlock x:Name="MyHeroName" Style="{StaticResource BigValue}" FontSize="24" />
-                        <TextBlock x:Name="MyHeroMeta" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
-                    </StackPanel>
-                </Border>
-                <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
-                    <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T draft_team, Upper=True}" /></TextBlock>
-                        <WrapPanel x:Name="TeamPanel" />
-                        <TextBlock x:Name="TeamNote" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
-                    </StackPanel>
-                </Border>
-            </Grid>
-
             <!-- Видимые герои -->
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -95,22 +54,31 @@
                 </Grid.ColumnDefinitions>
                 <Border Style="{StaticResource Card}" Margin="0,0,8,16">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T draft_allies, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_allies, Upper=True}" /></TextBlock>
                         <UniformGrid x:Name="AllySlots" Columns="5" />
                     </StackPanel>
                 </Border>
                 <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T draft_enemies, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_enemies, Upper=True}" /></TextBlock>
                         <UniformGrid x:Name="EnemySlots" Columns="5" />
                     </StackPanel>
                 </Border>
             </Grid>
 
+            <!-- Статус режима / сканирования: всегда на виду -->
+            <Border x:Name="ModeCard" Style="{StaticResource InnerCard}" Margin="0,0,0,16" Padding="14,10">
+                <DockPanel>
+                    <ov:Icon x:Name="ModeIcon" DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Margin="0,1,10,0"
+                             VerticalAlignment="Top" Brush="{DynamicResource Muted}" />
+                    <TextBlock x:Name="ModeNote" Style="{StaticResource MutedText}" />
+                </DockPanel>
+            </Border>
+
             <!-- Рекомендации -->
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T draft_results, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_results, Upper=True}" /></TextBlock>
                     <StackPanel x:Name="NotesPanel" />
                     <StackPanel x:Name="ResultsPanel" />
                     <Expander x:Name="AltExpander" Header="{app:T draft_alternatives, Upper=True}" FontFamily="{StaticResource DisplayFont}" Margin="0,12,0,0">
@@ -119,10 +87,50 @@
                 </StackPanel>
             </Border>
 
+            <Expander Header="{app:T draft_team_details}" Margin="0,0,0,14">
+            <!-- Мой герой + состав команды -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="320" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource Card}" Margin="0,0,8,16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_my_hero, Upper=True}" /></TextBlock>
+                        <TextBlock x:Name="MyHeroName" Style="{StaticResource BigValue}" FontSize="24" />
+                        <TextBlock x:Name="MyHeroMeta" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_team, Upper=True}" /></TextBlock>
+                        <WrapPanel x:Name="TeamPanel" />
+                        <TextBlock x:Name="TeamNote" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            </Expander>
+            <Expander Header="{app:T draft_auto_options}" Margin="0,0,0,14">
+                <StackPanel>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <DockPanel>
+                        <Button DockPanel.Dock="Right" Content="{app:T auto_setup}" Click="SetupAutoDraft_Click" Margin="12,0,0,0" />
+                        <CheckBox x:Name="AutoDraftBox" Content="{app:T auto_enabled}" Checked="AutoDraft_Changed" Unchecked="AutoDraft_Changed" />
+                    </DockPanel>
+                    <TextBlock Text="{app:T auto_help}" Style="{StaticResource MutedText}" Margin="0,10,0,6" />
+                    <TextBlock x:Name="AutoStatus" Style="{StaticResource Value}" />
+                    <TextBlock x:Name="SetupStatus" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                </StackPanel>
+            </Border>
+
+                </StackPanel>
+            </Expander>
             <!-- Сводка драфта -->
             <Border x:Name="BriefCard" Style="{StaticResource Card}" Margin="0,0,0,16" Visibility="Collapsed">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="06 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T brief_title, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T brief_title, Upper=True}" /></TextBlock>
                     <TextBlock Text="{app:T brief_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                     <StackPanel x:Name="BriefPanel" />
                 </StackPanel>

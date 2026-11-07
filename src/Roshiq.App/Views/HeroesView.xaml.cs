@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
@@ -144,6 +144,8 @@ public partial class HeroesView : UserControl, IRefreshable
         BuildNote.Text = personal != null ? L.Get("my_custom_note") : (hero.PlaysPosition(position) ? "" : L.Get("heroes_unusual_position") + " ") +
                          L.Get(build.HasCuratedBase ? "heroes_build_curated" : "heroes_build_generated");
 
+        ShowAdaptations(hero, position, build);
+
         // Текущая стадия матча — только если это герой, которым игрок играет сейчас (по GSI)
         var gsi = App.Host.LastGsi;
         BuildPhase? now = null;
@@ -200,6 +202,59 @@ public partial class HeroesView : UserControl, IRefreshable
             TipsPanel.Children.Add(Ui.Numbered(ti++, tip.Text(L.Language), "", L.Get("tipcat_" + tip.Category)));
     }
 
+    private List<Hero>? _previewEnemies;
+    private IReadOnlyList<Hero> PreviewEnemies => _previewEnemies ?? App.Host.BriefingEnemies;
+
+    private void AddEnemy_Click(object sender, RoutedEventArgs e)
+    {
+        var current = PreviewEnemies.Where(h => h.Id != _selected?.Id).DistinctBy(h => h.Id).Take(5).ToList();
+        if (current.Count >= 5) return;
+        var taken = current.Select(h => h.Id).ToHashSet();
+        if (_selected != null) taken.Add(_selected.Id);
+        new HeroPicker(Loc.T("build_add_enemy"), taken, false, hero =>
+        {
+            if (hero == null) return;
+            _previewEnemies = current.Append(hero).DistinctBy(h => h.Id).Take(5).ToList();
+            ShowDetails();
+        }) { Owner = Window.GetWindow(this) }.Show();
+    }
+
+    private void UseDraftEnemies_Click(object sender, RoutedEventArgs e) { _previewEnemies = null; ShowDetails(); }
+
+    private void ShowAdaptations(Hero hero, Position position, BuildRecommendation baseline)
+    {
+        var L = Loc.Instance;
+        var enemies = PreviewEnemies.Where(e => e.Id != hero.Id).DistinctBy(e => e.Id).Take(5).ToList();
+        EnemyContextPanel.Children.Clear();
+        foreach (var enemy in enemies)
+        {
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            row.Children.Add(Ui.Portrait(enemy, 40));
+            row.Children.Add(new TextBlock { Text = enemy.DisplayName(L.Language) + "  ×", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) });
+            var button = new Button { Content = row, ToolTip = L.Get("picker_clear"), Padding = new Thickness(7, 5, 7, 5) };
+            button.Click += (_, _) => { _previewEnemies = enemies.Where(e => e.Id != enemy.Id).ToList(); ShowDetails(); };
+            EnemyContextPanel.Children.Add(button);
+        }
+        AddEnemyButton.IsEnabled = enemies.Count < 5;
+        AddEnemyButton.ToolTip = enemies.Count < 5 ? L.Get("build_add_enemy") : L.Get("build_enemy_limit");
+        AdaptationPanel.Children.Clear();
+        if (enemies.Count == 0) { AdaptationPanel.Children.Add(Ui.Text(L.Get("build_adapt_empty"), "MutedText")); return; }
+        var options = App.Host.Builds.Adaptations(hero, position, enemies, baseline);
+        foreach (var option in options)
+        {
+            var text = new StackPanel();
+            text.Children.Add(Ui.Text(option.Pick.Item.DisplayName(L.Language), "H2"));
+            text.Children.Add(Ui.Text(string.Join("; ", option.Pick.Reasons.Take(2).Select(reason => reason.Text(L.Language))), "Value"));
+            text.Children.Add(Ui.Text(option.Pick.Item.Purpose(L.Language), "MutedText", 4));
+            var action = option.AlreadyIncluded ? L.Get("build_included") : option.Replace != null
+                ? L.Format("build_replace", option.Replace.DisplayName(L.Language)) : L.Get("build_consider");
+            var label = Ui.Text(action, "MutedText", 6); label.Foreground = Ui.Res(option.AlreadyIncluded ? "Success" : "Accent");
+            text.Children.Add(label);
+            AdaptationPanel.Children.Add(new Border { Style = (Style)FindResource("InnerCard"), Margin = new Thickness(0, 0, 0, 10), Child = Ui.WithImage(Ui.ItemIcon(option.Pick.Item.Key, 52), text) });
+        }
+        if (options.Count == 0) AdaptationPanel.Children.Add(Ui.Text(L.Get("build_adapt_none"), "MutedText"));
+    }
+
     /// <summary>Арт героя фоном шапки: справа ярко, к левому краю растворяется в цвет карточки.</summary>
     private void SetBackdrop(Hero hero)
     {
@@ -251,6 +306,11 @@ public partial class HeroesView : UserControl, IRefreshable
                 FontSize = 12.5, Foreground = Ui.Res("Muted")
             });
         if (meta.Children.Count > 0) text.Children.Add(meta);
+        if (!string.IsNullOrWhiteSpace(why)) text.Children.Add(new TextBlock
+        {
+            Text = why, FontSize = 12.5, Foreground = Ui.Res("Muted"), TextWrapping = TextWrapping.Wrap,
+            TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 36, Margin = new Thickness(0, 5, 0, 0)
+        });
         var row = new DockPanel();
         DockPanel.SetDock(icon, Dock.Left);
         row.Children.Add(icon);

@@ -25,6 +25,52 @@ class Program
             typeof(App).GetProperty("Host")!.SetValue(null, host);
             host.Settings.Current.Gsi.Enabled = false;
             var main = new MainWindow(); app.MainWindow = main;
+            foreach (var h in host.Database.Heroes)
+            {
+                var nativePortrait = Roshiq.App.Services.HeroArt.Portrait(h.Key) as System.Windows.Media.Imaging.BitmapSource;
+                Check(nativePortrait is { PixelWidth: >= 128, PixelHeight: >= 72 } && nativePortrait.IsFrozen, "Native UI portrait: " + h.Key);
+            }
+            var lich = (System.Windows.Media.Imaging.BitmapSource)Roshiq.App.Services.HeroArt.Portrait("lich")!;
+            Check(lich.PixelWidth >= 256, "Large Lich portrait retains native pixels");
+            var blink = (System.Windows.Media.Imaging.BitmapSource)Roshiq.App.Services.HeroArt.ItemIcon("item_blink")!;
+            Check(blink.PixelWidth >= 88, "Item icons retain native pixels");
+            var history = new HistoryView(); history.Refresh();
+            var historyList = Control<ListBox>(history, "MatchList");
+            var report = Control<StackPanel>(history, "ReviewPanel");
+            report.Visibility = Visibility.Visible;
+            report.Children.Add(new Border { Height = 1600 });
+            history.Measure(new Size(1160, 520)); history.Arrange(new Rect(0, 0, 1160, 520)); history.UpdateLayout();
+            var listOrigin = historyList.TransformToAncestor(history).Transform(new Point());
+            Check(listOrigin.Y < 200, "History list stays at the top beside a long report");
+            foreach (var page in new UserControl[] { new DashboardView(), new DraftView(), new HeroesView() })
+            {
+                if (page is IRefreshable refreshable) refreshable.Refresh();
+                foreach (var size in new[] { new Size(1160, 520), new Size(940, 380) })
+                {
+                    page.Measure(size); page.Arrange(new Rect(new Point(), size)); page.UpdateLayout();
+                    Check(page.IsMeasureValid && page.IsArrangeValid, page.GetType().Name + " layout " + size);
+                }
+            }
+            var reactiveDraft = new DraftView(); reactiveDraft.Refresh();
+            var enemyTiles = Control<System.Windows.Controls.Primitives.UniformGrid>(reactiveDraft, "EnemySlots");
+            var enemyBox = ((Panel)enemyTiles.Children[0]).Children.OfType<ComboBox>().Single();
+            enemyBox.SelectedItem = enemyBox.Items.OfType<Choice<Hero?>>().First(c => c.Value?.Key == "phantom_assassin");
+            Check(host.Draft.Enemies.Any(h => h.Key == "phantom_assassin") && host.LastDraftAnalysis != null, "Manual pick recomputes draft without Analyze click");
+            enemyBox.SelectedIndex = 0;
+            Check(host.Draft.Enemies.Count == 0, "Clearing a pick clears its draft context");
+            var adaptationView = new HeroesView(); adaptationView.Refresh();
+            typeof(HeroesView).GetField("_previewEnemies", BindingFlags.NonPublic | BindingFlags.Instance)!.SetValue(adaptationView,
+                new List<Hero> { host.Database.FindHero("phantom_assassin")!, host.Database.FindHero("riki")! });
+            adaptationView.Refresh();
+            Check(Control<Panel>(adaptationView, "EnemyContextPanel").Children.Count == 2 && Control<Panel>(adaptationView, "AdaptationPanel").Children.Count > 0,
+                "Build enemy editor renders context and adaptation advice");
+            var summary = new Roshiq.Recommendations.PostMatchSummary(new Roshiq.Recommendations.MatchRecord { HeroId = 1, DurationSec = 1800 },
+                Array.Empty<Roshiq.Recommendations.Insight>(), new Roshiq.Recommendations.Insight("no_tp", -2, "Нет ТП", "No TP"), 3);
+            var resultWindow = new PostMatchWindow(summary);
+            Check(Control<TextBlock>(resultWindow, "NextGoalText").Text.Length > 0, "Post-match window shows next-game action");
+            resultWindow.Close();
+            var takeaways = new MatchTakeaways(summary);
+            Check(takeaways.Children.Count == 4, "History summary includes three takeaways and comparison basis");
             var view = new HeroesView(); view.Refresh();
             var favorites = Control<CheckBox>(view, "FavoritesOnly");
             favorites.IsChecked = true;
@@ -32,9 +78,9 @@ class Program
             favorites.IsChecked = false;
             Control<Button>(view, "FavoriteButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             favorites.IsChecked = true;
-            Check(Control<ListBox>(view, "HeroList").Items.Count == 1, "Favorite button and filter");
+            Check(Control<ListBox>(view, "HeroList").Items.OfType<Choice<Hero>>().Count(x => !x.IsHeader) == 1, "Favorite button and filter");
             var hero = ((Choice<Hero>)Control<ListBox>(view, "HeroList").SelectedItem).Value;
-            Check(((Choice<Hero>)Control<ListBox>(view, "HeroList").SelectedItem).Display == "★  " + hero.Name, "English hero label without duplicate");
+            Check(((Choice<Hero>)Control<ListBox>(view, "HeroList").SelectedItem).Display == "★  " + hero.DisplayName(Roshiq.Core.Localization.Loc.Instance.Language), "English hero label without duplicate");
             var build = new PersonalBuild { HeroKey = hero.Key, Position = Position.Carry, Name = "Smoke", Entries = new() {
                 new() { ItemKey = "item_tango", Phase = BuildPhase.Start }, new() { ItemKey = "item_branches", Phase = BuildPhase.Start } } };
             // Test real editor XAML, selection handlers, search, row movement and copy isolation without displaying a window.
@@ -42,7 +88,7 @@ class Program
             Control<TextBox>(editor, "ItemSearch").Text = "blink";
             Check(Control<ComboBox>(editor, "ItemBox").Items.Count > 0, "Item search populates results");
             var itemChoice = (Choice<Item>)Control<ComboBox>(editor, "ItemBox").SelectedItem;
-            Check(itemChoice.Display == itemChoice.Value.Name, "English item label without duplicate");
+            Check(itemChoice.Display == itemChoice.Value.DisplayName(Roshiq.Core.Localization.Loc.Instance.Language), "English item label without duplicate");
             Control<Button>(editor, "AddButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check(editor.Result.Entries.Count == 3, "Editor adds item");
             var rows = Control<ListBox>(editor, "EntryList"); rows.SelectedIndex = 0;
@@ -57,7 +103,7 @@ class Program
             var box = Control<ComboBox>(view, "PersonalBuildBox"); box.SelectedIndex = 1;
             var actions = new List<Button>();
             Walk(view, actions);
-            var use = actions.First(x => (x.Content as string) == "Использовать");
+            var use = actions.First(x => string.Equals(x.Content as string, Roshiq.Core.Localization.Loc.T("my_use"), StringComparison.OrdinalIgnoreCase));
             use.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             Check(host.CurrentHero?.Key == hero.Key && host.CurrentBuild?[BuildPhase.Start][0].Item.Key == "item_tango", "Use personal build in app host");
             Check(new SettingsService(host.Settings.FilePath).Current.PersonalBuilds.Count == 1, "UI data survives settings reload");

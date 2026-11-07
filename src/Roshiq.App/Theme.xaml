@@ -14,8 +14,8 @@
     <SolidColorBrush x:Key="Line" Color="#232925" />
     <SolidColorBrush x:Key="LineStrong" Color="#303830" />
     <SolidColorBrush x:Key="Text" Color="#F5F7F5" />
-    <SolidColorBrush x:Key="Muted" Color="#A2A9A2" />
-    <SolidColorBrush x:Key="Faint" Color="#6F766F" />
+    <SolidColorBrush x:Key="Muted" Color="#BCC5BE" />
+    <SolidColorBrush x:Key="Faint" Color="#929E95" />
     <SolidColorBrush x:Key="Accent" Color="#B5FF4D" />
     <SolidColorBrush x:Key="AccentHover" Color="#C7FF7A" />
     <SolidColorBrush x:Key="AccentSoft" Color="#1C2612" />
@@ -33,7 +33,7 @@
     <!-- ===== Типографика ===== -->
     <Style x:Key="Display" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
-        <Setter Property="FontSize" Value="40" />
+        <Setter Property="FontSize" Value="32" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -69,7 +69,7 @@
     </Style>
     <Style x:Key="MutedText" TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource Muted}" />
-        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -93,7 +93,7 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="CornerRadius" Value="14" />
-        <Setter Property="Padding" Value="22,20" />
+        <Setter Property="Padding" Value="20,18" />
         <Setter Property="Margin" Value="0,0,0,16" />
         <Setter Property="app:Motion.Kind" Value="Card" />
     </Style>
@@ -620,7 +620,9 @@
                 <ControlTemplate TargetType="ListBox">
                     <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="14" Padding="{TemplateBinding Padding}">
-                        <ScrollViewer Focusable="False">
+                        <ScrollViewer Focusable="False" CanContentScroll="{TemplateBinding ScrollViewer.CanContentScroll}"
+                                      HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                      VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}">
                             <ItemsPresenter />
                         </ScrollViewer>
                     </Border>
@@ -754,7 +756,7 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
-                    <Grid Background="Transparent" Margin="0,0,22,0">
+                    <Grid Background="Transparent" Margin="0,0,18,0">
                         <ContentPresenter VerticalAlignment="Center" Margin="0,0,0,2" />
                         <Border x:Name="Underline" Height="2" VerticalAlignment="Bottom" Margin="0,0,0,-1"
                                 Background="{DynamicResource Accent}" Opacity="0" RenderTransformOrigin="0.5,0.5">

@@ -25,7 +25,7 @@
             <!-- Режим -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T ov_mode, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_overlay}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T ov_mode, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_overlay}" /></InlineUIContainer></TextBlock>
                     <WrapPanel>
                         <RadioButton x:Name="ModeMinimal" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_minimal, Upper=True}" Checked="Mode_Checked" />
                         <RadioButton x:Name="ModeExpanded" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_expanded, Upper=True}" Checked="Mode_Checked" />
@@ -43,7 +43,7 @@
                         <ColumnDefinition Width="340" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Margin="0,0,24,0">
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T ov_position, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T ov_position, Upper=True}" /></TextBlock>
                         <TextBlock Text="{app:T ov_position_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -100,7 +100,7 @@
             <!-- Горячие клавиши -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="03 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T ov_hotkeys, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T ov_hotkeys, Upper=True}" /></TextBlock>
                     <UniformGrid Columns="4">
                         <StackPanel Margin="0,0,10,0">
                             <TextBlock Text="{app:T ov_hotkey_toggle}" Style="{StaticResource FieldLabel}" />
@@ -131,7 +131,7 @@
             <!-- Поведение -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="04 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T ov_behavior, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T ov_behavior, Upper=True}" /></TextBlock>
                     <CheckBox x:Name="HideUnfocused" Content="{app:T ov_hide_unfocused}" Checked="Behavior_Changed" Unchecked="Behavior_Changed" />
                     <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <TextBlock Text="{app:T ov_process}" Style="{StaticResource FieldLabel}" Margin="0,0,10,0" />
@@ -144,7 +144,7 @@
             <!-- Профили -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T prof_title, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_profiles}" /></InlineUIContainer></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T prof_title, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_profiles}" /></InlineUIContainer></TextBlock>
                     <TextBlock Text="{app:T prof_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                     <WrapPanel x:Name="ProfilePanel" />
                     <DockPanel Margin="0,6,0,0">
