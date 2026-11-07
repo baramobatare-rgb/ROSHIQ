@@ -552,7 +552,7 @@ internal static class StringsExtra
         ["help_bench"] = ("«Лучше 72%» — ваш показатель выше, чем у 72% игроков, игравших этим героем (по данным OpenDota).", "Better than 72% — your value beats 72% of players on this hero (OpenDota data)."),
         ["wn_title"] = ("Что нового", "What's new"),
         ["wn_ok"] = ("Понятно", "Got it"),
-        ["wn_where"] = ("Подробности — в README на GitHub.", "Details — in the README on GitHub."),
+        ["wn_where"] = ("Подробности — в истории изменений (CHANGELOG) на GitHub.", "Details — in the CHANGELOG on GitHub."),
         ["data_updated_header"] = ("Данные обновлены", "Data updated"),
         ["data_updated"] = ("Герои, таймеры и правила обновлены до версии {0} — без переустановки программы.", "Heroes, timers and rules updated to {0} — no reinstall needed."),
         ["fresh_title"] = ("Актуальность данных", "Data freshness"),
