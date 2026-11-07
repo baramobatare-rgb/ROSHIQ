@@ -52,6 +52,9 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public bool DraftMode { get => _draftMode; set => Set(ref _draftMode, value); }
     public bool Expanded { get => _expanded; set => Set(ref _expanded, value); }
     public bool EditMode { get => _editMode; set => Set(ref _editMode, value); }
+    /// <summary>Подсказка в режиме расстановки: как двигать и как закончить.</summary>
+    public string EditHint { get => _editHint; set => Set(ref _editHint, value); }
+    private string _editHint = "";
     public string Section1Title { get => _section1Title; set => Set(ref _section1Title, value); }
     public string Section2Title { get => _section2Title; set => Set(ref _section2Title, value); }
     /// <summary>Подсказки горячих клавиш (оверлей не перехватывает мышь, поэтому управление — с клавиатуры).</summary>

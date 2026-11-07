@@ -113,6 +113,9 @@
                                        FontWeight="SemiBold" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
+                    <Button Style="{StaticResource IconButton}" Click="Search_Click" ToolTip="{app:T srch_tooltip}">
+                        <ov:Icon Glyph="{StaticResource I.Search}" Size="18" />
+                    </Button>
                     <Button Style="{StaticResource IconButton}" Click="Settings_Click" ToolTip="{app:T sec_settings}">
                         <ov:Icon Glyph="{StaticResource I.Sliders}" Size="18" />
                     </Button>

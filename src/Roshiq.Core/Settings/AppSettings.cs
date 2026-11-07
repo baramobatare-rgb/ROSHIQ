@@ -42,6 +42,7 @@ public sealed class AppSettings
     public TimerSettings Timers { get; set; } = new();
     public AlertSettings Alerts { get; set; } = new();
     public AutomationSettings Automation { get; set; } = new();
+    public SoundSettings Sounds { get; set; } = new();
     /// <summary>Пройден мастер первого запуска (1). 0 — ещё нет.</summary>
     public int SetupVersion { get; set; }
     /// <summary>Версия ROSHIQ, для которой уже показано окно «Что нового».</summary>
@@ -81,6 +82,8 @@ public sealed class AppSettings
         Timers ??= new();
         Alerts ??= new();
         Automation ??= new();
+        Sounds ??= new();
+        Sounds.Normalize();
         Timers.Normalize();
         Alerts.Normalize();
         Overlay ??= new();
@@ -113,9 +116,15 @@ public sealed class OverlaySettings
     public string RoshanHotkey { get; set; } = "Ctrl+Shift+K";
     public string TargetProcess { get; set; } = "dota2";
     public bool HideWhenGameNotFocused { get; set; } = false;
+    /// <summary>Положение панели для каждого разрешения окна игры ("2560x1440" → прямоугольник).</summary>
+    public Dictionary<string, RelRect> Layouts { get; set; } = new();
+    /// <summary>Прилипание к краям экрана и запретных зон при перетаскивании.</summary>
+    public bool SnapToEdges { get; set; } = true;
 
     public void Normalize()
     {
+        Layouts = (Layouts ?? new()).Where(kv => LayoutMemory.IsKey(kv.Key) && kv.Value != null)
+            .Take(16).ToDictionary(kv => kv.Key, kv => SafeZone.Clamp(kv.Value));
         Opacity = Math.Clamp(double.IsFinite(Opacity) ? Opacity : 0.88, 0.2, 1.0);
         Panel = SafeZone.Clamp(Panel ?? new RelRect(0.78, 0.22, 0.19, 0.30));
         if (string.IsNullOrWhiteSpace(ToggleHotkey)) ToggleHotkey = "F8";
@@ -336,6 +345,35 @@ public sealed class AutomationSettings
     public bool LaneTips { get; set; } = true;
     /// <summary>Пики силы: план по фазам составов и уведомление о ключевом предмете.</summary>
     public bool PowerSpikes { get; set; } = true;
+    /// <summary>Итог сразу после матча: что получилось и главная ошибка (по своей истории, без интернета).</summary>
+    public bool PostMatchSummary { get; set; } = true;
+}
+
+/// <summary>Звуки уведомлений поверх игры (по желанию, по умолчанию выключены).</summary>
+public sealed class SoundSettings
+{
+    public static readonly string[] Names = { "none", "soft", "chime", "ping", "alert" };
+
+    public bool Enabled { get; set; }
+    /// <summary>Громкость 0..1.</summary>
+    public double Volume { get; set; } = 0.6;
+    /// <summary>Напоминания (варды, смок, таймеры).</summary>
+    public string Reminder { get; set; } = "chime";
+    /// <summary>Предупреждения (нет ТП, выкуп, тайник, сторож связи).</summary>
+    public string Warning { get; set; } = "alert";
+    /// <summary>Прочие события (роль определена, итог матча, цели).</summary>
+    public string Event { get; set; } = "soft";
+    /// <summary>Не чаще одного звука за столько секунд.</summary>
+    public int MinGapSec { get; set; } = 3;
+
+    public void Normalize()
+    {
+        Volume = Math.Clamp(double.IsFinite(Volume) ? Volume : 0.6, 0, 1);
+        if (!Names.Contains(Reminder)) Reminder = "chime";
+        if (!Names.Contains(Warning)) Warning = "alert";
+        if (!Names.Contains(Event)) Event = "soft";
+        MinGapSec = Math.Clamp(MinGapSec, 0, 60);
+    }
 }
 
 /// <summary>Режим подсказок: сколько всего ROSHIQ показывает во время игры.</summary>

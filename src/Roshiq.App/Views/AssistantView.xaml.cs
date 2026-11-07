@@ -11,9 +11,18 @@ public partial class AssistantView : UserControl, IRefreshable
 {
     private bool _ready;
 
+    /// <summary>Вкладка для открытия (переход из поиска): role, reminders, match.</summary>
+    public static string? PendingTab { get; set; }
+    public static AssistantView? Instance { get; private set; }
+
+    public void SelectTab(string key) =>
+        (key switch { "reminders" => TabReminders, "match" => TabMatch, _ => TabRole }).IsChecked = true;
+
     public AssistantView()
     {
         InitializeComponent();
+        Instance = this;
+        if (PendingTab != null) { SelectTab(PendingTab); PendingTab = null; }
         Loc.Instance.PropertyChanged += (_, _) => { if (IsLoaded) Refresh(); };
         App.Host.StateChanged += (_, _) => { if (IsLoaded) ShowSituations(); };
         Roshiq.App.Services.HeroArt.ItemIconsUpdated += (_, _) => { if (IsLoaded) ShowSituations(); };

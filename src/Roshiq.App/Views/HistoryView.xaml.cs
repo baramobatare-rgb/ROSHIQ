@@ -16,6 +16,9 @@ public partial class HistoryView : UserControl, IRefreshable
     private bool _ready;
     private MatchRecord? _selected;
 
+    /// <summary>Матч, который выбрать при следующем обновлении (переход из итога матча).</summary>
+    public static string? PendingSelectId { get; set; }
+
     public HistoryView()
     {
         InitializeComponent();
@@ -42,7 +45,8 @@ public partial class HistoryView : UserControl, IRefreshable
         _ready = false;
         var L = Loc.Instance;
         var all = App.Host.History.All();
-        var keep = _selected?.Id;
+        var keep = PendingSelectId ?? _selected?.Id;
+        PendingSelectId = null;
         MatchList.Items.Clear();
         foreach (var m in all)
         {

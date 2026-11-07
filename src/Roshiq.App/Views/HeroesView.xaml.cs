@@ -19,6 +19,9 @@ public partial class HeroesView : UserControl, IRefreshable
         x.Id == _previewBuildId && x.HeroKey == _selected?.Key && x.Position == SelectedPosition);
     private Position SelectedPosition => Ui.TryValue<Position>(BuildPosition, out var position) ? position : App.Host.Settings.Current.Position;
 
+    /// <summary>Герой, которого выбрать при следующем обновлении (переход из поиска Ctrl+K).</summary>
+    public static string? PendingHeroKey { get; set; }
+
     public HeroesView()
     {
         InitializeComponent();
@@ -67,7 +70,8 @@ public partial class HeroesView : UserControl, IRefreshable
             .ThenBy(h => h.DisplayName(L.Language))
             .Select(h => Ui.HeroChoice(h, h, (favorites.Contains(h.Key) ? "★  " : "") + h.DisplayName(L.Language)))
             .ToList();
-        var keep = _selected;
+        var keep = PendingHeroKey != null ? App.Host.Database.FindHero(PendingHeroKey) ?? _selected : _selected;
+        PendingHeroKey = null;
         HeroList.ItemsSource = Ui.WithHeaders(heroes);
         CountText.Text = L.Format("heroes_count", heroes.Count);
         EmptyFavorites.Visibility = heroes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;

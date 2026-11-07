@@ -70,6 +70,7 @@ public sealed class AppHost : IDisposable
         OverlayVm = new OverlayViewModel();
         Overlay = new OverlayController(Settings, OverlayVm);
         Vision = new VisionService(Settings);
+        Sound = new SoundService(Settings);
         Monitor = new ProcessMonitor();
         Draft = DraftState.Empty(Settings.Current.Position);
         CurrentHero = Database.FindHero(Settings.Current.LastHeroKey);
@@ -86,9 +87,12 @@ public sealed class AppHost : IDisposable
         Trainer = new DraftTrainer(Database, new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats));
         ApplyPool();
 
-        Reminders.Shown += (_, r) => Overlay.ShowToast(
-            (Loc.T("role_short_" + (int)Settings.Current.Position) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(),
-            Loc.T(r.TextKey));
+        Reminders.Shown += (_, r) =>
+        {
+            if (Overlay.ShowToast((Loc.T("role_short_" + (int)Settings.Current.Position) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(),
+                    Loc.T(r.TextKey), warning: false))
+                Sound.Play(SoundKind.Reminder);
+        };
         Reminders.Hidden += (_, _) => Overlay.HideToast();
         Vision.Recognized += (_, r) => _dispatcher.InvokeAsync(() => OnVisionResult(r));
         Settings.Changed += (_, _) => ApplySettings();
@@ -109,6 +113,8 @@ public sealed class AppHost : IDisposable
     public OverlayViewModel OverlayVm { get; }
     public OverlayController Overlay { get; }
     public VisionService Vision { get; }
+    /// <summary>Звуки уведомлений (по желанию).</summary>
+    public SoundService Sound { get; }
     public ProcessMonitor Monitor { get; }
     public GsiServer? Gsi { get; private set; }
     public ItemCostCache Costs { get; }
@@ -539,6 +545,8 @@ public sealed class AppHost : IDisposable
             ? L.Get("gsi_connected") : L.Get("gsi_waiting");
         vm.Footer = $"GSI · {gsiState}".ToUpperInvariant();
         vm.HideHint = (s.Overlay.ToggleHotkey + " " + L.Get("ov_key_hide")).ToUpperInvariant();
+        vm.EditHint = L.Format("ov_edit_hint", s.Overlay.EditHotkey)
+            + (Overlay.CurrentLayoutKey is string lk ? " · " + L.Format("ov_edit_res", Roshiq.Core.Layout.LayoutMemory.Pretty(lk)) : "");
         vm.DetailsHint = vm.DraftMode ? "CTRL+SHIFT+R · " + L.Get("auto_role_key").ToUpperInvariant() : (s.Overlay.DetailsHotkey + " " + L.Get(s.Overlay.Mode == OverlayMode.Expanded ? "ov_key_less" : "ov_key_more")).ToUpperInvariant();
     }
 
@@ -1126,7 +1134,7 @@ public sealed class AppHost : IDisposable
         if (Reminders.Active != null) return false;
         if (DateTime.UtcNow - _lastEventToastUtc < TimeSpan.FromSeconds(4)) return false;
         _lastEventToastUtc = DateTime.UtcNow;
-        Overlay.ShowToast(header, text, warning);
+        if (Overlay.ShowToast(header, text, warning)) Sound.Play(warning ? SoundKind.Warning : SoundKind.Event);
         return true;
     }
 
@@ -1268,6 +1276,7 @@ public sealed class AppHost : IDisposable
         _lastSaved = record;
         MatchSavedSinceGameStart = true;
         Log.Info($"История: сохранён матч {record.MatchId} ({record.Result})");
+        BuildPostMatch(record);
         _ = AutoImportAfterMatchAsync(record.MatchId);
         try
         {
@@ -1280,6 +1289,37 @@ public sealed class AppHost : IDisposable
             }
         }
         catch (Exception ex) { Log.Error("Цели: ошибка проверки", ex); }
+    }
+
+    /// <summary>Итог последнего матча, который ещё не показан (окно откроется, когда пользователь уйдёт из игры).</summary>
+    public PostMatchSummary? PendingPostMatch { get; private set; }
+
+    /// <summary>Готов итог матча (сразу после игры).</summary>
+    public event EventHandler<PostMatchSummary>? PostMatchReady;
+
+    /// <summary>Забрать итог для показа (повторно не покажется).</summary>
+    public PostMatchSummary? TakePostMatch()
+    {
+        var s = PendingPostMatch;
+        PendingPostMatch = null;
+        return s;
+    }
+
+    private void BuildPostMatch(MatchRecord record)
+    {
+        if (!Settings.Current.Automation.PostMatchSummary || !PostMatch.Worth(record)) return;
+        try
+        {
+            var summary = PostMatch.Build(record, History.All(), key => Database.FindItem(key)?.Name);
+            if (!summary.HasContent) return;
+            PendingPostMatch = summary;
+            var L = Loc.Instance;
+            var line = summary.MainMistake ?? summary.Good.FirstOrDefault();
+            _lastEventToastUtc = DateTime.MinValue;
+            if (line != null) ShowEventToast(L.Get("pm_header").ToUpperInvariant(), line.Text(L.Language) + " " + L.Get("pm_toast_more"));
+            PostMatchReady?.Invoke(this, summary);
+        }
+        catch (Exception ex) { Log.Error("Итог матча", ex); }
     }
 
     // ------------------------------------------------------------------ личный темп и цели

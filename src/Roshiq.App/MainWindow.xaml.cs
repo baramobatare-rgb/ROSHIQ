@@ -49,6 +49,15 @@ public partial class MainWindow : Window
         App.Host.Settings.Changed += (_, _) => Dispatcher.InvokeAsync(() => { ApplyScale(); UpdateChrome(); });
         Loc.Instance.PropertyChanged += (_, _) => UpdateChrome();
         SetupTray();
+        SetupPostMatch();
+        PreviewKeyDown += (_, e) =>
+        {
+            if (e.Key == System.Windows.Input.Key.K && System.Windows.Input.Keyboard.Modifiers == System.Windows.Input.ModifierKeys.Control)
+            {
+                e.Handled = true;
+                SearchWindow.Toggle(this);
+            }
+        };
         SetupGlow();
         App.Host.GameLaunched += (_, _) => Dispatcher.InvokeAsync(OnGameLaunched);
         App.Host.GameClosed += (_, _) => Dispatcher.InvokeAsync(OnGameClosed);
@@ -164,6 +173,30 @@ public partial class MainWindow : Window
         }
     }
 
+    // ------------------------------------------------------------------ итог матча
+
+    private void SetupPostMatch()
+    {
+        App.Host.PostMatchReady += (_, _) => Dispatcher.InvokeAsync(TryShowPostMatch, DispatcherPriority.ApplicationIdle);
+        App.Host.StateChanged += (_, _) => { if (App.Host.PendingPostMatch != null) Dispatcher.InvokeAsync(TryShowPostMatch, DispatcherPriority.ApplicationIdle); };
+        Activated += (_, _) => TryShowPostMatch();
+    }
+
+    /// <summary>Показать итог матча, когда пользователь не в игре (окно игры не на переднем плане).</summary>
+    private void TryShowPostMatch()
+    {
+        if (_exitRequested || Dispatcher.HasShutdownStarted || App.Host.PendingPostMatch == null) return;
+        var game = App.Host.Overlay.Game;
+        if (game.Found && game.Foreground && !IsActive) return; // ещё в игре — подождём
+        if (OwnedWindows.OfType<Window>().Any(w => w is PostMatchWindow)) return;
+        var summary = App.Host.TakePostMatch();
+        if (summary == null) return;
+        var w = new PostMatchWindow(summary);
+        if (IsVisible && WindowState != WindowState.Minimized) w.Owner = this;
+        else w.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        w.Show();
+    }
+
     // ------------------------------------------------------------------ трей
 
     private TrayIcon? _tray;
@@ -234,6 +267,7 @@ public partial class MainWindow : Window
             new(0, "", Separator: true),
             new(2, L.Get(overlayShown ? "tray_overlay_hide" : "tray_overlay_show") + "\t" + s.Overlay.ToggleHotkey, Enabled: !App.Host.SafeMode),
             new(3, L.Get("tray_roshan") + "\t" + s.Overlay.RoshanHotkey),
+            new(6, L.Get(App.Host.Overlay.EditMode ? "tray_arrange_done" : "tray_arrange") + "\t" + s.Overlay.EditHotkey, Enabled: !App.Host.SafeMode),
             new(0, L.Get("preset_title"), Children: presets),
             new(0, L.Get("tray_role"), Children: roles),
         };
@@ -256,6 +290,7 @@ public partial class MainWindow : Window
             case 3: App.Host.ToggleRoshanMark(); break;
             case 4: Roshiq.App.Views.DiagnosticsWindow.Open(); break;
             case 5: Navigate("settings"); break;
+            case 6: App.Host.Overlay.SetEditMode(!App.Host.Overlay.EditMode); break;
             case 9: RequestExit(); break;
             case >= TrayPresetBase and < TrayPresetBase + 3:
                 var preset = (HintPreset)(new[] { (int)HintPreset.Minimal, (int)HintPreset.Normal, (int)HintPreset.Full }[id - TrayPresetBase]);
@@ -308,6 +343,11 @@ public partial class MainWindow : Window
         {
             if (Roshiq.App.Views.SettingsHostView.Instance is { } host) host.SelectTab(parts[1]);
             else Roshiq.App.Views.SettingsHostView.PendingTab = parts[1];
+        }
+        else if (parts.Length == 2 && parts[0] == "assistant")
+        {
+            if (Roshiq.App.Views.AssistantView.Instance is { } asst) asst.SelectTab(parts[1]);
+            else Roshiq.App.Views.AssistantView.PendingTab = parts[1];
         }
         w.Select(parts[0]);
         w.RestoreFromTray();
@@ -381,6 +421,8 @@ public partial class MainWindow : Window
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => Select("settings");
+
+    private void Search_Click(object sender, RoutedEventArgs e) => SearchWindow.Toggle(this);
 
     private void Nav_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

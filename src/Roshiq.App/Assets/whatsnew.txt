@@ -1,4 +1,8 @@
 # Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.14.0|Поиск по программе: Ctrl+K или значок лупы — герои, предметы, таймеры и настройки, в любой раскладке.|Search anywhere: Ctrl+K or the magnifier — heroes, items, timers and settings, any keyboard layout.
+0.14.0|Итог сразу после матча: что получилось и одна главная ошибка — по вашей истории, без интернета.|Summary right after a match: what went well and one main mistake — from your history, offline.
+0.14.0|Оверлей запоминает положение для каждого разрешения и прилипает к краям; «Расставить» — в меню трея.|The overlay remembers its position per resolution and snaps to edges; Arrange is in the tray menu.
+0.14.0|Звуки уведомлений по желанию: громкость и свой звук для напоминаний, предупреждений и событий.|Optional notification sounds: volume and a sound per reminders, warnings and events.
 0.13.0|Диагностика в один клик: что не работает и кнопка «Исправить» рядом (Настройки → Диагностика или меню в трее).|One-click diagnostics: what is broken, with a Fix button next to it (Settings → Diagnostics or the tray menu).
 0.13.0|Если Dota 2 запущена, а данные из игры не приходят, ROSHIQ сразу подскажет, что сделать.|If Dota 2 is running but sends no data, ROSHIQ tells you right away what to do.
 0.13.0|Отчёт о сбое с кнопками «Скопировать» и «Сообщить на GitHub»; после повторных сбоев — безопасный режим.|Crash reports with Copy and Report on GitHub; safe mode after repeated crashes.

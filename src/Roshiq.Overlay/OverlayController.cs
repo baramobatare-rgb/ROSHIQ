@@ -129,14 +129,16 @@ public sealed class OverlayController : IDisposable
 
     public void ShowToast(string header, string text) => ShowToast(header, text, warning: false);
 
-    public void ShowToast(string header, string text, bool warning)
+    /// <summary>Показать уведомление поверх игры. false — не показано (оверлей скрыт или игры нет).</summary>
+    public bool ShowToast(string header, string text, bool warning)
     {
-        if (_toast == null || _userHidden) return;
+        if (_toast == null || _userHidden) return false;
         var host = HostRect();
-        if (host == null) return;
+        if (host == null) return false;
         var n = _settings.Current.Notifications;
         _toast.ShowToast(header, text, SafeZone.ToastArea.ToPixels(host.Value), TimeSpan.FromSeconds(n.DisplaySec), _settings.Current.Overlay.Opacity,
             warning, !_settings.Current.ReduceMotion);
+        return true;
     }
 
     public void HideToast() => _toast?.HideToast();
@@ -150,6 +152,7 @@ public sealed class OverlayController : IDisposable
             var o = _settings.Current.Overlay;
             _tracker.ProcessName = o.TargetProcess;
             _lastGame = _tracker.Poll();
+            if (!EditMode) ApplyLayoutForResolution();
             ViewModel.Expanded = o.Mode == OverlayMode.Expanded || EditMode || ViewModel.DraftMode;
 
             var panel = ViewModel.DraftMode ? o.Panel with { W = Math.Max(o.Panel.W, .24), H = Math.Max(o.Panel.H, Math.Min(.65, 420.0 / Math.Max(1, _lastGame.ClientArea.Height))) } : o.Panel;
@@ -198,10 +201,44 @@ public sealed class OverlayController : IDisposable
     {
         var host = HostRect();
         if (host == null) return;
+        var o = _settings.Current.Overlay;
         var rel = RelRect.FromPixels(pixels, host.Value);
         // в режиме Minimal высоту задаёт сам режим, сохраняем только позицию
-        if (_settings.Current.Overlay.Mode == OverlayMode.Minimal) rel = rel with { H = _settings.Current.Overlay.Panel.H };
-        _settings.Current.Overlay.Panel = SafeZone.Clamp(rel);
+        if (o.Mode == OverlayMode.Minimal) rel = rel with { H = o.Panel.H };
+        if (o.SnapToEdges) rel = LayoutMemory.Snap(rel);
+        o.Panel = SafeZone.Clamp(rel);
+        // запомнить для текущего разрешения окна игры
+        if (_layoutKey != null) o.Layouts[_layoutKey] = o.Panel;
+    }
+
+    private string? _layoutKey;
+
+    /// <summary>Разрешение окна игры, для которого сейчас применено положение ("2560x1440"), или null.</summary>
+    public string? CurrentLayoutKey => _layoutKey;
+
+    /// <summary>Сменилось разрешение окна игры — взять сохранённое для него положение (если есть).</summary>
+    private void ApplyLayoutForResolution()
+    {
+        if (!_lastGame.Found) return;
+        var key = LayoutMemory.Key(_lastGame.ClientArea.Width, _lastGame.ClientArea.Height);
+        if (key == null || key == _layoutKey) return;
+        _layoutKey = key;
+        var o = _settings.Current.Overlay;
+        if (o.Layouts.TryGetValue(key, out var saved) && saved != o.Panel)
+        {
+            o.Panel = SafeZone.Clamp(saved);
+            Log.Info($"Оверлей: положение для {key}");
+        }
+        else if (!o.Layouts.ContainsKey(key)) o.Layouts[key] = o.Panel;
+    }
+
+    /// <summary>Забыть сохранённые положения для всех разрешений (кроме текущего).</summary>
+    public void ResetLayouts()
+    {
+        var o = _settings.Current.Overlay;
+        o.Layouts.Clear();
+        if (_layoutKey != null) o.Layouts[_layoutKey] = o.Panel;
+        _settings.Save();
     }
 
     private void SyncDraftHotkey()

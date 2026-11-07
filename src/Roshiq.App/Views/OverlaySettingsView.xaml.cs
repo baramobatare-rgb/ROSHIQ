@@ -40,6 +40,8 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         RoshanHotkey.Text = o.RoshanHotkey;
         BuildProfiles();
         HideUnfocused.IsChecked = o.HideWhenGameNotFocused;
+        SnapBox.IsChecked = o.SnapToEdges;
+        UpdateLayoutsText();
         ProcessName.Text = o.TargetProcess;
         UpdateTexts();
         UpdateButtons();
@@ -109,6 +111,7 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         App.Host.Settings.Update(s =>
         {
             s.Overlay.Panel = rect;
+            if (App.Host.Overlay.CurrentLayoutKey is string key) s.Overlay.Layouts[key] = rect;
             s.Overlay.Opacity = OpacitySlider.Value;
             s.Overlay.Scale = Math.Round(ScaleSlider.Value, 2);
         });
@@ -130,6 +133,30 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
             s.Overlay.Scale = 1.0;
         });
         Refresh();
+    }
+
+    private void Snap_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        bool on = SnapBox.IsChecked == true;
+        App.Host.Settings.Update(s => s.Overlay.SnapToEdges = on);
+    }
+
+    private void ResetLayouts_Click(object sender, RoutedEventArgs e)
+    {
+        App.Host.Overlay.ResetLayouts();
+        UpdateLayoutsText();
+    }
+
+    /// <summary>Для каких разрешений окна игры запомнено положение панели.</summary>
+    private void UpdateLayoutsText()
+    {
+        var L = Loc.Instance;
+        var o = App.Host.Settings.Current.Overlay;
+        var current = App.Host.Overlay.CurrentLayoutKey;
+        var keys = o.Layouts.Keys.OrderBy(k => k).Select(k => LayoutMemory.Pretty(k) + (k == current ? " ✓" : "")).ToList();
+        LayoutsText.Text = keys.Count == 0 ? L.Get("ov_layouts_none") : L.Format("ov_layouts", string.Join(", ", keys));
+        ResetLayoutsButton.Visibility = o.Layouts.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private void Test_Click(object sender, RoutedEventArgs e)

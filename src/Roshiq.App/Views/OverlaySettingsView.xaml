@@ -78,6 +78,11 @@
                             <Button x:Name="TestButton" Click="Test_Click" />
                             <Button Style="{StaticResource GhostButton}" Content="{app:T ov_reset, Upper=True}" Click="Reset_Click" />
                         </WrapPanel>
+                        <CheckBox x:Name="SnapBox" Content="{app:T ov_snap}" Checked="Snap_Changed" Unchecked="Snap_Changed" Margin="0,10,0,0" />
+                        <DockPanel Margin="0,8,0,0">
+                            <Button x:Name="ResetLayoutsButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T ov_layouts_reset, Upper=True}" Click="ResetLayouts_Click" />
+                            <TextBlock x:Name="LayoutsText" Style="{StaticResource MutedText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                        </DockPanel>
                     </StackPanel>
 
                     <!-- Схема экрана 16:9: запретные зоны HUD и положение панели -->

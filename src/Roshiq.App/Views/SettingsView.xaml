@@ -163,11 +163,44 @@
                     <TextBlock Text="{app:T set_auto_import_hint}" Style="{StaticResource MutedText}" Margin="28,0,0,6" />
                     <CheckBox x:Name="AutoReviewBox" Content="{app:T set_auto_review}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
                     <CheckBox x:Name="LaneTipsBox" Content="{app:T set_lane_tips}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="PowerSpikesBox" Content="{app:T set_power_spikes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,12" />
+                    <CheckBox x:Name="PowerSpikesBox" Content="{app:T set_power_spikes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
+                    <CheckBox x:Name="PostMatchBox" Content="{app:T set_post_match}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,12" />
                     <DockPanel>
                         <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Brush="{DynamicResource Accent}" Margin="0,1,10,0" VerticalAlignment="Top" />
                         <TextBlock Text="{app:T set_auto_note}" Style="{StaticResource MutedText}" />
                     </DockPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Звуки уведомлений -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T snd_title, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_sounds}" /></InlineUIContainer></TextBlock>
+                    <CheckBox x:Name="SoundsBox" Content="{app:T snd_enabled}" Checked="Sounds_Changed" Unchecked="Sounds_Changed" Margin="0,0,0,10" />
+                    <Grid x:Name="SoundsGrid">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="170" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Text="{app:T snd_volume}" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <DockPanel Grid.Column="1" Margin="0,4">
+                            <TextBlock x:Name="VolumeText" DockPanel.Dock="Right" Style="{StaticResource MutedText}" Width="44" TextAlignment="Right" VerticalAlignment="Center" />
+                            <Slider x:Name="VolumeSlider" Minimum="0" Maximum="1" ValueChanged="Volume_Changed" />
+                        </DockPanel>
+                        <TextBlock Grid.Row="1" Text="{app:T snd_reminder}" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <WrapPanel x:Name="ReminderSounds" Grid.Row="1" Grid.Column="1" Margin="0,4" Tag="Reminder" />
+                        <TextBlock Grid.Row="2" Text="{app:T snd_warning}" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <WrapPanel x:Name="WarningSounds" Grid.Row="2" Grid.Column="1" Margin="0,4" Tag="Warning" />
+                        <TextBlock Grid.Row="3" Text="{app:T snd_event}" Style="{StaticResource FieldLabel}" VerticalAlignment="Center" />
+                        <WrapPanel x:Name="EventSounds" Grid.Row="3" Grid.Column="1" Margin="0,4" Tag="Event" />
+                    </Grid>
+                    <TextBlock Text="{app:T snd_hint}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0" />
                 </StackPanel>
             </Border>
 

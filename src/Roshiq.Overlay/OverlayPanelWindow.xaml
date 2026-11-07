@@ -179,6 +179,10 @@
             <!-- Рамка режима настройки -->
             <Border CornerRadius="12" BorderThickness="2" BorderBrush="{DynamicResource Accent}" IsHitTestVisible="False"
                     Visibility="{Binding EditMode, Converter={StaticResource BoolToVis}}" />
+            <Border VerticalAlignment="Bottom" Margin="8" Padding="8,5" CornerRadius="6" Background="#E6101410" IsHitTestVisible="False"
+                    Visibility="{Binding EditMode, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="{Binding EditHint}" Foreground="{StaticResource TextMain}" FontFamily="{StaticResource OvDisplay}" FontSize="10.5" TextWrapping="Wrap" />
+            </Border>
         </Grid>
     </Border>
 </Window>

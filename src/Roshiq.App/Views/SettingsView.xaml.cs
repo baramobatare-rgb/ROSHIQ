@@ -25,6 +25,7 @@ public partial class SettingsView : UserControl, IRefreshable
         LanguageBox.Items.Add(new Choice<Lang>(Lang.Russian, "Русский"));
         LanguageBox.Items.Add(new Choice<Lang>(Lang.English, "English"));
         App.Host.SteamChanged += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) RefreshSteam(); });
+        VolumeSlider.PreviewMouseLeftButtonUp += (_, _) => VolumePreview();
     }
 
     public void Refresh()
@@ -57,6 +58,8 @@ public partial class SettingsView : UserControl, IRefreshable
         AutoReviewBox.IsChecked = a.AutoReview;
         LaneTipsBox.IsChecked = a.LaneTips;
         PowerSpikesBox.IsChecked = a.PowerSpikes;
+        PostMatchBox.IsChecked = a.PostMatchSummary;
+        RefreshSounds();
         CtxReference.IsChecked = s.UsageContext == UsageContext.Reference;
         CtxTraining.IsChecked = s.UsageContext == UsageContext.Training;
 
@@ -315,6 +318,73 @@ public partial class SettingsView : UserControl, IRefreshable
 
     private void Diagnostics_Click(object sender, RoutedEventArgs e) => DiagnosticsWindow.Open();
 
+    // ------------------------------------------------------------------ звуки
+
+    private bool _soundsReady;
+
+    private void RefreshSounds()
+    {
+        _soundsReady = false;
+        var snd = App.Host.Settings.Current.Sounds;
+        SoundsBox.IsChecked = snd.Enabled;
+        VolumeSlider.Value = snd.Volume;
+        VolumeText.Text = snd.Volume.ToString("P0");
+        SoundsGrid.IsEnabled = snd.Enabled;
+        SoundsGrid.Opacity = snd.Enabled ? 1 : 0.5;
+        BuildSoundChoices(ReminderSounds, snd.Reminder);
+        BuildSoundChoices(WarningSounds, snd.Warning);
+        BuildSoundChoices(EventSounds, snd.Event);
+        _soundsReady = true;
+    }
+
+    /// <summary>Кнопки выбора звука; выбор сразу проигрывается.</summary>
+    private void BuildSoundChoices(WrapPanel panel, string current)
+    {
+        panel.Children.Clear();
+        var kind = (string)panel.Tag;
+        foreach (var name in Roshiq.Core.Settings.SoundSettings.Names)
+        {
+            var rb = new RadioButton
+            {
+                Style = (Style)FindResource("Segment"), GroupName = "snd_" + kind, Margin = new Thickness(0, 0, 6, 6),
+                Content = Ui.Up(Loc.T("snd_" + name)), IsChecked = name == current
+            };
+            var chosen = name;
+            rb.Checked += (_, _) =>
+            {
+                if (!_soundsReady) return;
+                App.Host.Settings.Update(s =>
+                {
+                    if (kind == "Reminder") s.Sounds.Reminder = chosen;
+                    else if (kind == "Warning") s.Sounds.Warning = chosen;
+                    else s.Sounds.Event = chosen;
+                });
+                App.Host.Sound.Preview(chosen, App.Host.Settings.Current.Sounds.Volume);
+            };
+            panel.Children.Add(rb);
+        }
+    }
+
+    private void Sounds_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_soundsReady) return;
+        bool on = SoundsBox.IsChecked == true;
+        App.Host.Settings.Update(s => s.Sounds.Enabled = on);
+        RefreshSounds();
+        if (on) App.Host.Sound.Preview(App.Host.Settings.Current.Sounds.Warning, App.Host.Settings.Current.Sounds.Volume);
+    }
+
+    private void Volume_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (!_soundsReady) return;
+        double v = Math.Round(VolumeSlider.Value, 2);
+        VolumeText.Text = v.ToString("P0");
+        App.Host.Settings.Update(s => s.Sounds.Volume = v);
+    }
+
+    /// <summary>Проиграть звук предупреждения при отпускании ползунка громкости.</summary>
+    private void VolumePreview() => App.Host.Sound.Preview(App.Host.Settings.Current.Sounds.Warning, App.Host.Settings.Current.Sounds.Volume);
+
     private void RunWizard_Click(object sender, RoutedEventArgs e)
     {
         new FirstRunWindow { Owner = Window.GetWindow(this) }.ShowDialog();
@@ -336,6 +406,7 @@ public partial class SettingsView : UserControl, IRefreshable
             a.AutoReview = AutoReviewBox.IsChecked == true;
             a.LaneTips = LaneTipsBox.IsChecked == true;
             a.PowerSpikes = PowerSpikesBox.IsChecked == true;
+            a.PostMatchSummary = PostMatchBox.IsChecked == true;
         });
         AutoHideBox.IsEnabled = AutoShowBox.IsEnabled = AutoWatchBox.IsChecked == true;
     }
