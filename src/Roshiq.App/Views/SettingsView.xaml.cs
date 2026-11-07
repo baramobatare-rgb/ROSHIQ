@@ -41,6 +41,10 @@ public partial class SettingsView : UserControl, IRefreshable
         TrayMinimizeBox.IsChecked = s.MinimizeToTray;
         TrayCloseBox.IsChecked = s.CloseToTray;
         PersonalStatsBox.IsChecked = s.Data.UsePersonalStats;
+        (s.Preset switch { HintPreset.Minimal => PresetMin, HintPreset.Full => PresetFull, _ => PresetNormal }).IsChecked = true;
+        PresetDescription.Text = Loc.T("preset_desc_" + s.Preset.ToString().ToLowerInvariant());
+        AdvancedBox.IsChecked = s.ShowAdvancedSettings;
+        ApplyAdvancedVisibility(s.ShowAdvancedSettings);
         RefreshSteam();
         var a = s.Automation;
         AutoWatchBox.IsChecked = a.WatchGame;
@@ -281,6 +285,38 @@ public partial class SettingsView : UserControl, IRefreshable
     {
         if (!_ready) return;
         App.Host.Settings.Update(s => s.Data.UsePersonalStats = PersonalStatsBox.IsChecked == true);
+    }
+
+    // ------------------------------------------------------------------ режим подсказок и расширенные настройки
+
+    private void Preset_Checked(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        var preset = PresetMin.IsChecked == true ? HintPreset.Minimal : PresetFull.IsChecked == true ? HintPreset.Full : HintPreset.Normal;
+        App.Host.Settings.Update(s => HintPresets.Apply(s, preset));
+        Refresh();
+    }
+
+    private void Advanced_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        bool on = AdvancedBox.IsChecked == true;
+        App.Host.Settings.Update(s => s.ShowAdvancedSettings = on);
+        ApplyAdvancedVisibility(on);
+    }
+
+    private void ApplyAdvancedVisibility(bool on)
+    {
+        var v = on ? Visibility.Visible : Visibility.Collapsed;
+        VisionCard.Visibility = v;
+        StorageCard.Visibility = v;
+        GsiAdvanced.Visibility = v;
+    }
+
+    private void RunWizard_Click(object sender, RoutedEventArgs e)
+    {
+        new FirstRunWindow { Owner = Window.GetWindow(this) }.ShowDialog();
+        Refresh();
     }
 
     private void Automation_Changed(object sender, RoutedEventArgs e)

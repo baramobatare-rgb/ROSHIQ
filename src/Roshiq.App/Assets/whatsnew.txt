@@ -1,0 +1,8 @@
+# Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.12.0|Мастер первого запуска: язык, роль, связь с игрой, Steam и режим подсказок за минуту.|First-run wizard: language, role, game connection, Steam and hint mode in a minute.
+0.12.0|Режимы подсказок «Минимум», «Обычный», «Всё» и скрытые расширенные настройки.|Hint modes Minimal, Normal and Full, plus advanced settings hidden by default.
+0.12.0|Данные (герои, таймеры, правила) обновляются с GitHub сами — без переустановки после патча.|Data (heroes, timers, rules) now updates from GitHub automatically — no reinstall after a patch.
+0.12.0|Проверка актуальности данных: новые герои, исчезнувшие предметы и отставание от патча — в «Обновлениях».|Data freshness check: new heroes, removed items and patch lag — in Updates.
+0.12.0|Статистика контрпиков обновляется в фоне раз в неделю. Подсказки «?» рядом со сложными настройками.|Counter-pick stats refresh in the background weekly. “?” hints next to tricky settings.
+0.11.0|Советы на линию против соперников, пики силы и мета-сборки из OpenDota.|Lane tips against your opponents, power spikes and OpenDota meta builds.
+0.10.0|Разбор матчей через OpenDota: сравнение с игроками на герое, линия, тайминги, варды.|OpenDota match reviews: comparison with players on your hero, lane, timings, wards.

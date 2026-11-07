@@ -30,8 +30,12 @@ public sealed class SettingsService
 
     public event EventHandler<AppSettings>? Changed;
 
+    /// <summary>Файла настроек не было — это первый запуск ROSHIQ на этом компьютере.</summary>
+    public bool IsFreshInstall { get; private set; }
+
     public AppSettings Load()
     {
+        IsFreshInstall = !File.Exists(_path);
         try
         {
             if (File.Exists(_path))
@@ -162,6 +166,8 @@ public static class AppPaths
 
     public static string Templates => Path.Combine(DataRoot, "templates");
     public static string Cache => Path.Combine(DataRoot, "cache");
+    /// <summary>Файлы данных, скачанные с GitHub (обновление данных без новой версии программы).</summary>
+    public static string DataRemote => Path.Combine(DataRoot, "data-remote");
     public static string Logs => Path.Combine(DataRoot, "logs");
     public static string DataOverrides => Path.Combine(DataRoot, "data");
     public static string Matches => Path.Combine(DataRoot, "matches");

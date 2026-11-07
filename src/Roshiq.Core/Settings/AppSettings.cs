@@ -42,6 +42,14 @@ public sealed class AppSettings
     public TimerSettings Timers { get; set; } = new();
     public AlertSettings Alerts { get; set; } = new();
     public AutomationSettings Automation { get; set; } = new();
+    /// <summary>Пройден мастер первого запуска (1). 0 — ещё нет.</summary>
+    public int SetupVersion { get; set; }
+    /// <summary>Версия ROSHIQ, для которой уже показано окно «Что нового».</summary>
+    public string? LastSeenVersion { get; set; }
+    /// <summary>Выбранный режим подсказок (что включено по умолчанию).</summary>
+    public HintPreset Preset { get; set; } = HintPreset.Normal;
+    /// <summary>Показывать расширенные настройки (калибровка, хранилище, тонкая настройка GSI).</summary>
+    public bool ShowAdvancedSettings { get; set; }
 
     /// <summary>Приводит значения к допустимым диапазонам (после загрузки/импорта).</summary>
     public AppSettings Normalize()
@@ -221,6 +229,11 @@ public sealed class DataSettings
     public const string DefaultUpdateRepo = "baramobatare-rgb/ROSHIQ";
     /// <summary>Раз в день проверять новый патч, цены предметов и версию ROSHIQ (только если сеть разрешена).</summary>
     public bool AutoCheckOnline { get; set; } = true;
+    /// <summary>Подтягивать обновления файлов данных (герои, таймеры, правила) с GitHub без новой версии программы.</summary>
+    public bool AutoUpdateData { get; set; } = true;
+    public DateTime? DataCheckedUtc { get; set; }
+    /// <summary>Раз в неделю обновлять статистику матчапов OpenDota для контрпиков (в фоне, ~2 минуты).</summary>
+    public bool AutoRefreshMatchups { get; set; } = true;
     /// <summary>Патч, о котором пользователь уже знает (уведомление больше не показывается).</summary>
     public string? AcknowledgedPatch { get; set; }
 }
@@ -323,4 +336,35 @@ public sealed class AutomationSettings
     public bool LaneTips { get; set; } = true;
     /// <summary>Пики силы: план по фазам составов и уведомление о ключевом предмете.</summary>
     public bool PowerSpikes { get; set; } = true;
+}
+
+/// <summary>Режим подсказок: сколько всего ROSHIQ показывает во время игры.</summary>
+public enum HintPreset { Minimal, Normal, Full }
+
+public static class HintPresets
+{
+    /// <summary>
+    /// Применить режим: Минимум — только самое важное (нет ТП, выкуп, таймеры без всплывающих окон);
+    /// Обычный — значения по умолчанию; Всё — все подсказки и уведомления.
+    /// </summary>
+    public static void Apply(AppSettings s, HintPreset preset)
+    {
+        s.Preset = preset;
+        bool full = preset == HintPreset.Full, minimal = preset == HintPreset.Minimal;
+        s.Timers.Enabled = true;
+        s.Timers.Toasts = !minimal;
+        s.Alerts.Enabled = true;
+        s.Alerts.NoTeleport = true;
+        s.Alerts.Buyback = true;
+        s.Alerts.Stash = !minimal;
+        s.Alerts.UnspentGold = !minimal;
+        s.Alerts.Pace = !minimal;
+        s.Alerts.Adaptive = !full;
+        s.Automation.LaneTips = !minimal;
+        s.Automation.PowerSpikes = !minimal;
+        s.Automation.AutoOverlayModes = true;
+        if (full) s.Timers.Disabled.Clear();
+        else if (minimal) s.Timers.Disabled = new() { "lotus", "daynight", "water_rune", "wisdom_rune", "stack" };
+        else s.Timers.Disabled = new() { "lotus", "daynight", "water_rune" };
+    }
 }

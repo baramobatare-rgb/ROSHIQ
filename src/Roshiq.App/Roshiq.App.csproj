@@ -21,6 +21,7 @@
     <Resource Include="Assets\roshiq.ico" />
     <Resource Include="Assets\Brand\**\*.ico;Assets\Brand\**\*.png" />
     <EmbeddedResource Include="Assets\Portraits.zip" />
+    <EmbeddedResource Include="Assets\whatsnew.txt" LogicalName="Roshiq.App.Assets.whatsnew.txt" />
     <!-- Иконки предметов: собирает tools\fetch-item-icons.ps1 (вызывается из build.ps1) -->
     <EmbeddedResource Include="Assets\ItemIcons.zip" Condition="Exists('Assets\ItemIcons.zip')" />
     <SplashScreen Include="Assets\Brand\splash.jpg" />

@@ -45,7 +45,78 @@ public partial class UpdatesView : UserControl, IRefreshable
         History.Text = File.Exists(HistoryPath) ? string.Join(Environment.NewLine, File.ReadLines(HistoryPath).Reverse().Take(50)) : "";
         Network.Text = string.Join(Environment.NewLine, NetworkLog.All.Reverse());
         RefreshOnline();
+        RefreshFreshness();
         _ready = true;
+    }
+
+    /// <summary>Откуда взяты данные, что в них устарело и как обновляются.</summary>
+    private void RefreshFreshness()
+    {
+        var L = Loc.Instance;
+        var h = App.Host;
+        var db = h.Database;
+        var d = h.Settings.Current.Data;
+        var source = db.RemoteFiles.Count > 0
+            ? L.Format("fresh_source_remote", db.DataVersion, db.RemoteFiles.Count)
+            : L.Format("fresh_source_builtin", db.DataVersion);
+        if (db.OverriddenFiles.Count > 0) source += " · " + L.Format("fresh_source_mine", db.OverriddenFiles.Count);
+        FreshSource.Text = source;
+
+        FreshAudit.Children.Clear();
+        if (h.Audit is not { } a)
+            FreshAudit.Children.Add(Ui.Text(L.Get(d.AllowOnlineStats ? "fresh_not_checked" : "steam_need_network"), "MutedText"));
+        else
+        {
+            FreshAudit.Children.Add(Ui.Row(L.Get("fresh_patch"),
+                a.PatchBehind ? L.Format("fresh_patch_behind", a.LatestPatch ?? "?", a.Baseline) : L.Format("fresh_patch_ok", a.LatestPatch ?? a.Baseline),
+                a.PatchBehind ? "!" : "✓", a.PatchBehind ? "Warning" : "Accent"));
+            FreshAudit.Children.Add(Ui.Row(L.Get("fresh_heroes"),
+                a.NewHeroes.Count == 0 ? L.Get("fresh_heroes_ok") : L.Format("fresh_heroes_new", string.Join(", ", a.NewHeroes)),
+                a.NewHeroes.Count == 0 ? "✓" : a.NewHeroes.Count.ToString(), a.NewHeroes.Count == 0 ? "Accent" : "Warning"));
+            FreshAudit.Children.Add(Ui.Row(L.Get("fresh_items"),
+                a.RemovedItems.Count == 0 ? L.Get("fresh_items_ok") : L.Format("fresh_items_removed", string.Join(", ", a.RemovedItems.Take(12))),
+                a.RemovedItems.Count == 0 ? "✓" : a.RemovedItems.Count.ToString(), a.RemovedItems.Count == 0 ? "Accent" : "Warning"));
+            if (a.HasIssues) FreshAudit.Children.Add(Ui.Text(L.Get("fresh_issues_hint"), "MutedText", 4));
+        }
+        FreshMessage.Text = string.Join(" · ", new[]
+        {
+            h.DataUpdateMessage,
+            d.DataCheckedUtc is DateTime c ? L.Format("fresh_checked_at", c.ToLocalTime().ToString("dd.MM HH:mm")) : null,
+            h.Stats.LastUpdatedUtc is DateTime st ? L.Format("fresh_matchups_at", st.ToLocalTime().ToString("dd.MM")) : null
+        }.Where(x => !string.IsNullOrEmpty(x)));
+        AutoDataBox.IsChecked = d.AutoUpdateData;
+        AutoMatchupsBox.IsChecked = d.AutoRefreshMatchups;
+        FreshCheckButton.IsEnabled = d.AllowOnlineStats;
+        FreshResetButton.IsEnabled = db.RemoteFiles.Count > 0;
+    }
+
+    private void Fresh_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        App.Host.Settings.Update(s =>
+        {
+            s.Data.AutoUpdateData = AutoDataBox.IsChecked == true;
+            s.Data.AutoRefreshMatchups = AutoMatchupsBox.IsChecked == true;
+        });
+    }
+
+    private async void FreshCheck_Click(object sender, RoutedEventArgs e)
+    {
+        FreshCheckButton.IsEnabled = false;
+        FreshMessage.Text = Loc.T("fresh_checking");
+        try
+        {
+            var error = await App.Host.RunOnlineChecksAsync(force: true);
+            Refresh();
+            if (error != null) FreshMessage.Text += " · " + error;
+        }
+        finally { FreshCheckButton.IsEnabled = App.Host.Settings.Current.Data.AllowOnlineStats; }
+    }
+
+    private void FreshReset_Click(object sender, RoutedEventArgs e)
+    {
+        App.Host.ResetRemoteData();
+        Refresh();
     }
 
     /// <summary>Патч, цены предметов и версия ROSHIQ.</summary>

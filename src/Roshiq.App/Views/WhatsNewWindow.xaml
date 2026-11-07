@@ -1,0 +1,19 @@
+<Window x:Class="Roshiq.App.Views.WhatsNewWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:Roshiq.App"
+        Title="ROSHIQ" Icon="{DynamicResource AppIcon}" Width="560" SizeToContent="Height" MaxHeight="640" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
+    <StackPanel Margin="28,24,28,22">
+        <TextBlock x:Name="VersionLabel" Style="{StaticResource Eyebrow}" />
+        <TextBlock Text="{app:T wn_title}" Style="{StaticResource H1}" Margin="0,0,0,12" />
+        <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="ItemsPanel" />
+        </ScrollViewer>
+        <DockPanel Margin="0,16,0,0">
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T wn_ok, Upper=True}" Click="Ok_Click" IsDefault="True" IsCancel="True" />
+            <TextBlock Text="{app:T wn_where}" Style="{StaticResource MutedText}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
+        </DockPanel>
+    </StackPanel>
+</Window>

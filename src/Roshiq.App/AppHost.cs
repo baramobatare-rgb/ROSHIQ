@@ -61,7 +61,7 @@ public sealed class AppHost : IDisposable
         Settings = new SettingsService();
         Loc.Instance.Language = Settings.Current.Language;
 
-        Database = GameDatabase.Load(AppPaths.DataOverrides);
+        Database = GameDatabase.Load(AppPaths.DataOverrides, Settings.Current.Data.AutoUpdateData ? RemoteData.UsableRemoteDir(AppPaths.DataRemote) : null);
         Stats = new MatchupStatsCache(Path.Combine(AppPaths.Cache, "matchups.json"));
         Analyzer = new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats);
         Builds = new ItemBuildEngine(Database);
@@ -165,6 +165,7 @@ public sealed class AppHost : IDisposable
         Overlay.StateChanged += (_, _) => RaiseChanged();
         _ = RunOnlineChecksAsync(force: false);
         _ = StartupImportAsync();
+        _ = AutoRefreshMatchupsAsync();
     }
 
     // ------------------------------------------------------------------ события
@@ -342,7 +343,7 @@ public sealed class AppHost : IDisposable
 
     public void ReloadDatabase()
     {
-        Database = GameDatabase.Load(AppPaths.DataOverrides);
+        Database = GameDatabase.Load(AppPaths.DataOverrides, Settings.Current.Data.AutoUpdateData ? RemoteData.UsableRemoteDir(AppPaths.DataRemote) : null);
         RebuildEngines();
         CurrentHero = CurrentHero == null ? null : Database.FindHero(CurrentHero.Key);
         RecomputeBuild();
@@ -1401,6 +1402,41 @@ public sealed class AppHost : IDisposable
                 try { AvailableUpdate = await AppUpdater.CheckAsync(d.UpdateRepo!, CancellationToken.None); }
                 catch (Exception ex) { error ??= ex.Message; Log.Warn("Обновление ROSHIQ: " + ex.Message); }
             }
+
+            // обновление файлов данных с GitHub и проверка их актуальности — раз в сутки
+            if (force || d.DataCheckedUtc == null || now - d.DataCheckedUtc.Value > TimeSpan.FromDays(1))
+            {
+                if (d.AutoUpdateData && !string.IsNullOrWhiteSpace(d.UpdateRepo))
+                {
+                    try
+                    {
+                        using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+                        http.DefaultRequestHeaders.UserAgent.ParseAdd("Roshiq/" + AppUpdater.CurrentVersion);
+                        var result = await RemoteData.UpdateAsync(http, d.UpdateRepo!, Database.DataVersion, AppUpdater.CurrentVersion,
+                            AppPaths.DataRemote, CancellationToken.None);
+                        DataUpdateMessage = result.Message;
+                        if (result.Updated)
+                            await _dispatcher.InvokeAsync(() =>
+                            {
+                                ReloadDatabase();
+                                _lastEventToastUtc = DateTime.MinValue;
+                                ShowEventToast(Loc.T("data_updated_header").ToUpperInvariant(), Loc.Instance.Format("data_updated", result.Version ?? ""));
+                            });
+                    }
+                    catch (Exception ex) { error ??= ex.Message; DataUpdateMessage = ex.Message; Log.Warn("Обновление данных: " + ex.Message); }
+                }
+                try
+                {
+                    var heroes = await client.GetHeroListAsync(CancellationToken.None);
+                    var items = await client.GetItemIdMapAsync(CancellationToken.None);
+                    _itemIdMap ??= items;
+                    Audit = DataAudit.Build(Database, Patch.Latest, heroes, items.Values.ToList());
+                    Log.Info($"Проверка данных: новых героев {Audit.NewHeroes.Count}, исчезнувших предметов {Audit.RemovedItems.Count}, патч {(Audit.PatchBehind ? "новее базы" : "совпадает")}");
+                }
+                catch (Exception ex) { error ??= ex.Message; Log.Warn("Проверка данных: " + ex.Message); }
+                var checkedAt = now;
+                await _dispatcher.InvokeAsync(() => Settings.Update(x => x.Data.DataCheckedUtc = checkedAt));
+            }
         }
         finally
         {
@@ -1408,6 +1444,42 @@ public sealed class AppHost : IDisposable
             _ = _dispatcher.InvokeAsync(() => { RefreshOverlay(); RaiseChanged(); });
         }
         return error;
+    }
+
+    /// <summary>Итог последней проверки актуальности данных (null — ещё не проверялось в этом запуске).</summary>
+    public DataAudit? Audit { get; private set; }
+    /// <summary>Что произошло при последней проверке обновления данных.</summary>
+    public string? DataUpdateMessage { get; private set; }
+
+    private readonly CancellationTokenSource _backgroundCts = new();
+    private bool _matchupRefreshRunning;
+
+    /// <summary>Статистика контрпиков старше недели — тихо обновить в фоне (≈1 запрос в секунду, ~2 минуты).</summary>
+    private async Task AutoRefreshMatchupsAsync()
+    {
+        var d = Settings.Current.Data;
+        if (!d.AllowOnlineStats || !d.AutoRefreshMatchups || _matchupRefreshRunning) return;
+        if (Stats.LastUpdatedUtc is DateTime last && DateTime.UtcNow - last < TimeSpan.FromDays(7)) return;
+        _matchupRefreshRunning = true;
+        try
+        {
+            await Task.Delay(TimeSpan.FromMinutes(2), _backgroundCts.Token); // не мешать запуску программы
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            int ok = await client.RefreshAsync(Stats, Database.Heroes.Select(h => h.Id).ToList(), null, _backgroundCts.Token);
+            Log.Info($"Статистика контрпиков обновлена в фоне: {ok}/{Database.Heroes.Count}");
+            await _dispatcher.InvokeAsync(() => { RebuildEngines(); RaiseChanged(); });
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) { Log.Warn("Фоновое обновление статистики: " + ex.Message); }
+        finally { _matchupRefreshRunning = false; }
+    }
+
+    /// <summary>Вернуться к встроенным данным (удалить обновление с GitHub).</summary>
+    public void ResetRemoteData()
+    {
+        RemoteData.Reset(AppPaths.DataRemote);
+        Settings.Update(x => x.Data.DataCheckedUtc = null);
+        ReloadDatabase();
     }
 
     public static BuildPhase PhaseForClock(int? clock) => clock switch
@@ -1427,6 +1499,7 @@ public sealed class AppHost : IDisposable
     public void Dispose()
     {
         _tick.Stop();
+        try { _backgroundCts.Cancel(); } catch { }
         try { if (_recorder.Flush() is MatchRecord last) SaveMatch(last); } catch { }
         try { Settings.Save(); } catch { }
         Gsi?.Dispose();

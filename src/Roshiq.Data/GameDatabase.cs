@@ -67,15 +67,28 @@ public sealed class GameDatabase
 
     private GameDatabase() { }
 
-    /// <summary>Загрузить встроенные данные (и переопределения из папки, если задана).</summary>
-    public static GameDatabase Load(string? overrideDirectory = null)
+    /// <summary>
+    /// Загрузить данные. Порядок: ваши правки (overrideDirectory) → обновление данных с GitHub (remoteDirectory) → встроенные.
+    /// </summary>
+    public static GameDatabase Load(string? overrideDirectory = null, string? remoteDirectory = null)
     {
         var db = new GameDatabase();
-        var source = new DataSource(overrideDirectory);
+        var source = new DataSource(overrideDirectory, remoteDirectory);
         db.LoadAll(source);
         db.OverriddenFiles = source.Overridden;
+        db.RemoteFiles = source.Remote;
         return db;
     }
+
+    /// <summary>Файлы данных, взятые из обновления с GitHub.</summary>
+    public IReadOnlyList<string> RemoteFiles { get; private set; } = Array.Empty<string>();
+
+
+    /// <summary>Имена всех встроенных файлов данных (heroes.txt, items.txt…).</summary>
+    public static IReadOnlyList<string> ResourceFiles =>
+        Assembly.GetExecutingAssembly().GetManifestResourceNames()
+            .Where(n => n.StartsWith("Roshiq.Data.", StringComparison.Ordinal) && n.EndsWith(".txt", StringComparison.Ordinal))
+            .Select(n => n["Roshiq.Data.".Length..]).OrderBy(n => n, StringComparer.Ordinal).ToList();
 
     public Hero? FindHero(string? keyOrName)
     {
@@ -295,18 +308,26 @@ public sealed class GameDatabase
     private sealed class DataSource
     {
         private readonly string? _dir;
+        private readonly string? _remote;
         public List<string> Overridden { get; } = new();
+        public List<string> Remote { get; } = new();
 
-        public DataSource(string? dir) { _dir = dir; }
+        public DataSource(string? dir, string? remote = null) { _dir = dir; _remote = remote; }
 
         public IEnumerable<string> Lines(string file)
         {
             string text;
             var overridePath = _dir == null ? null : Path.Combine(_dir, file);
+            var remotePath = _remote == null ? null : Path.Combine(_remote, file);
             if (overridePath != null && File.Exists(overridePath))
             {
                 text = File.ReadAllText(overridePath);
                 Overridden.Add(file);
+            }
+            else if (remotePath != null && File.Exists(remotePath))
+            {
+                text = File.ReadAllText(remotePath);
+                Remote.Add(file);
             }
             else
             {

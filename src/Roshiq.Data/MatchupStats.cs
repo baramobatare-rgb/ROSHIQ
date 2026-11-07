@@ -385,5 +385,19 @@ public sealed class OpenDotaClient : IDisposable
         return result;
     }
 
+    /// <summary>Все герои OpenDota: id → английское имя (constants/heroes).</summary>
+    public async Task<IReadOnlyDictionary<int, string>> GetHeroListAsync(CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync("/constants/heroes", ct).ConfigureAwait(false);
+        var map = new Dictionary<int, string>();
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) return map;
+        foreach (var p in doc.RootElement.EnumerateObject())
+        {
+            if (p.Value.ValueKind != JsonValueKind.Object || MatchDetails.Int(p.Value, "id") is not int id) continue;
+            map[id] = MatchDetails.Str(p.Value, "localized_name") ?? MatchDetails.Str(p.Value, "name") ?? id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+        return map;
+    }
+
     public void Dispose() => _http.Dispose();
 }

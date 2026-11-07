@@ -1,0 +1,92 @@
+<Window x:Class="Roshiq.App.Views.FirstRunWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="clr-namespace:Roshiq.App"
+        Title="ROSHIQ" Icon="{DynamicResource AppIcon}" Width="760" Height="600" MinWidth="640" MinHeight="520"
+        WindowStartupLocation="CenterScreen" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
+        FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
+    <Grid Margin="28,24,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Шапка: шаг и прогресс -->
+        <StackPanel>
+            <TextBlock x:Name="StepLabel" Style="{StaticResource Eyebrow}" />
+            <TextBlock x:Name="StepTitle" Style="{StaticResource H1}" />
+            <Grid Margin="0,4,0,16" Height="4">
+                <Border Background="{DynamicResource Panel3}" CornerRadius="2" />
+                <Border x:Name="ProgressFill" Background="{DynamicResource Accent}" CornerRadius="2" HorizontalAlignment="Left" Width="0" />
+            </Grid>
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <!-- 1. Приветствие, язык, тема -->
+                <StackPanel x:Name="Step0">
+                    <TextBlock Text="{app:T fr_welcome}" TextWrapping="Wrap" Style="{StaticResource Value}" Margin="0,0,0,12" />
+                    <TextBlock Text="{app:T fr_language}" Style="{StaticResource Eyebrow}" Margin="0,6,0,6" />
+                    <WrapPanel>
+                        <RadioButton x:Name="LangRu" Style="{StaticResource Segment}" GroupName="Lang" Content="РУССКИЙ" Checked="Lang_Checked" Margin="0,0,8,8" />
+                        <RadioButton x:Name="LangEn" Style="{StaticResource Segment}" GroupName="Lang" Content="ENGLISH" Checked="Lang_Checked" Margin="0,0,8,8" />
+                    </WrapPanel>
+                    <TextBlock Text="{app:T fr_theme}" Style="{StaticResource Eyebrow}" Margin="0,10,0,6" />
+                    <WrapPanel x:Name="ThemePanel" />
+                    <TextBlock Text="{app:T fr_honest}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,16,0,0" />
+                </StackPanel>
+
+                <!-- 2. Роль -->
+                <StackPanel x:Name="Step1" Visibility="Collapsed">
+                    <TextBlock Text="{app:T fr_role_hint}" TextWrapping="Wrap" Style="{StaticResource Value}" Margin="0,0,0,12" />
+                    <WrapPanel x:Name="RolePanel" />
+                    <TextBlock Text="{app:T fr_role_auto}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                </StackPanel>
+
+                <!-- 3. Связь с игрой -->
+                <StackPanel x:Name="Step2" Visibility="Collapsed">
+                    <TextBlock Text="{app:T fr_gsi_hint}" TextWrapping="Wrap" Style="{StaticResource Value}" Margin="0,0,0,12" />
+                    <Button x:Name="GsiButton" Style="{StaticResource PrimaryButton}" Content="{app:T fr_gsi_setup, Upper=True}" Click="Gsi_Click" HorizontalAlignment="Left" />
+                    <TextBlock x:Name="GsiStatus" Style="{StaticResource Value}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <TextBlock Text="{app:T fr_gsi_after}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                </StackPanel>
+
+                <!-- 4. Steam -->
+                <StackPanel x:Name="Step3" Visibility="Collapsed">
+                    <TextBlock Text="{app:T fr_steam_hint}" TextWrapping="Wrap" Style="{StaticResource Value}" Margin="0,0,0,12" />
+                    <WrapPanel>
+                        <Button Style="{StaticResource PrimaryButton}" Content="{app:T steam_find_local, Upper=True}" Click="SteamLocal_Click" />
+                        <Button x:Name="SteamSignIn" Style="{StaticResource GhostButton}" Content="{app:T steam_signin, Upper=True}" Click="SteamSignIn_Click" />
+                    </WrapPanel>
+                    <StackPanel x:Name="SteamList" Margin="0,6,0,0" />
+                    <TextBlock x:Name="SteamStatus" Style="{StaticResource Value}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <TextBlock Text="{app:T fr_steam_later}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                </StackPanel>
+
+                <!-- 5. Интернет и режим подсказок -->
+                <StackPanel x:Name="Step4" Visibility="Collapsed">
+                    <CheckBox x:Name="OnlineBox" Content="{app:T fr_online}" />
+                    <TextBlock Text="{app:T fr_online_hint}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="28,2,0,14" />
+                    <TextBlock Text="{app:T preset_title}" Style="{StaticResource Eyebrow}" Margin="0,4,0,6" />
+                    <WrapPanel>
+                        <RadioButton x:Name="PresetMin" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_minimal, Upper=True}" Checked="Preset_Checked" Margin="0,0,8,8" />
+                        <RadioButton x:Name="PresetNormal" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_normal, Upper=True}" Checked="Preset_Checked" Margin="0,0,8,8" />
+                        <RadioButton x:Name="PresetFull" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_full, Upper=True}" Checked="Preset_Checked" Margin="0,0,8,8" />
+                    </WrapPanel>
+                    <TextBlock x:Name="PresetDescription" Style="{StaticResource MutedText}" TextWrapping="Wrap" />
+                    <CheckBox x:Name="AutostartBox" Content="{app:T fr_autostart}" Margin="0,16,0,0" />
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <DockPanel Grid.Row="2" Margin="0,16,0,0">
+            <Button DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Content="{app:T fr_skip, Upper=True}" Click="Skip_Click" />
+            <WrapPanel DockPanel.Dock="Right" HorizontalAlignment="Right">
+                <Button x:Name="BackButton" Style="{StaticResource GhostButton}" Content="{app:T fr_back, Upper=True}" Click="Back_Click" />
+                <Button x:Name="NextButton" Style="{StaticResource PrimaryButton}" Click="Next_Click" />
+            </WrapPanel>
+            <Border />
+        </DockPanel>
+    </Grid>
+</Window>

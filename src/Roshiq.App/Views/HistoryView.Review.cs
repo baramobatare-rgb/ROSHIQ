@@ -44,7 +44,10 @@ public partial class HistoryView
         // сравнение с игроками на герое
         if (review.Benchmarks.Count > 0)
         {
-            OdReviewPanel.Children.Add(SubTitle(L.Get("review_bench")));
+            var benchTitle = new StackPanel { Orientation = Orientation.Horizontal };
+            benchTitle.Children.Add(SubTitle(L.Get("review_bench")));
+            benchTitle.Children.Add(new HelpTip { Text = L.Get("help_bench"), Margin = new Thickness(6, 8, 0, 0) });
+            OdReviewPanel.Children.Add(benchTitle);
             foreach (var b in review.Benchmarks.OrderBy(b => b.Pct))
                 OdReviewPanel.Children.Add(BenchmarkBar(b, L));
         }

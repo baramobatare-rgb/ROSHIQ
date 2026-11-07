@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:app="clr-namespace:Roshiq.App"
+             xmlns:v="clr-namespace:Roshiq.App.Views"
              xmlns:ov="clr-namespace:Roshiq.Overlay;assembly=Roshiq.Overlay">
     <UserControl.Resources>
         <Style x:Key="FieldLabel" TargetType="TextBlock">
@@ -24,7 +25,7 @@
             <!-- Режим -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T ov_mode, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="01 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T ov_mode, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_overlay}" /></InlineUIContainer></TextBlock>
                     <WrapPanel>
                         <RadioButton x:Name="ModeMinimal" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_minimal, Upper=True}" Checked="Mode_Checked" />
                         <RadioButton x:Name="ModeExpanded" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_expanded, Upper=True}" Checked="Mode_Checked" />
@@ -137,7 +138,7 @@
             <!-- Профили -->
             <Border Style="{StaticResource Card}">
                 <StackPanel>
-                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T prof_title, Upper=True}" /></TextBlock>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="05 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T prof_title, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_profiles}" /></InlineUIContainer></TextBlock>
                     <TextBlock Text="{app:T prof_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                     <WrapPanel x:Name="ProfilePanel" />
                     <DockPanel Margin="0,6,0,0">

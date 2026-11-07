@@ -63,6 +63,47 @@ public partial class App : Application
         }
         Host.Start();
         Log.Info("ROSHIQ запущен");
+
+        // мастер первого запуска и «Что нового» — когда окно видно (при запуске в трей — при первом открытии)
+        if (window.IsVisible) window.Dispatcher.InvokeAsync(() => ShowStartupDialogs(window), DispatcherPriority.ApplicationIdle);
+        else
+        {
+            DependencyPropertyChangedEventHandler? handler = null;
+            handler = (_, _) =>
+            {
+                if (!window.IsVisible) return;
+                window.IsVisibleChanged -= handler;
+                window.Dispatcher.InvokeAsync(() => ShowStartupDialogs(window), DispatcherPriority.ApplicationIdle);
+            };
+            window.IsVisibleChanged += handler;
+        }
+    }
+
+    private static void ShowStartupDialogs(Window owner)
+    {
+        try
+        {
+            var settings = Host.Settings;
+            var current = Roshiq.App.Services.AppUpdater.CurrentVersion.ToString();
+            if (settings.Current.SetupVersion == 0)
+            {
+                if (settings.IsFreshInstall)
+                {
+                    new Roshiq.App.Views.FirstRunWindow { Owner = owner, WindowStartupLocation = WindowStartupLocation.CenterOwner }.ShowDialog();
+                    settings.Update(s => { s.SetupVersion = Math.Max(1, s.SetupVersion); s.LastSeenVersion = current; });
+                    return;
+                }
+                settings.Update(s => s.SetupVersion = 1); // обновились со старой версии — всё уже настроено
+            }
+            if (settings.Current.LastSeenVersion != current)
+            {
+                var entries = Roshiq.App.Views.WhatsNewWindow.Since(Roshiq.App.Views.WhatsNewWindow.Load(), settings.Current.LastSeenVersion,
+                    Roshiq.App.Services.AppUpdater.CurrentVersion);
+                settings.Update(s => s.LastSeenVersion = current);
+                if (entries.Count > 0) new Roshiq.App.Views.WhatsNewWindow(entries) { Owner = owner }.ShowDialog();
+            }
+        }
+        catch (Exception ex) { Log.Error("Окна при запуске", ex); }
     }
 
     private void OnUiException(object sender, DispatcherUnhandledExceptionEventArgs e)

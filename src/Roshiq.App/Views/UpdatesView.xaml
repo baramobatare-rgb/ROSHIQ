@@ -2,6 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:app="clr-namespace:Roshiq.App"
+             xmlns:v="clr-namespace:Roshiq.App.Views"
              xmlns:ov="clr-namespace:Roshiq.Overlay;assembly=Roshiq.Overlay">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,6,20">
@@ -34,7 +35,7 @@
                 <!-- Статистика -->
                 <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T upd_stats, Upper=True}" /></TextBlock>
+                        <TextBlock Style="{StaticResource Eyebrow}"><Run Text="02 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T upd_stats, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_online}" /></InlineUIContainer></TextBlock>
                         <TextBlock x:Name="StatsInfo" Style="{StaticResource Value}" />
                         <CheckBox x:Name="AllowOnline" Content="{app:T upd_allow_online}" Margin="0,10,0,4" Checked="AllowOnline_Changed" Unchecked="AllowOnline_Changed" />
                         <UniformGrid Columns="2">
@@ -65,6 +66,22 @@
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <!-- Актуальность данных -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource Eyebrow}"><Run Text="08 / " Foreground="{DynamicResource Accent}" /><Run Text="{app:T fresh_title, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_data}" /></InlineUIContainer></TextBlock>
+                    <TextBlock x:Name="FreshSource" Style="{StaticResource Value}" TextWrapping="Wrap" />
+                    <StackPanel x:Name="FreshAudit" Margin="0,8,0,0" />
+                    <TextBlock x:Name="FreshMessage" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,6,0,0" />
+                    <CheckBox x:Name="AutoDataBox" Content="{app:T fresh_auto_data}" Checked="Fresh_Changed" Unchecked="Fresh_Changed" Margin="0,10,0,4" />
+                    <CheckBox x:Name="AutoMatchupsBox" Content="{app:T fresh_auto_matchups}" Checked="Fresh_Changed" Unchecked="Fresh_Changed" Margin="0,0,0,8" />
+                    <WrapPanel>
+                        <Button x:Name="FreshCheckButton" Style="{StaticResource PrimaryButton}" Content="{app:T fresh_check, Upper=True}" Click="FreshCheck_Click" />
+                        <Button x:Name="FreshResetButton" Style="{StaticResource GhostButton}" Content="{app:T fresh_reset, Upper=True}" Click="FreshReset_Click" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
 
             <!-- История и сеть -->
             <Grid>
