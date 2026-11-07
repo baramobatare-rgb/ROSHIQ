@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using Roshiq.Core.Localization;
 using Roshiq.Recommendations;
 
 namespace Roshiq.App.Views;
@@ -63,8 +64,8 @@ public static class MiniMap
         // базы и древние
         canvas.Children.Add(Base(0, S(1 - MapZones.BaseSize), S(MapZones.BaseSize), RadiantC));
         canvas.Children.Add(Base(S(1 - MapZones.BaseSize), 0, S(MapZones.BaseSize), DireC));
-        canvas.Children.Add(Marker(P(0.09, 0.09), Math.Max(9, size / 26), RadiantC, true, "Ancient · Radiant"));
-        canvas.Children.Add(Marker(P(0.91, 0.91), Math.Max(9, size / 26), DireC, true, "Ancient · Dire"));
+        canvas.Children.Add(Marker(P(0.09, 0.09), Math.Max(9, size / 26), RadiantC, true, Loc.T("map_ancient") + " · Radiant"));
+        canvas.Children.Add(Marker(P(0.91, 0.91), Math.Max(9, size / 26), DireC, true, Loc.T("map_ancient") + " · Dire"));
 
         // вышки: по три на линию у каждой стороны (схематичные места)
         double t = Math.Max(5, size / 52);
@@ -75,13 +76,35 @@ public static class MiniMap
                      (0.80, 0.08), (0.52, 0.08), (0.30, 0.08),
                  })
         {
-            canvas.Children.Add(Marker(P(x, y), t, RadiantC, false, "Tower · Radiant"));
-            canvas.Children.Add(Marker(P(1 - x, 1 - y), t, DireC, false, "Tower · Dire"));
+            canvas.Children.Add(Marker(P(x, y), t, RadiantC, false, Loc.T("map_tower") + " · Radiant"));
+            canvas.Children.Add(Marker(P(1 - x, 1 - y), t, DireC, false, Loc.T("map_tower") + " · Dire"));
         }
 
         // логова Рошана
         foreach (var (x, y) in new[] { (0.36, 0.64), (0.64, 0.36) })
-            canvas.Children.Add(Ring(P(x, y), Math.Max(10, size / 22), "Roshan"));
+            canvas.Children.Add(Ring(P(x, y), Math.Max(10, size / 22), Loc.T("map_roshan")));
+
+        // лагеря леса (треугольники), зеркально для двух сторон
+        double camp = Math.Max(6, size / 48);
+        foreach (var (x, y) in new[] { (0.27, 0.36), (0.36, 0.24), (0.46, 0.17), (0.58, 0.16), (0.70, 0.17), (0.20, 0.50), (0.26, 0.58), (0.44, 0.31) })
+        {
+            canvas.Children.Add(Camp(P(x, y), camp, RadiantC, Loc.T("map_camp")));
+            canvas.Children.Add(Camp(P(1 - x, 1 - y), camp, DireC, Loc.T("map_camp")));
+        }
+
+        // аванпосты — по одному на стороне, ближе к своей лёгкой линии
+        foreach (var (x, y, c) in new[] { (0.62, 0.24, RadiantC), (0.38, 0.76, DireC) })
+            canvas.Children.Add(Outpost(P(x, y), Math.Max(10, size / 30), c, Loc.T("map_outpost")));
+
+        // руны: силы — у реки, богатства — в лесу
+        foreach (var (x, y) in new[] { (0.30, 0.71), (0.70, 0.29) })
+            canvas.Children.Add(Rune(P(x, y), Math.Max(8, size / 38), Color.FromRgb(79, 163, 247), Loc.T("map_power_rune")));
+        foreach (var (x, y) in new[] { (0.30, 0.44), (0.70, 0.56), (0.46, 0.06), (0.54, 0.94) })
+            canvas.Children.Add(Rune(P(x, y), Math.Max(7, size / 44), Color.FromRgb(242, 194, 75), Loc.T("map_bounty_rune")));
+
+        // Торментеры — по одному в углах у лёгких линий противников
+        foreach (var (x, y) in new[] { (0.80, 0.24), (0.20, 0.76) })
+            canvas.Children.Add(Ring(P(x, y), Math.Max(9, size / 30), Loc.T("map_tormentor"), Color.FromRgb(255, 150, 80)));
 
         if (labels)
         {
@@ -176,16 +199,56 @@ public static class MiniMap
         return rect;
     }
 
-    private static FrameworkElement Ring(Point at, double size, string tip)
+    private static FrameworkElement Ring(Point at, double size, string tip, Color? color = null)
     {
+        var c = color ?? Color.FromRgb(201, 160, 255);
         var e = new Ellipse
         {
-            Width = size, Height = size, Stroke = new SolidColorBrush(Color.FromArgb(170, 201, 160, 255)), StrokeThickness = 1.5,
-            StrokeDashArray = new DoubleCollection { 2, 2 }, Fill = new SolidColorBrush(Color.FromArgb(30, 201, 160, 255)), ToolTip = tip
+            Width = size, Height = size, Stroke = new SolidColorBrush(Color.FromArgb(170, c.R, c.G, c.B)), StrokeThickness = 1.5,
+            StrokeDashArray = new DoubleCollection { 2, 2 }, Fill = new SolidColorBrush(Color.FromArgb(30, c.R, c.G, c.B)), ToolTip = tip
         };
         Canvas.SetLeft(e, at.X - size / 2);
         Canvas.SetTop(e, at.Y - size / 2);
         return e;
+    }
+
+    /// <summary>Лагерь леса — маленький треугольник в цвете стороны.</summary>
+    private static FrameworkElement Camp(Point at, double size, Color c, string tip)
+    {
+        var tri = new Polygon
+        {
+            Points = new PointCollection { new(size / 2, 0), new(size, size), new(0, size) },
+            Fill = new SolidColorBrush(Color.FromArgb(110, c.R, c.G, c.B)), Stroke = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)),
+            StrokeThickness = 0.8, ToolTip = tip
+        };
+        Canvas.SetLeft(tri, at.X - size / 2);
+        Canvas.SetTop(tri, at.Y - size / 2);
+        return tri;
+    }
+
+    /// <summary>Аванпост — кольцо с точкой.</summary>
+    private static FrameworkElement Outpost(Point at, double size, Color c, string tip)
+    {
+        var g = new Grid { Width = size, Height = size, ToolTip = tip };
+        g.Children.Add(new Ellipse { Stroke = new SolidColorBrush(Color.FromArgb(200, c.R, c.G, c.B)), StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromArgb(40, c.R, c.G, c.B)) });
+        g.Children.Add(new Ellipse { Width = size / 3, Height = size / 3, Fill = new SolidColorBrush(c) });
+        Canvas.SetLeft(g, at.X - size / 2);
+        Canvas.SetTop(g, at.Y - size / 2);
+        return g;
+    }
+
+    /// <summary>Руна — ромбик.</summary>
+    private static FrameworkElement Rune(Point at, double size, Color c, string tip)
+    {
+        var r = new Rectangle
+        {
+            Width = size, Height = size, Fill = new SolidColorBrush(Color.FromArgb(200, c.R, c.G, c.B)),
+            Stroke = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)), StrokeThickness = 0.8, ToolTip = tip,
+            RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new RotateTransform(45)
+        };
+        Canvas.SetLeft(r, at.X - size / 2);
+        Canvas.SetTop(r, at.Y - size / 2);
+        return r;
     }
 
     private static TextBlock Label(string text, Point at, double size)

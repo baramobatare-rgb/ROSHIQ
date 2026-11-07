@@ -1,4 +1,5 @@
 # Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.17.2|Карта смертей подробнее: лагеря леса, аванпосты, руны силы и богатства, Торментеры; подписи при наведении.|More detailed death map: jungle camps, outposts, power and bounty runes, Tormentors; labels on hover.
 0.17.1|Драфт: контрпики приходят всплывающим уведомлением, как только враги выбирают героев (можно выключить в настройках).|Draft: counterpicks arrive as a pop-up as soon as enemies pick (can be turned off in settings).
 0.17.1|Драфт распознаётся надёжнее: запасной захват окна игры при чёрном кадре, больше стадий выбора, сторона по вашему портрету; если не выходит — уведомление с причиной.|More reliable draft recognition: fallback window capture for black frames, more pick stages, side from your portrait; if it fails, a notification says why.
 0.17.1|В настройках можно выключить сборку в игре: оверлей покажет только героя и советы.|Settings: turn off the in-game build — the overlay shows only the hero and tips.
