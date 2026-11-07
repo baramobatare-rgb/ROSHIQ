@@ -41,7 +41,7 @@ public sealed class HeroPicker : Window
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
         if (canClear)
         {
-            var clear = new Button { Content = Ui.Up(Loc.T("picker_clear")), Style = (Style)Application.Current.FindResource("GhostButton") };
+            var clear = new Button { Content = Loc.T("picker_clear"), Style = (Style)Application.Current.FindResource("GhostButton") };
             clear.Click += (_, _) => Choose(null);
             DockPanel.SetDock(clear, Dock.Right);
             header.Children.Add(clear);

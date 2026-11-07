@@ -83,7 +83,7 @@ public partial class DiagnosticsWindow : Window
             var fix = new Button
             {
                 Style = (Style)FindResource(c.Status == CheckStatus.Error ? "PrimaryButton" : "GhostButton"),
-                Content = Ui.Up(c.FixText), VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0)
+                Content = c.FixText, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0)
             };
             fix.Click += async (_, _) =>
             {

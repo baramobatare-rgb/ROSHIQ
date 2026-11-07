@@ -116,11 +116,11 @@ public partial class HeroesView : UserControl, IRefreshable
 
         FavoriteButton.Content = L.Get(App.Host.Settings.Current.FavoriteHeroKeys.Contains(hero.Key) ? "my_favorite_remove" : "my_favorite_add");
         FavoriteButton.Foreground = Ui.Res(App.Host.Settings.Current.FavoriteHeroKeys.Contains(hero.Key) ? "Accent" : "Text");
-        HeroName.Text = Ui.Up(hero.DisplayName(L.Language));
+        HeroName.Text = hero.DisplayName(L.Language);
         if ((PortraitHost.Content as FrameworkElement)?.Tag as string != hero.Key)
         {
             SetBackdrop(hero);
-            var portrait = Ui.Portrait(hero, 176);
+            var portrait = Ui.Portrait(hero, 136);
             portrait.Tag = hero.Key;
             PortraitHost.Content = portrait;
             Motion.Enter(portrait, -10, 0);
@@ -128,7 +128,15 @@ public partial class HeroesView : UserControl, IRefreshable
         HeroMeta.Text = Ui.Up($"{hero.Name} · {L.Get("attr_" + hero.Attribute.ToString().ToLowerInvariant())} · " +
                         string.Join(" / ", hero.Positions.Select(p => "POS " + (int)p)));
         TraitPanel.Children.Clear();
-        foreach (var t in hero.Traits.OrderBy(t => t)) TraitPanel.Children.Add(Ui.Chip(db.TraitText(t, L.Language)));
+        // признаки — одной строкой: первые четыре, остальные в подсказке «+N»
+        var traits = hero.Traits.OrderBy(t => t).Select(t => db.TraitText(t, L.Language)).ToList();
+        foreach (var t in traits.Take(4)) TraitPanel.Children.Add(Ui.Chip(t));
+        if (traits.Count > 4)
+        {
+            var more = Ui.Chip("+" + (traits.Count - 4));
+            more.ToolTip = string.Join("\n", traits.Skip(4));
+            TraitPanel.Children.Add(more);
+        }
         if (!string.Equals(NoteBox.Tag as string, hero.Key, StringComparison.OrdinalIgnoreCase))
         {
             NoteBox.Tag = hero.Key;
@@ -160,7 +168,7 @@ public partial class HeroesView : UserControl, IRefreshable
             var picks = build[phase];
             if (picks.Count == 0) continue;
 
-            var head = new DockPanel { Margin = new Thickness(0, n == 1 ? 8 : 18, 0, 10) };
+            var head = new DockPanel { Margin = new Thickness(0, n == 1 ? 8 : 12, 0, 8) };
             if (now == phase)
             {
                 var chip = Ui.Chip(Ui.Up(L.Get("build_now")), "AccentSoft", "Accent");
@@ -238,41 +246,37 @@ public partial class HeroesView : UserControl, IRefreshable
         AddEnemyButton.IsEnabled = enemies.Count < 5;
         AddEnemyButton.ToolTip = enemies.Count < 5 ? L.Get("build_add_enemy") : L.Get("build_enemy_limit");
         AdaptationPanel.Children.Clear();
-        if (enemies.Count == 0) { AdaptationPanel.Children.Add(Ui.Text(L.Get("build_adapt_empty"), "MutedText")); return; }
+        // пока врагов нет — блок сжат до одной строки (заголовок и кнопки), чтобы не вытеснять сборку
+        bool any = enemies.Count > 0;
+        EnemyContextPanel.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+        AdaptHint.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+        AdaptationPanel.Visibility = any ? Visibility.Visible : Visibility.Collapsed;
+        if (!any) return;
         var options = App.Host.Builds.Adaptations(hero, position, enemies, baseline);
         foreach (var option in options)
         {
             var text = new StackPanel();
-            text.Children.Add(Ui.Text(option.Pick.Item.DisplayName(L.Language), "H2"));
+            var title = Ui.Text(option.Pick.Item.DisplayName(L.Language), "Value"); title.FontWeight = FontWeights.SemiBold;
+            text.Children.Add(title);
             text.Children.Add(Ui.Text(string.Join("; ", option.Pick.Reasons.Take(2).Select(reason => reason.Text(L.Language))), "Value"));
             text.Children.Add(Ui.Text(option.Pick.Item.Purpose(L.Language), "MutedText", 4));
             var action = option.AlreadyIncluded ? L.Get("build_included") : option.Replace != null
                 ? L.Format("build_replace", option.Replace.DisplayName(L.Language)) : L.Get("build_consider");
             var label = Ui.Text(action, "MutedText", 6); label.Foreground = Ui.Res(option.AlreadyIncluded ? "Success" : "Accent");
             text.Children.Add(label);
-            AdaptationPanel.Children.Add(new Border { Style = (Style)FindResource("InnerCard"), Margin = new Thickness(0, 0, 0, 10), Child = Ui.WithImage(Ui.ItemIcon(option.Pick.Item.Key, 52), text) });
+            // информационный блок без рамки
+            var block = Ui.WithImage(Ui.ItemIcon(option.Pick.Item.Key, 52), text);
+            block.Margin = new Thickness(0, 0, 0, 12);
+            AdaptationPanel.Children.Add(block);
         }
         if (options.Count == 0) AdaptationPanel.Children.Add(Ui.Text(L.Get("build_adapt_none"), "MutedText"));
     }
 
     /// <summary>Арт героя фоном шапки: справа ярко, к левому краю растворяется в цвет карточки.</summary>
+    /// <summary>Арт героя справа в шапке: в родном размере (по высоте шапки), затемнён и растворяется влево — без растягивания.</summary>
     private void SetBackdrop(Hero hero)
     {
-        var img = Roshiq.App.Services.HeroArt.Portrait(hero.Key);
-        if (img == null || Ui.Res("Panel") is not SolidColorBrush panel) { HeroHeader.ClearValue(Border.BackgroundProperty); return; }
-        var c = panel.Color;
-        var rect = new Rect(0, 0, 32, 9);   // широкая карточка: картинка 16:9 справа, слева сплошной цвет
-        var group = new DrawingGroup();
-        group.Children.Add(new GeometryDrawing(panel, null, new RectangleGeometry(rect)));
-        group.Children.Add(new ImageDrawing(img, new Rect(14, -1, 19.5, 11)) );
-        var fade = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 0) };
-        fade.GradientStops.Add(new GradientStop(c, 0));
-        fade.GradientStops.Add(new GradientStop(c, 0.44));
-        fade.GradientStops.Add(new GradientStop(Color.FromArgb(0xC8, c.R, c.G, c.B), 0.62));
-        fade.GradientStops.Add(new GradientStop(Color.FromArgb(0x55, c.R, c.G, c.B), 1));
-        group.Children.Add(new GeometryDrawing(fade, null, new RectangleGeometry(rect)));
-        group.ClipGeometry = new RectangleGeometry(rect);
-        HeroHeader.Background = new DrawingBrush(group) { Stretch = Stretch.UniformToFill, AlignmentX = AlignmentX.Right, AlignmentY = AlignmentY.Center };
+        HeaderArt.Source = Roshiq.App.Services.HeroArt.Portrait(hero.Key);
     }
 
     /// <summary>Ваше среднее время покупки предметов на этом герое (по истории, от двух матчей).</summary>
@@ -284,40 +288,61 @@ public partial class HeroesView : UserControl, IRefreshable
             .Where(g => g.Count() >= 2).ToDictionary(g => g.Key, g => (int)g.Average(kv => kv.Value), StringComparer.OrdinalIgnoreCase);
     }
 
-    /// <summary>Плитка предмета: крупная иконка, название, цена и примерный тайминг; пояснение — в подсказке.</summary>
+    /// <summary>
+    /// Плитка предмета — одинаковая для всех: иконка в пропорциях Valve, название, одна строка назначения,
+    /// цена и тайминг всегда в нижней строке на одних и тех же местах. Полное «почему» — в подсказке.
+    /// </summary>
     private FrameworkElement ItemTile(string key, string name, string why, bool curated, bool now, int? timing, bool mine)
     {
         var L = Loc.Instance;
         var icon = Ui.ItemIcon(key, 66);
         icon.Margin = new Thickness(0, 0, 12, 0);
         icon.VerticalAlignment = VerticalAlignment.Center;
-        var text = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var purpose = App.Host.Database.FindItem(key)?.Purpose(L.Language);
+        if (string.IsNullOrWhiteSpace(purpose)) purpose = why;
+
+        var text = new Grid { VerticalAlignment = VerticalAlignment.Center };
+        for (int i = 0; i < 3; i++) text.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         text.Children.Add(new TextBlock { Text = name, FontWeight = FontWeights.SemiBold, FontSize = 14, Foreground = Ui.Res("Text"), TextTrimming = TextTrimming.CharacterEllipsis });
-        var meta = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
+        var line = new TextBlock
+        {
+            Text = purpose ?? "", FontSize = 12.5, Foreground = Ui.Res("Muted"), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0)
+        };
+        Grid.SetRow(line, 1);
+        text.Children.Add(line);
+
+        // нижняя строка: цена — фиксированная ширина слева (даже если цены нет), тайминг — справа от неё
+        var meta = new Grid { Margin = new Thickness(0, 4, 0, 0) };
+        meta.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+        meta.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         if (App.Host.Costs.Cost(key) is int cost)
         {
-            meta.Children.Add(new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(Color.FromRgb(0xF2, 0xC2, 0x4B)), Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center });
-            meta.Children.Add(new TextBlock { Text = cost.ToString("#,0", System.Globalization.CultureInfo.GetCultureInfo("ru-RU")), FontSize = 12.5, Foreground = new SolidColorBrush(Color.FromRgb(0xF2, 0xC2, 0x4B)), Margin = new Thickness(0, 0, 10, 0) });
+            var gold = new SolidColorBrush(Color.FromRgb(0xF2, 0xC2, 0x4B));
+            var price = new StackPanel { Orientation = Orientation.Horizontal };
+            price.Children.Add(new Border { Width = 8, Height = 8, CornerRadius = new CornerRadius(4), Background = gold, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center });
+            price.Children.Add(new TextBlock { Text = cost.ToString("#,0", System.Globalization.CultureInfo.GetCultureInfo("ru-RU")), FontSize = 12.5, Foreground = gold });
+            meta.Children.Add(price);
         }
         if (timing is int t && t > 0)
-            meta.Children.Add(new TextBlock
+        {
+            var tm = new TextBlock
             {
                 Text = (mine ? L.Get("item_tile_mine") : L.Get("item_tile_usual")) + $" ~{t / 60}:{t % 60:00}",
-                FontSize = 12.5, Foreground = Ui.Res("Muted")
-            });
-        if (meta.Children.Count > 0) text.Children.Add(meta);
-        if (!string.IsNullOrWhiteSpace(why)) text.Children.Add(new TextBlock
-        {
-            Text = why, FontSize = 12.5, Foreground = Ui.Res("Muted"), TextWrapping = TextWrapping.Wrap,
-            TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 36, Margin = new Thickness(0, 5, 0, 0)
-        });
+                FontSize = 12.5, Foreground = Ui.Res(mine ? "Text" : "Faint"), TextTrimming = TextTrimming.CharacterEllipsis
+            };
+            Grid.SetColumn(tm, 1);
+            meta.Children.Add(tm);
+        }
+        Grid.SetRow(meta, 2);
+        text.Children.Add(meta);
+
         var row = new DockPanel();
         DockPanel.SetDock(icon, Dock.Left);
         row.Children.Add(icon);
         row.Children.Add(text);
         var card = new Border
         {
-            Style = (Style)FindResource("InnerCard"), Width = 268, Margin = new Thickness(0, 0, 10, 10), Padding = new Thickness(12, 10, 12, 10),
+            Style = (Style)FindResource("InnerCard"), Width = 268, Height = 76, Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(12, 8, 12, 8),
             BorderBrush = Ui.Res(now ? "Accent" : curated ? "LineStrong" : "Line"), Child = row,
             ToolTip = new ToolTip { Content = new TextBlock { Text = why + (curated ? "\n\n" + L.Get("build_base") : ""), TextWrapping = TextWrapping.Wrap, MaxWidth = 320 } }
         };

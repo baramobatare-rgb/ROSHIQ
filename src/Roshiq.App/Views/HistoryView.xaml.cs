@@ -208,7 +208,7 @@ public partial class HistoryView : UserControl, IRefreshable
         ReviewPanel.Visibility = Visibility.Visible;
         LinksPanel.Visibility = m.MatchId != null ? Visibility.Visible : Visibility.Collapsed;
 
-        MatchTitle.Text = Ui.Up(HeroName(m));
+        MatchTitle.Text = HeroName(m);
         var matchHero = App.Host.Database.FindHero(m.HeroId) ?? App.Host.Database.FindHero(m.HeroKey);
         MatchPortrait.Content = matchHero != null ? Ui.Portrait(matchHero, 96) : null;
         Motion.Enter(ReviewPanel, 0, 8);

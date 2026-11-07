@@ -27,9 +27,9 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T ov_mode, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_overlay}" /></InlineUIContainer></TextBlock>
                     <WrapPanel>
-                        <RadioButton x:Name="ModeMinimal" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_minimal, Upper=True}" Checked="Mode_Checked" />
-                        <RadioButton x:Name="ModeExpanded" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_expanded, Upper=True}" Checked="Mode_Checked" />
-                        <RadioButton x:Name="ModeHidden" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_hidden, Upper=True}" Checked="Mode_Checked" />
+                        <RadioButton x:Name="ModeMinimal" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_minimal}" Checked="Mode_Checked" />
+                        <RadioButton x:Name="ModeExpanded" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_expanded}" Checked="Mode_Checked" />
+                        <RadioButton x:Name="ModeHidden" Style="{StaticResource Segment}" GroupName="Mode" Content="{app:T ovmode_hidden}" Checked="Mode_Checked" />
                     </WrapPanel>
                     <TextBlock Text="{app:T ov_mode_hint}" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
                 </StackPanel>
@@ -76,11 +76,11 @@
                         <WrapPanel Margin="0,12,0,0">
                             <Button x:Name="EditButton" Style="{StaticResource PrimaryButton}" Click="Edit_Click" />
                             <Button x:Name="TestButton" Click="Test_Click" />
-                            <Button Style="{StaticResource GhostButton}" Content="{app:T ov_reset, Upper=True}" Click="Reset_Click" />
+                            <Button Style="{StaticResource GhostButton}" Content="{app:T ov_reset}" Click="Reset_Click" />
                         </WrapPanel>
                         <CheckBox x:Name="SnapBox" Content="{app:T ov_snap}" Checked="Snap_Changed" Unchecked="Snap_Changed" Margin="0,10,0,0" />
                         <DockPanel Margin="0,8,0,0">
-                            <Button x:Name="ResetLayoutsButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T ov_layouts_reset, Upper=True}" Click="ResetLayouts_Click" />
+                            <Button x:Name="ResetLayoutsButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T ov_layouts_reset}" Click="ResetLayouts_Click" />
                             <TextBlock x:Name="LayoutsText" Style="{StaticResource MutedText}" TextWrapping="Wrap" VerticalAlignment="Center" />
                         </DockPanel>
                     </StackPanel>
@@ -120,8 +120,8 @@
                         </StackPanel>
                     </UniformGrid>
                     <DockPanel Margin="0,10,0,0">
-                        <Button DockPanel.Dock="Left" Content="{app:T save, Upper=True}" Click="SaveHotkeys_Click" />
-                        <Button DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Content="{app:T hk_reset, Upper=True}" Click="ResetHotkeys_Click" Margin="8,0,0,0" />
+                        <Button DockPanel.Dock="Left" Content="{app:T save}" Click="SaveHotkeys_Click" />
+                        <Button DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Content="{app:T hk_reset}" Click="ResetHotkeys_Click" Margin="8,0,0,0" />
                         <TextBlock x:Name="HotkeyStatus" Style="{StaticResource MutedText}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="12,0,0,0" />
                     </DockPanel>
                     <TextBlock Text="{app:T hk_hint}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0" />
@@ -148,7 +148,7 @@
                     <TextBlock Text="{app:T prof_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                     <WrapPanel x:Name="ProfilePanel" />
                     <DockPanel Margin="0,6,0,0">
-                        <Button DockPanel.Dock="Left" Content="{app:T prof_save, Upper=True}" Click="SaveProfile_Click" />
+                        <Button DockPanel.Dock="Left" Content="{app:T prof_save}" Click="SaveProfile_Click" />
                         <TextBlock x:Name="ProfileStatus" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="8,0,0,0" />
                     </DockPanel>
                 </StackPanel>

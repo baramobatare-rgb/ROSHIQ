@@ -46,6 +46,7 @@ public partial class MainWindow : Window
         _statusTimer.Tick += (_, _) => UpdateStatus();
         _statusTimer.Start();
         App.Host.StateChanged += (_, _) => UpdateStatus();
+        App.Host.StateChanged += (_, _) => Dispatcher.InvokeAsync(RefreshUpdateButton);
         App.Host.Settings.Changed += (_, _) => Dispatcher.InvokeAsync(() => { ApplyScale(); UpdateChrome(); });
         Loc.Instance.PropertyChanged += (_, _) => UpdateChrome();
         SetupTray();
@@ -170,6 +171,115 @@ public partial class MainWindow : Window
         {
             CompositionTarget.Rendering -= FollowFrame;
             _glowFollowing = false;
+        }
+    }
+
+    // ------------------------------------------------------------------ обновление программы (кнопка в верхней панели)
+
+    private bool _updateBusy;
+    private DispatcherTimer? _updateNoteTimer;
+
+    /// <summary>Вид кнопки: есть новая версия — акцентная «Обновить до …», иначе тихая «Обновления».</summary>
+    private void RefreshUpdateButton()
+    {
+        if (_updateBusy || (_updateNoteTimer?.IsEnabled ?? false)) return;
+        var L = Loc.Instance;
+        if (App.Host.AvailableUpdate is { } upd)
+        {
+            UpdateButton.Style = (Style)FindResource("PrimaryButton");
+            UpdateText.Text = L.Format("top_update", upd.Tag);
+            UpdateButton.ToolTip = L.Get("top_update_tip");
+        }
+        else
+        {
+            UpdateButton.Style = (Style)FindResource("GhostButton");
+            UpdateText.Text = L.Get("top_update_check");
+            UpdateButton.ToolTip = L.Format("top_update_check_tip", AppUpdater.CurrentVersion.ToString(3));
+        }
+        UpdateButton.Margin = new Thickness(0, 0, 10, 0);
+        UpdateButton.Padding = new Thickness(10, 7, 10, 7);
+    }
+
+    /// <summary>Короткая надпись на кнопке на 3 секунды («Последняя версия», «Не удалось»).</summary>
+    private void FlashUpdateNote(string text)
+    {
+        UpdateText.Text = text;
+        _updateNoteTimer ??= new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+        _updateNoteTimer.Tick -= UpdateNoteTick;
+        _updateNoteTimer.Tick += UpdateNoteTick;
+        _updateNoteTimer.Stop();
+        _updateNoteTimer.Start();
+    }
+
+    private void UpdateNoteTick(object? sender, EventArgs e)
+    {
+        _updateNoteTimer?.Stop();
+        RefreshUpdateButton();
+    }
+
+    private async void Update_Click(object sender, RoutedEventArgs e)
+    {
+        if (_updateBusy) return;
+        var L = Loc.Instance;
+        var d = App.Host.Settings.Current.Data;
+        var upd = App.Host.AvailableUpdate;
+        if (upd == null)
+        {
+            // сеть выключена или не указан репозиторий — ведём туда, где это включается
+            if (!d.AllowOnlineStats || string.IsNullOrWhiteSpace(d.UpdateRepo)) { Navigate("settings/data"); return; }
+            _updateBusy = true;
+            UpdateButton.IsEnabled = false;
+            UpdateText.Text = L.Get("top_update_checking");
+            try
+            {
+                var info = await AppUpdater.CheckAsync(d.UpdateRepo!, CancellationToken.None);
+                App.Host.SetAvailableUpdate(info);
+                _updateBusy = false;
+                if (info == null) FlashUpdateNote(L.Get("top_update_latest"));
+            }
+            catch (Exception ex)
+            {
+                Log.Warn("Проверка обновления: " + ex.Message);
+                _updateBusy = false;
+                FlashUpdateNote(L.Get("top_update_failed"));
+            }
+            finally
+            {
+                _updateBusy = false;
+                UpdateButton.IsEnabled = true;
+                RefreshUpdateButton();
+            }
+            return;
+        }
+
+        if (upd.InstallerUrl == null) { AppUpdater.OpenPage(upd.PageUrl); return; }
+        var sizeMb = upd.InstallerSize > 0 ? (upd.InstallerSize / 1048576.0).ToString("0.0") : "?";
+        if (MessageBox.Show(this, L.Format("upd_app_download_confirm", upd.InstallerName ?? "setup.exe", sizeMb, upd.Tag), "ROSHIQ",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
+        _updateBusy = true;
+        UpdateButton.IsEnabled = false;
+        try
+        {
+            var path = await AppUpdater.DownloadAsync(upd, new Progress<double>(p => UpdateText.Text = L.Format("top_update_progress", (int)Math.Round(p * 100))),
+                CancellationToken.None);
+            if (MessageBox.Show(this, L.Get("upd_app_run_confirm"), "ROSHIQ", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            {
+                AppUpdater.RunInstaller(path);
+                RequestExit();
+                return;
+            }
+            MessageBox.Show(this, L.Format("upd_app_saved", path), "ROSHIQ", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Обновление ROSHIQ: " + ex.Message);
+            MessageBox.Show(this, L.Format("upd_check_error", ex.Message), "ROSHIQ", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        finally
+        {
+            _updateBusy = false;
+            UpdateButton.IsEnabled = true;
+            RefreshUpdateButton();
         }
     }
 
@@ -376,8 +486,8 @@ public partial class MainWindow : Window
         var L = Loc.Instance;
         int n = Array.IndexOf(Order, _currentKey) + 1;
         PageNumber.Text = $"{n:00} /";
-        PageTitle.Text = L.Get("sec_" + _currentKey).ToUpper(L.Language == Roshiq.Core.Models.Language.Russian
-            ? new System.Globalization.CultureInfo("ru-RU") : System.Globalization.CultureInfo.InvariantCulture);
+        PageTitle.Text = L.Get("sec_" + _currentKey);
+        RefreshUpdateButton();
         PageSubtitle.Text = L.Get("sec_" + _currentKey + "_sub");
 
         bool training = App.Host.Settings.Current.UsageContext == UsageContext.Training;

@@ -62,8 +62,8 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
     private void UpdateButtons()
     {
         var ov = App.Host.Overlay;
-        EditButton.Content = Ui.Up(Loc.T(ov.EditMode ? "ov_edit_finish" : "ov_edit_start"));
-        TestButton.Content = Ui.Up(Loc.T(ov.TestMode ? "dash_test_overlay_off" : "dash_test_overlay"));
+        EditButton.Content = Loc.T(ov.EditMode ? "ov_edit_finish" : "ov_edit_start");
+        TestButton.Content = Loc.T(ov.TestMode ? "dash_test_overlay_off" : "dash_test_overlay");
     }
 
     /// <summary>Схема экрана: зоны интерфейса Dota, которые оверлей не перекрывает, и текущее положение панели.</summary>
@@ -225,7 +225,7 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
             {
                 Style = (Style)FindResource("Segment"),
                 GroupName = "OverlayProfile",
-                Content = Ui.Up(profile.Name),
+                Content = profile.Name,
                 Tag = profile.Id,
                 Margin = new Thickness(0, 0, 8, 8),
                 IsChecked = profile.Id == s.ActiveOverlayProfile

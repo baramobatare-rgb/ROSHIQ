@@ -66,7 +66,7 @@ public partial class FirstRunWindow : Window
             var rb = new RadioButton
             {
                 Style = (Style)FindResource("Segment"), GroupName = "Theme", Tag = p.Key, Margin = new Thickness(0, 0, 8, 8),
-                Content = Ui.Up(Loc.Instance.Language == AppLanguage.Russian ? p.NameRu : p.NameEn), IsChecked = p.Key == current
+                Content = Loc.Instance.Language == AppLanguage.Russian ? p.NameRu : p.NameEn, IsChecked = p.Key == current
             };
             rb.Checked += (_, _) =>
             {

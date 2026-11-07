@@ -42,62 +42,87 @@
         <!-- Карточка героя и сборка -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel x:Name="Details" Margin="0,0,6,0">
-                <Border x:Name="HeroHeader" Style="{StaticResource Card}" Padding="20,18" MinHeight="156">
+                <!-- Шапка героя: 106 px. Чёткий портрет, имя, роль одной строкой; арт — затемнённый справа, в родном размере -->
+                <Border x:Name="HeroHeader" Style="{StaticResource Card}" Padding="12" Height="106" ClipToBounds="True">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <!-- портрет героя (арт героя растянут фоном карточки — см. HeroesView.SetBackdrop) -->
-                        <ContentControl x:Name="PortraitHost" Focusable="False" VerticalAlignment="Top" Margin="0,2,22,0" />
-                        <StackPanel Grid.Column="1">
-                            <TextBlock x:Name="HeroMeta" Style="{StaticResource Eyebrow}" />
-                            <TextBlock x:Name="HeroName" Style="{StaticResource Display}" FontSize="28" />
-                            <WrapPanel x:Name="TraitPanel" Margin="0,14,0,0" />
+                        <Image x:Name="HeaderArt" Grid.ColumnSpan="3" Height="104" Margin="0,-12,-12,-12" HorizontalAlignment="Right"
+                               VerticalAlignment="Center" Stretch="Uniform" Opacity="0.30" IsHitTestVisible="False" RenderOptions.BitmapScalingMode="HighQuality">
+                            <Image.OpacityMask>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                    <GradientStop Color="Transparent" Offset="0" />
+                                    <GradientStop Color="#FF000000" Offset="0.75" />
+                                </LinearGradientBrush>
+                            </Image.OpacityMask>
+                        </Image>
+                        <ContentControl x:Name="PortraitHost" Focusable="False" VerticalAlignment="Center" Margin="0,0,16,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock x:Name="HeroMeta" Style="{StaticResource Eyebrow}" Margin="0,0,0,2" TextTrimming="CharacterEllipsis" />
+                            <TextBlock x:Name="HeroName" Style="{StaticResource Display}" FontSize="23" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" />
+                            <StackPanel x:Name="TraitPanel" Orientation="Horizontal" Margin="0,6,0,0" ClipToBounds="True" />
                         </StackPanel>
-                        <StackPanel Grid.Column="2" VerticalAlignment="Top" Margin="20,0,0,0">
-                            <Button x:Name="FavoriteButton" Click="Favorite_Click" HorizontalAlignment="Stretch" Margin="0,0,0,8" />
-                            <ComboBox x:Name="BuildPosition" Width="210" SelectionChanged="BuildPosition_Changed" />
-                            <Button Style="{StaticResource PrimaryButton}" Click="SetCurrent_Click" Margin="0,8,0,0">
+                        <Grid Grid.Column="2" VerticalAlignment="Center" Margin="16,0,0,0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button x:Name="FavoriteButton" Style="{StaticResource GhostButton}" Click="Favorite_Click" Margin="0,0,8,0" />
+                                <ComboBox x:Name="BuildPosition" Width="170" Margin="0" SelectionChanged="BuildPosition_Changed" />
+                            </StackPanel>
+                            <Button Grid.Row="1" Style="{StaticResource PrimaryButton}" Click="SetCurrent_Click" Margin="0,8,0,0" HorizontalAlignment="Right">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{app:T heroes_set_current, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T heroes_set_current}" VerticalAlignment="Center" />
                                     <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
                                 </StackPanel>
                             </Button>
-                        </StackPanel>
+                        </Grid>
                     </Grid>
                 </Border>
 
+                <!-- Основная сборка — сразу под шапкой -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
-                        <TextBlock Text="{app:T build_adapt_title}" Style="{StaticResource H2}" />
-                        <TextBlock Text="{app:T build_adapt_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
-                        <WrapPanel x:Name="EnemyContextPanel" />
-                        <WrapPanel>
-                            <Button x:Name="AddEnemyButton" Content="{app:T build_add_enemy}" Click="AddEnemy_Click" />
-                            <Button Content="{app:T build_from_draft}" Click="UseDraftEnemies_Click" Style="{StaticResource GhostButton}" />
-                        </WrapPanel>
-                        <StackPanel x:Name="AdaptationPanel" Margin="0,10,0,0" />
+                        <DockPanel Margin="0,0,0,8">
+                            <TextBlock x:Name="BuildNote" DockPanel.Dock="Bottom" Style="{StaticResource MutedOptional}" />
+                            <TextBlock Style="{StaticResource H2}" Text="{app:T heroes_build}" FontSize="20" Margin="0,0,0,2" />
+                        </DockPanel>
+                        <Grid Margin="0,4,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" MinWidth="160" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ComboBox x:Name="PersonalBuildBox" Margin="0" ToolTip="{app:T my_builds}" SelectionChanged="PersonalBuild_Changed" />
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="8,0,0,0">
+                                <Button Content="{app:T my_new}" Click="NewBuild_Click" Margin="0,0,8,0" />
+                                <Button x:Name="EditBuildButton" Content="{app:T my_edit}" Click="EditBuild_Click" Margin="0,0,8,0" />
+                                <Button x:Name="DeleteBuildButton" Content="{app:T my_delete}" Style="{StaticResource GhostButton}" Click="DeleteBuild_Click" Margin="0,0,8,0" />
+                                <Button Content="{app:T my_use}" Click="SetCurrent_Click" Margin="0" />
+                            </StackPanel>
+                        </Grid>
+                        <TextBlock x:Name="PersonalBuildStatus" Style="{StaticResource MutedOptional}" Margin="0,4,0,0" />
+                        <TextBlock x:Name="PersonalBuildNotes" Style="{StaticResource Value}" Margin="0,8,0,0" Visibility="Collapsed" />
+                        <StackPanel x:Name="BuildPanel" Margin="0,4,0,0" />
                     </StackPanel>
                 </Border>
+
+                <!-- Ситуационные советы против противников: пока врагов нет — одна строка -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
-                        <DockPanel Margin="0,0,0,6">
-                            <TextBlock x:Name="BuildNote" DockPanel.Dock="Bottom" Style="{StaticResource MutedText}" Margin="0,2,0,0" />
-                            <TextBlock Style="{StaticResource H1}" Text="{app:T heroes_build, Upper=True}" />
+                        <DockPanel>
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button Content="{app:T build_from_draft}" Click="UseDraftEnemies_Click" Style="{StaticResource GhostButton}" Margin="0,0,8,0" />
+                                <Button x:Name="AddEnemyButton" Content="{app:T build_add_enemy}" Click="AddEnemy_Click" Margin="0" />
+                            </StackPanel>
+                            <TextBlock Text="{app:T build_adapt_title}" Style="{StaticResource H2}" Margin="0" VerticalAlignment="Center" />
                         </DockPanel>
-                        <TextBlock Text="{app:T my_builds}" Style="{StaticResource Eyebrow}" Margin="0,8,0,6" />
-                        <ComboBox x:Name="PersonalBuildBox" SelectionChanged="PersonalBuild_Changed" />
-                        <WrapPanel Margin="0,8,0,0">
-                            <Button Content="{app:T my_new}" Click="NewBuild_Click" />
-                            <Button x:Name="EditBuildButton" Content="{app:T my_edit}" Click="EditBuild_Click" />
-                            <Button x:Name="DeleteBuildButton" Content="{app:T my_delete}" Click="DeleteBuild_Click" />
-                            <Button Style="{StaticResource PrimaryButton}" Content="{app:T my_use}" Click="SetCurrent_Click" />
-                        </WrapPanel>
-                        <TextBlock x:Name="PersonalBuildStatus" Style="{StaticResource MutedText}" Margin="0,4,0,12" />
-                        <TextBlock x:Name="PersonalBuildNotes" Style="{StaticResource Value}" Margin="0,0,0,12" Visibility="Collapsed" />
-                        <StackPanel x:Name="BuildPanel" />
+                        <WrapPanel x:Name="EnemyContextPanel" Margin="0,12,0,0" />
+                        <TextBlock x:Name="AdaptHint" Text="{app:T build_adapt_hint}" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                        <StackPanel x:Name="AdaptationPanel" Margin="0,12,0,0" />
                     </StackPanel>
                 </Border>
 
@@ -106,11 +131,11 @@
                     <StackPanel>
                         <DockPanel>
                             <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Top">
-                                <Button x:Name="MetaRefreshButton" Style="{StaticResource GhostButton}" Content="{app:T meta_refresh, Upper=True}" Click="MetaRefresh_Click" />
-                                <Button x:Name="MetaUseButton" Content="{app:T meta_use, Upper=True}" Click="MetaUse_Click" />
+                                <Button x:Name="MetaRefreshButton" Style="{StaticResource GhostButton}" Content="{app:T meta_refresh}" Click="MetaRefresh_Click" />
+                                <Button x:Name="MetaUseButton" Content="{app:T meta_use}" Click="MetaUse_Click" />
                             </WrapPanel>
                             <StackPanel>
-                                <TextBlock Style="{StaticResource H2}" Text="{app:T meta_title, Upper=True}" />
+                                <TextBlock Style="{StaticResource H2}" Text="{app:T meta_title}" />
                                 <TextBlock Text="{app:T meta_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" TextWrapping="Wrap" />
                             </StackPanel>
                         </DockPanel>
@@ -122,13 +147,13 @@
                 <!-- Личные заметки к герою -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
-                        <TextBlock Style="{StaticResource H2}" Text="{app:T notes_title, Upper=True}" />
+                        <TextBlock Style="{StaticResource H2}" Text="{app:T notes_title}" />
                         <TextBlock Text="{app:T notes_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
                         <TextBox x:Name="NoteBox" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="70" MaxHeight="160"
                                  VerticalScrollBarVisibility="Auto" MaxLength="2000" />
                         <DockPanel Margin="0,8,0,0">
-                            <Button DockPanel.Dock="Left" Style="{StaticResource PrimaryButton}" Content="{app:T notes_save, Upper=True}" Click="SaveNote_Click" />
-                            <Button DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Content="{app:T notes_clear, Upper=True}" Click="ClearNote_Click" />
+                            <Button DockPanel.Dock="Left" Content="{app:T notes_save}" Click="SaveNote_Click" />
+                            <Button DockPanel.Dock="Left" Style="{StaticResource GhostButton}" Content="{app:T notes_clear}" Click="ClearNote_Click" />
                             <TextBlock x:Name="NoteStatus" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="8,0,0,0" />
                         </DockPanel>
                     </StackPanel>
@@ -141,14 +166,14 @@
                     </Grid.ColumnDefinitions>
                     <Border Style="{StaticResource Card}" Margin="0,0,8,16">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource H2}" Text="{app:T heroes_counters, Upper=True}" />
+                            <TextBlock Style="{StaticResource H2}" Text="{app:T heroes_counters}" />
                             <TextBlock Text="{app:T heroes_counters_note}" Style="{StaticResource MutedText}" Margin="0,0,0,10" />
                             <StackPanel x:Name="CounterPanel" />
                         </StackPanel>
                     </Border>
                     <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
                         <StackPanel>
-                            <TextBlock Style="{StaticResource H2}" Text="{app:T heroes_tips, Upper=True}" />
+                            <TextBlock Style="{StaticResource H2}" Text="{app:T heroes_tips}" />
                             <StackPanel x:Name="TipsPanel" />
                         </StackPanel>
                     </Border>

@@ -103,7 +103,7 @@ public partial class DraftTrainerView : UserControl, IRefreshable
             TrainerVerdict.OffRole => ("trainer_offrole", "Warning"),
             _ => ("trainer_weak", "Red")
         };
-        ResultPanel.Children.Add(Ui.Row(Ui.Up(L.Get(key)), L.Format("trainer_rank", grade.Rank, grade.Total), pick.Name, brush));
+        ResultPanel.Children.Add(Ui.Row(L.Get(key), L.Format("trainer_rank", grade.Rank, grade.Total), pick.Name, brush));
         foreach (var r in grade.PickEvaluation.Positives.Where(r => r.Kind != ReasonKind.RoleFit).Take(4))
             ResultPanel.Children.Add(Ui.Text("+ " + r.Text(L.Language), "MutedText", 2));
         foreach (var r in grade.PickEvaluation.Risks.Take(3))

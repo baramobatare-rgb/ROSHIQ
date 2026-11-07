@@ -8,9 +8,9 @@
         <StackPanel Margin="0,0,6,20">
             <!-- Вкладки раздела: матчи и разбор / прогресс / импорт -->
             <WrapPanel Margin="0,0,0,14">
-                <RadioButton x:Name="TabMatches" Style="{StaticResource Segment}" GroupName="HistTabs" IsChecked="True" Content="{app:T hist_tab_matches, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
-                <RadioButton x:Name="TabProgress" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_progress, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
-                <RadioButton x:Name="TabImport" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_import, Upper=True}" Checked="Tab_Checked" />
+                <RadioButton x:Name="TabMatches" Style="{StaticResource Segment}" GroupName="HistTabs" IsChecked="True" Content="{app:T hist_tab_matches}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabProgress" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_progress}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabImport" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_import}" Checked="Tab_Checked" />
             </WrapPanel>
             <StackPanel x:Name="MatchesSection">
                 <Grid>
@@ -27,7 +27,7 @@
                                 <TextBlock x:Name="CountText" Style="{StaticResource MutedText}" Margin="0,0,0,8" />
                             </StackPanel>
                             <Button x:Name="DeleteButton" DockPanel.Dock="Bottom" Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
-                                    Content="{app:T hist_delete, Upper=True}" Click="Delete_Click" Margin="0,8,0,0" />
+                                    Content="{app:T hist_delete}" Click="Delete_Click" Margin="0,8,0,0" />
                             <ListBox x:Name="MatchList" Height="420" SelectionChanged="MatchList_SelectionChanged" />
                         </DockPanel>
                     </Border>
@@ -115,7 +115,7 @@
                             <TextBlock x:Name="GoalText" Style="{StaticResource BigValue}" FontSize="20" TextWrapping="Wrap" />
                             <TextBlock x:Name="GoalProgress" Style="{StaticResource MutedText}" Margin="0,4,0,8" />
                             <WrapPanel x:Name="GoalHistory" Margin="0,0,0,8" />
-                            <Button x:Name="GoalSkip" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Content="{app:T goal_skip, Upper=True}" Click="GoalSkip_Click" />
+                            <Button x:Name="GoalSkip" Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Content="{app:T goal_skip}" Click="GoalSkip_Click" />
                             <TextBlock Text="{app:T goal_hint}" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
                         </StackPanel>
                     </Border>
@@ -171,7 +171,7 @@
                             <Button x:Name="ImportButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Click="Import_Click" Margin="10,0,0,0">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.Database}" Size="15" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T hist_import_button, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T hist_import_button}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <TextBox x:Name="SteamIdBox" FontFamily="{StaticResource MonoFont}" ToolTip="{app:T hist_steam_id}" VerticalContentAlignment="Center" />

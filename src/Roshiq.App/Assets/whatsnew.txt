@@ -1,4 +1,8 @@
 # Окно «Что нового» после обновления. Формат: версия|по-русски|по-английски (по 3–5 строк на версию)
+0.16.1|Кнопка обновления — в верхней панели: «Обновления» проверяет, «Обновить до …» скачивает и ставит новую версию.|Update button in the top bar: "Updates" checks, "Update to …" downloads and installs the new version.
+0.16.1|«Сборки»: компактная шапка героя, сборка сразу под ней, советы против врагов — ниже и одной строкой, пока врагов нет.|Builds: compact hero header, the build right below it, enemy advice further down and a single line until you add enemies.
+0.16.1|Одинаковые плитки предметов: назначение одной строкой, цена и тайминг всегда на своих местах.|Uniform item tiles: one-line purpose, cost and timing always in the same place.
+0.16.1|Спокойнее интерфейс: обычный регистр в меню и кнопках, меньше рамок, ровнее отступы.|Calmer interface: normal case in menus and buttons, fewer frames, even spacing.
 0.16.0|Портреты героев в родном качестве Valve — чётче на больших экранах; программа запускается быстрее.|Hero portraits in Valve's native quality — sharper on big screens; the app starts faster.
 0.16.0|Драфт пересчитывается сам при каждом выборе героя и после сканирования; статус сканирования снова на виду.|The draft updates by itself on every pick and after a scan; the scan status is visible again.
 0.16.0|В «Сборках» — блок «Под этих противников»: до пяти врагов и до трёх предметов против них с причиной.|Builds: "Adapt to these opponents" — up to five enemies and up to three counter items with reasons.

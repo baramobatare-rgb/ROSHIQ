@@ -64,7 +64,7 @@ public partial class AssistantView : UserControl, IRefreshable
     {
         var L = Loc.Instance;
         var pos = App.Host.Settings.Current.Position;
-        RoleTitle.Text = Ui.Up(L.PositionName(pos));
+        RoleTitle.Text = L.PositionName(pos);
         RoleTips.Children.Clear();
         int i = 1;
         var hero = App.Host.CurrentHero;
@@ -89,7 +89,7 @@ public partial class AssistantView : UserControl, IRefreshable
             Situations.Children.Add(Ui.State(UiState.Empty, L.Get("state_no_hero_title"), L.Get("state_no_hero_text")));
             return;
         }
-        SituationTitle.Text = Ui.Up(hero.DisplayName(L.Language));
+        SituationTitle.Text = hero.DisplayName(L.Language);
         bool enemyAware = ComplianceGate.IsAllowed(Feature.EnemyAwareItemAdvice, App.Host.Settings.Current.UsageContext) && build.EnemyAware;
         SituationNote.Text = L.Get(enemyAware ? "asst_situations_live" : "asst_situations_ref");
         int i = 1;

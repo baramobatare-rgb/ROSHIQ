@@ -64,11 +64,11 @@
                     </StackPanel>
                 </UniformGrid>
                 <WrapPanel Margin="0,14,0,0">
-                    <Button Style="{StaticResource PrimaryButton}" Click="Save_Click" Content="{app:T save, Upper=True}" />
+                    <Button Style="{StaticResource PrimaryButton}" Click="Save_Click" Content="{app:T save}" />
                     <Button Click="Test_Click">
                         <StackPanel Orientation="Horizontal">
                             <ov:Icon Glyph="{StaticResource I.Bell}" Size="15" Margin="0,0,8,0" />
-                            <TextBlock Text="{app:T notif_test, Upper=True}" VerticalAlignment="Center" />
+                            <TextBlock Text="{app:T notif_test}" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
                 </WrapPanel>

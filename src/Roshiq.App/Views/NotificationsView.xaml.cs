@@ -78,7 +78,7 @@ public partial class NotificationsView : UserControl, IRefreshable
     private void UpdateTimer()
     {
         var L = Loc.Instance;
-        TimerButton.Content = Ui.Up(L.Get(App.Host.ManualTimerRunning ? "notif_timer_stop" : "notif_timer_start"));
+        TimerButton.Content = L.Get(App.Host.ManualTimerRunning ? "notif_timer_stop" : "notif_timer_start");
         var r = App.Host.Reminders;
         string Fmt(ReminderKind k) => r.NextDue(k) is TimeSpan t ? $"{(int)t.TotalMinutes}:{t.Seconds:00}" : "—";
         NextPanel.Children.Clear();

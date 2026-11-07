@@ -102,7 +102,7 @@ public partial class SettingsView : UserControl, IRefreshable
                     Fill = new System.Windows.Media.SolidColorBrush(p.Accent)
                 };
             System.Windows.Media.RenderOptions.SetBitmapScalingMode(swatch, System.Windows.Media.BitmapScalingMode.HighQuality);
-            var label = new TextBlock { Text = Ui.Up(Loc.Instance.Language == Lang.Russian ? p.NameRu : p.NameEn), VerticalAlignment = VerticalAlignment.Center };
+            var label = new TextBlock { Text = Loc.Instance.Language == Lang.Russian ? p.NameRu : p.NameEn, VerticalAlignment = VerticalAlignment.Center };
             var content = new StackPanel { Orientation = Orientation.Horizontal };
             content.Children.Add(swatch);
             content.Children.Add(label);
@@ -347,7 +347,7 @@ public partial class SettingsView : UserControl, IRefreshable
             var rb = new RadioButton
             {
                 Style = (Style)FindResource("Segment"), GroupName = "snd_" + kind, Margin = new Thickness(0, 0, 6, 6),
-                Content = Ui.Up(Loc.T("snd_" + name)), IsChecked = name == current
+                Content = Loc.T("snd_" + name), IsChecked = name == current
             };
             var chosen = name;
             rb.Checked += (_, _) =>

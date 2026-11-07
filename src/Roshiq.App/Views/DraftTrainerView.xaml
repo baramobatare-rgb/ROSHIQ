@@ -14,7 +14,7 @@
                 <Button Style="{StaticResource PrimaryButton}" Click="New_Click">
                     <StackPanel Orientation="Horizontal">
                         <ov:Icon Glyph="{StaticResource I.Refresh}" Size="15" Margin="0,0,8,0" />
-                        <TextBlock Text="{app:T trainer_new, Upper=True}" VerticalAlignment="Center" />
+                        <TextBlock Text="{app:T trainer_new}" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </WrapPanel>
@@ -37,7 +37,7 @@
                 <DockPanel>
                     <Button x:Name="AnswerButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Click="Answer_Click" Margin="10,0,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="{app:T trainer_answer, Upper=True}" VerticalAlignment="Center" />
+                            <TextBlock Text="{app:T trainer_answer}" VerticalAlignment="Center" />
                             <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
                         </StackPanel>
                     </Button>

@@ -77,28 +77,35 @@
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBoxItem Tag="dashboard" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_dashboard, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_dashboard}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="draft" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_draft, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_draft}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="build" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_build, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_build}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="assistant" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_assistant, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_assistant}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="history" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_history, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_history}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="settings" Height="66">
-                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_settings, Upper=True}" /></StackPanel>
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_settings}" /></StackPanel>
                     </ListBoxItem>
                 </ListBox>
                 </Viewbox>
 
                 <!-- Статусы и кнопка настроек -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Обновление программы: всегда на виду; когда вышла новая версия — акцентная кнопка «Обновить до …» -->
+                    <Button x:Name="UpdateButton" Style="{StaticResource GhostButton}" Click="Update_Click" Margin="0,0,10,0" Padding="10,7">
+                        <StackPanel Orientation="Horizontal">
+                            <ov:Icon x:Name="UpdateIcon" Glyph="{StaticResource I.Refresh}" Size="15" VerticalAlignment="Center" />
+                            <TextBlock x:Name="UpdateText" Margin="7,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Border Style="{StaticResource Pill}" ToolTip="{app:T top_dota_tip}">
                         <StackPanel Orientation="Horizontal">
                             <Ellipse x:Name="StatusDot" Width="7" Height="7" Fill="{DynamicResource Faint}" VerticalAlignment="Center" />

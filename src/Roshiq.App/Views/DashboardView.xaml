@@ -39,8 +39,8 @@
                 <DockPanel>
                     <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Alert}" Size="18" Brush="{DynamicResource Warning}" Margin="0,1,12,0" VerticalAlignment="Top" />
                     <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,0,0">
-                        <Button Content="{app:T dash_notice_open, Upper=True}" Click="NoticeOpen_Click" />
-                        <Button x:Name="NoticeDismiss" Style="{StaticResource GhostButton}" Content="{app:T dash_notice_dismiss, Upper=True}" Click="NoticeDismiss_Click" />
+                        <Button Content="{app:T dash_notice_open}" Click="NoticeOpen_Click" />
+                        <Button x:Name="NoticeDismiss" Style="{StaticResource GhostButton}" Content="{app:T dash_notice_dismiss}" Click="NoticeDismiss_Click" />
                     </WrapPanel>
                     <TextBlock x:Name="NoticeText" Style="{StaticResource Value}" VerticalAlignment="Center" />
                 </DockPanel>
@@ -67,7 +67,7 @@
             <Border x:Name="GoalCard" Style="{StaticResource Card}" Visibility="Collapsed" Padding="22,14">
                 <DockPanel>
                     <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Spark}" Size="18" Brush="{DynamicResource Accent}" Margin="0,1,12,0" VerticalAlignment="Top" />
-                    <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T goal_open, Upper=True}" Click="GoalOpen_Click" VerticalAlignment="Center" />
+                    <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T goal_open}" Click="GoalOpen_Click" VerticalAlignment="Center" />
                     <StackPanel>
                         <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T goal_next_game, Upper=True}" Margin="0,0,0,2" />
                         <TextBlock x:Name="GoalLine" Style="{StaticResource Value}" TextWrapping="Wrap" />
@@ -92,27 +92,27 @@
                         <WrapPanel>
                             <Button Style="{StaticResource PrimaryButton}" Click="GoDraft_Click">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{app:T dash_go_draft, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T dash_go_draft}" VerticalAlignment="Center" />
                                     <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
                                 </StackPanel>
                             </Button>
                             <Button Click="GoBuild_Click">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{app:T dash_go_build, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T dash_go_build}" VerticalAlignment="Center" />
                                     <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
                                 </StackPanel>
                             </Button>
                             <Button Click="ToggleOverlay_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.Eye}" Size="15" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T dash_toggle_overlay, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T dash_toggle_overlay}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="TestModeButton" Style="{StaticResource GhostButton}" Click="TestMode_Click" />
                             <Button x:Name="FixButton" Style="{StaticResource GhostButton}" Click="Fix_Click" Visibility="Collapsed" Foreground="{DynamicResource Warning}">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.Alert}" Size="15" Brush="{DynamicResource Warning}" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T dash_fix, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T dash_fix}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
                         </WrapPanel>
@@ -198,7 +198,7 @@
                         <TextBlock x:Name="LessonSub" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
                         <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left" Click="GoHistory_Click">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{app:T dash_go_history, Upper=True}" VerticalAlignment="Center" />
+                                <TextBlock Text="{app:T dash_go_history}" VerticalAlignment="Center" />
                                 <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
                             </StackPanel>
                         </Button>

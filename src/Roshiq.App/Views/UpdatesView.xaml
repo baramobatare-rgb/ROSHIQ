@@ -22,11 +22,11 @@
                             <Button Style="{StaticResource PrimaryButton}" Click="Reload_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.Refresh}" Size="15" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T upd_reload, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T upd_reload}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <Button Content="{app:T upd_open_data, Upper=True}" Click="OpenData_Click" />
-                            <Button Style="{StaticResource GhostButton}" Content="{app:T upd_export_data, Upper=True}" Click="ExportData_Click" />
+                            <Button Content="{app:T upd_open_data}" Click="OpenData_Click" />
+                            <Button Style="{StaticResource GhostButton}" Content="{app:T upd_export_data}" Click="ExportData_Click" />
                         </WrapPanel>
                         <TextBlock Text="{app:T upd_data_hint}" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
                     </StackPanel>
@@ -52,12 +52,12 @@
                             <Button x:Name="RefreshStats" Style="{StaticResource PrimaryButton}" Click="RefreshStats_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.Database}" Size="15" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T upd_refresh_stats, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T upd_refresh_stats}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="CancelStats" Content="{app:T cancel, Upper=True}" Click="CancelStats_Click" IsEnabled="False" />
-                            <Button Style="{StaticResource GhostButton}" Content="{app:T upd_clear_stats, Upper=True}" Click="ClearStats_Click" />
-                            <Button Style="{StaticResource GhostButton}" Content="{app:T save, Upper=True}" Click="SaveKey_Click" />
+                            <Button x:Name="CancelStats" Content="{app:T cancel}" Click="CancelStats_Click" IsEnabled="False" />
+                            <Button Style="{StaticResource GhostButton}" Content="{app:T upd_clear_stats}" Click="ClearStats_Click" />
+                            <Button Style="{StaticResource GhostButton}" Content="{app:T save}" Click="SaveKey_Click" />
                         </WrapPanel>
                         <ProgressBar x:Name="StatsProgress" Margin="0,10,0,0" Maximum="1" />
                         <ContentControl x:Name="StatsState" Focusable="False" Margin="0,6,0,0" />
@@ -77,8 +77,8 @@
                     <CheckBox x:Name="AutoDataBox" Content="{app:T fresh_auto_data}" Checked="Fresh_Changed" Unchecked="Fresh_Changed" Margin="0,10,0,4" />
                     <CheckBox x:Name="AutoMatchupsBox" Content="{app:T fresh_auto_matchups}" Checked="Fresh_Changed" Unchecked="Fresh_Changed" Margin="0,0,0,8" />
                     <WrapPanel>
-                        <Button x:Name="FreshCheckButton" Style="{StaticResource PrimaryButton}" Content="{app:T fresh_check, Upper=True}" Click="FreshCheck_Click" />
-                        <Button x:Name="FreshResetButton" Style="{StaticResource GhostButton}" Content="{app:T fresh_reset, Upper=True}" Click="FreshReset_Click" />
+                        <Button x:Name="FreshCheckButton" Style="{StaticResource PrimaryButton}" Content="{app:T fresh_check}" Click="FreshCheck_Click" />
+                        <Button x:Name="FreshResetButton" Style="{StaticResource GhostButton}" Content="{app:T fresh_reset}" Click="FreshReset_Click" />
                     </WrapPanel>
                 </StackPanel>
             </Border>
@@ -119,10 +119,10 @@
                             <Button x:Name="CheckOnline" Style="{StaticResource PrimaryButton}" Click="CheckOnline_Click">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.Refresh}" Size="15" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T upd_check_now, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T upd_check_now}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="AckPatch" Style="{StaticResource GhostButton}" Content="{app:T upd_patch_ack, Upper=True}" Click="AckPatch_Click" />
+                            <Button x:Name="AckPatch" Style="{StaticResource GhostButton}" Content="{app:T upd_patch_ack}" Click="AckPatch_Click" />
                         </WrapPanel>
                         <TextBlock x:Name="OnlineStatus" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
                         <TextBlock Text="{app:T upd_patch_hint}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
@@ -134,18 +134,18 @@
                         <TextBlock x:Name="AppVersionInfo" Style="{StaticResource Value}" />
                         <TextBlock Text="{app:T upd_repo}" Foreground="{DynamicResource Muted}" FontSize="12.5" Margin="0,10,0,0" />
                         <DockPanel Margin="0,3,0,0">
-                            <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T save, Upper=True}" Click="SaveRepo_Click" Margin="8,0,0,0" />
+                            <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T save}" Click="SaveRepo_Click" Margin="8,0,0,0" />
                             <TextBox x:Name="RepoBox" FontFamily="{StaticResource MonoFont}" VerticalContentAlignment="Center" />
                         </DockPanel>
                         <WrapPanel Margin="0,10,0,0">
-                            <Button x:Name="CheckApp" Click="CheckApp_Click" Content="{app:T upd_app_check, Upper=True}" />
+                            <Button x:Name="CheckApp" Click="CheckApp_Click" Content="{app:T upd_app_check}" />
                             <Button x:Name="InstallApp" Style="{StaticResource PrimaryButton}" Click="InstallApp_Click" IsEnabled="False">
                                 <StackPanel Orientation="Horizontal">
                                     <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="0,0,8,0" />
-                                    <TextBlock Text="{app:T upd_app_install, Upper=True}" VerticalAlignment="Center" />
+                                    <TextBlock Text="{app:T upd_app_install}" VerticalAlignment="Center" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="OpenRelease" Style="{StaticResource GhostButton}" Content="{app:T upd_app_page, Upper=True}" Click="OpenRelease_Click" IsEnabled="False" />
+                            <Button x:Name="OpenRelease" Style="{StaticResource GhostButton}" Content="{app:T upd_app_page}" Click="OpenRelease_Click" IsEnabled="False" />
                         </WrapPanel>
                         <ProgressBar x:Name="AppProgress" Margin="0,10,0,0" Maximum="1" Visibility="Collapsed" />
                         <TextBlock x:Name="AppStatus" Style="{StaticResource MutedText}" Margin="0,6,0,0" />

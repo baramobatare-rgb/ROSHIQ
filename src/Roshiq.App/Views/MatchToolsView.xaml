@@ -33,10 +33,10 @@
                         <Button Style="{StaticResource PrimaryButton}" Click="RoshanKill_Click">
                             <StackPanel Orientation="Horizontal">
                                 <ov:Icon Glyph="{StaticResource I.Clock}" Size="15" Margin="0,0,8,0" />
-                                <TextBlock Text="{app:T rosh_mark, Upper=True}" VerticalAlignment="Center" />
+                                <TextBlock Text="{app:T rosh_mark}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource GhostButton}" Content="{app:T rosh_clear, Upper=True}" Click="RoshanClear_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T rosh_clear}" Click="RoshanClear_Click" />
                     </WrapPanel>
                 </StackPanel>
             </Border>

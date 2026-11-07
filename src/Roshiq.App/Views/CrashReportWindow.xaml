@@ -19,11 +19,11 @@
         <TextBox x:Name="ReportText" Grid.Row="1" IsReadOnly="True" TextWrapping="NoWrap" FontFamily="{StaticResource MonoFont}" FontSize="11.5"
                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" AcceptsReturn="True" />
         <DockPanel Grid.Row="2" Margin="0,16,0,0">
-            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close, Upper=True}" Click="Close_Click" IsCancel="True" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close}" Click="Close_Click" IsCancel="True" />
             <WrapPanel>
-                <Button Style="{StaticResource GhostButton}" Content="{app:T crash_copy, Upper=True}" Click="Copy_Click" />
-                <Button Style="{StaticResource GhostButton}" Content="{app:T crash_github, Upper=True}" Click="GitHub_Click" />
-                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_logs, Upper=True}" Click="Folder_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T crash_copy}" Click="Copy_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T crash_github}" Click="GitHub_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_logs}" Click="Folder_Click" />
                 <TextBlock x:Name="Status" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="8,0,0,0" />
             </WrapPanel>
         </DockPanel>

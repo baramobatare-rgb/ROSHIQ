@@ -12,7 +12,7 @@
             <StackPanel x:Name="ItemsPanel" />
         </ScrollViewer>
         <DockPanel Margin="0,16,0,0">
-            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T wn_ok, Upper=True}" Click="Ok_Click" IsDefault="True" IsCancel="True" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T wn_ok}" Click="Ok_Click" IsDefault="True" IsCancel="True" />
             <TextBlock Text="{app:T wn_where}" Style="{StaticResource MutedText}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0" />
         </DockPanel>
     </StackPanel>

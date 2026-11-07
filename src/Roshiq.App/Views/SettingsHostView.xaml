@@ -5,13 +5,13 @@
     <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,18">
             <RadioButton x:Name="TabGeneral" Style="{StaticResource Segment}" GroupName="SettingsTabs" Checked="Tab_Checked" Tag="general">
-                <TextBlock><Run Text="01  " /><Run Text="{app:T set_tab_general, Upper=True}" /></TextBlock>
+                <TextBlock><Run Text="01  " /><Run Text="{app:T set_tab_general}" /></TextBlock>
             </RadioButton>
             <RadioButton x:Name="TabOverlay" Style="{StaticResource Segment}" GroupName="SettingsTabs" Checked="Tab_Checked" Tag="overlay">
-                <TextBlock><Run Text="02  " /><Run Text="{app:T set_tab_overlay, Upper=True}" /></TextBlock>
+                <TextBlock><Run Text="02  " /><Run Text="{app:T set_tab_overlay}" /></TextBlock>
             </RadioButton>
             <RadioButton x:Name="TabData" Style="{StaticResource Segment}" GroupName="SettingsTabs" Checked="Tab_Checked" Tag="data">
-                <TextBlock><Run Text="03  " /><Run Text="{app:T set_tab_data, Upper=True}" /></TextBlock>
+                <TextBlock><Run Text="03  " /><Run Text="{app:T set_tab_data}" /></TextBlock>
             </RadioButton>
         </StackPanel>
         <ContentControl x:Name="TabHost" Focusable="False" />

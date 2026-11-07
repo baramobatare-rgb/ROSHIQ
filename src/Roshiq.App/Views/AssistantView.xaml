@@ -7,9 +7,9 @@
         <StackPanel Margin="0,0,6,20">
             <!-- Вкладки: роль и сборка / напоминания саппорту / таймеры и подсказки -->
             <WrapPanel Margin="0,0,0,14">
-                <RadioButton x:Name="TabRole" Style="{StaticResource Segment}" GroupName="AsstTabs" IsChecked="True" Content="{app:T asst_tab_role, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
-                <RadioButton x:Name="TabReminders" Style="{StaticResource Segment}" GroupName="AsstTabs" Content="{app:T asst_tab_reminders, Upper=True}" Checked="Tab_Checked" Margin="0,0,8,0" />
-                <RadioButton x:Name="TabMatch" Style="{StaticResource Segment}" GroupName="AsstTabs" Content="{app:T asst_tab_match, Upper=True}" Checked="Tab_Checked" />
+                <RadioButton x:Name="TabRole" Style="{StaticResource Segment}" GroupName="AsstTabs" IsChecked="True" Content="{app:T asst_tab_role}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabReminders" Style="{StaticResource Segment}" GroupName="AsstTabs" Content="{app:T asst_tab_reminders}" Checked="Tab_Checked" Margin="0,0,8,0" />
+                <RadioButton x:Name="TabMatch" Style="{StaticResource Segment}" GroupName="AsstTabs" Content="{app:T asst_tab_match}" Checked="Tab_Checked" />
             </WrapPanel>
             <Grid x:Name="RoleSection">
                 <Grid.ColumnDefinitions>

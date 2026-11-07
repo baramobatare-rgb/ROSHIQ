@@ -216,22 +216,22 @@ public partial class DashboardView : UserControl, IRefreshable
         HeroEyebrow.Inlines.Add(new System.Windows.Documents.Run(Ui.Up(L.Get("dash_now"))));
         if (gsiFresh && gsi!.IsHeroSelection)
         {
-            Headline.Text = Ui.Up(L.Get("dash_head_draft"));
+            Headline.Text = L.Get("dash_head_draft");
             HeadlineSub.Text = L.Get(s.UsageContext == UsageContext.Training ? "dash_head_draft_sub_training" : "dash_head_draft_sub");
         }
         else if (gsiFresh && gsi!.IsInProgress)
         {
-            Headline.Text = Ui.Up(L.Get("dash_head_live"));
+            Headline.Text = L.Get("dash_head_live");
             HeadlineSub.Text = L.Get("dash_head_live_sub");
         }
         else if (game.Found)
         {
-            Headline.Text = Ui.Up(L.Get("dash_head_ready"));
+            Headline.Text = L.Get("dash_head_ready");
             HeadlineSub.Text = L.Get(h.Gsi?.LastPacketUtc == null ? "dash_head_ready_nogsi" : "dash_head_ready_sub");
         }
         else
         {
-            Headline.Text = Ui.Up(L.Get("dash_head_idle"));
+            Headline.Text = L.Get("dash_head_idle");
             HeadlineSub.Text = L.Get("dash_head_idle_sub");
         }
 
@@ -268,14 +268,14 @@ public partial class DashboardView : UserControl, IRefreshable
         }
         else
         {
-            HeroName.Text = Ui.Up(h.CurrentHero.DisplayName(L.Language));
+            HeroName.Text = h.CurrentHero.DisplayName(L.Language);
             HeroMeta.Text = L.PositionName(s.Position) + (gsi?.HeroLevel is int lvl ? " · " + L.Format("dash_level", lvl) : "");
             var next = h.CurrentBuild?.NextItem(gsi?.InventoryItems, gsi?.ClockTime);
             NextItem.Text = next?.Item.DisplayName(L.Language) ?? L.Get("ov_build_done");
             Ui.SetItemImage(NextItemIcon, next?.Item.Key);
             NextItemWhy.Text = next?.Explain(L.Language) ?? "";
         }
-        TestModeButton.Content = Ui.Up(L.Get(h.Overlay.TestMode ? "dash_test_overlay_off" : "dash_test_overlay"));
+        TestModeButton.Content = L.Get(h.Overlay.TestMode ? "dash_test_overlay_off" : "dash_test_overlay");
 
         // --- плитки
         GameValue.Text = Ui.Up(L.Get(!game.Found ? "tile_off" : game.Minimized ? "tile_minimized" : "tile_on"));

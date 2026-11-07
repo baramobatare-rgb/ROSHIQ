@@ -33,13 +33,13 @@
                         <Button x:Name="ScanButton" Click="Scan_Click">
                             <StackPanel Orientation="Horizontal">
                                 <ov:Icon Glyph="{StaticResource I.Target}" Size="15" Margin="0,0,8,0" />
-                                <TextBlock Text="{app:T draft_scan, Upper=True}" VerticalAlignment="Center" />
+                                <TextBlock Text="{app:T draft_scan}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Style="{StaticResource GhostButton}" Click="Clear_Click" Content="{app:T draft_clear, Upper=True}" />
+                        <Button Style="{StaticResource GhostButton}" Click="Clear_Click" Content="{app:T draft_clear}" />
                         <Button Style="{StaticResource PrimaryButton}" Click="Analyze_Click" Margin="0,4,0,4">
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Text="{app:T draft_analyze, Upper=True}" VerticalAlignment="Center" />
+                                <TextBlock Text="{app:T draft_analyze}" VerticalAlignment="Center" />
                                 <ov:Icon Glyph="{StaticResource I.ArrowRight}" Size="15" Margin="8,0,0,0" />
                             </StackPanel>
                         </Button>
@@ -81,7 +81,7 @@
                     <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_results, Upper=True}" /></TextBlock>
                     <StackPanel x:Name="NotesPanel" />
                     <StackPanel x:Name="ResultsPanel" />
-                    <Expander x:Name="AltExpander" Header="{app:T draft_alternatives, Upper=True}" FontFamily="{StaticResource DisplayFont}" Margin="0,12,0,0">
+                    <Expander x:Name="AltExpander" Header="{app:T draft_alternatives}" FontFamily="{StaticResource DisplayFont}" Margin="0,12,0,0">
                         <StackPanel x:Name="AltPanel" Margin="0,8,0,0" TextElement.FontFamily="Segoe UI Variable Text, Segoe UI" />
                     </Expander>
                 </StackPanel>

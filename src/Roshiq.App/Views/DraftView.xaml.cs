@@ -71,7 +71,7 @@ public partial class DraftView : UserControl, IRefreshable
         {
             var box = new ComboBox { IsEditable = true, IsTextSearchEnabled = true, Visibility = Visibility.Collapsed };
             var status = new TextBlock { Foreground = Ui.Res("Muted"), FontSize = 11.5, TextWrapping = TextWrapping.Wrap, TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
-            var teach = new Button { Content = Ui.Up(Loc.T("draft_teach")), Visibility = Visibility.Collapsed, Padding = new Thickness(8, 5, 8, 5), Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
+            var teach = new Button { Content = Loc.T("draft_teach"), Visibility = Visibility.Collapsed, Padding = new Thickness(8, 5, 8, 5), Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Center };
 
             var portrait = new Border
             {
@@ -186,7 +186,7 @@ public partial class DraftView : UserControl, IRefreshable
             foreach (var h in withHeaders) slot.Box.Items.Add(h);
             if (selected != null) Ui.SelectValue(slot.Box, (Hero?)selected);
             if (slot.Box.SelectedIndex < 0) slot.Box.SelectedIndex = 0;
-            slot.Teach.Content = Ui.Up(L.Get("draft_teach"));
+            slot.Teach.Content = L.Get("draft_teach");
         }
         _ready = true;
     }
@@ -252,7 +252,7 @@ public partial class DraftView : UserControl, IRefreshable
     {
         var L = Loc.Instance;
         var hero = App.Host.CurrentHero;
-        MyHeroName.Text = hero == null ? "—" : Ui.Up(hero.DisplayName(L.Language));
+        MyHeroName.Text = hero == null ? "—" : hero.DisplayName(L.Language);
         MyHeroMeta.Text = hero == null
             ? L.Get("draft_my_hero_none")
             : L.PositionName(App.Host.Settings.Current.Position) + " · " + string.Join(", ", hero.Traits.Take(4).Select(t => App.Host.Database.TraitText(t, L.Language)));
@@ -469,7 +469,7 @@ public partial class DraftView : UserControl, IRefreshable
                 Foreground = Ui.Res(index == 1 ? "Accent" : "Faint")
             });
             var sp = new StackPanel();
-            var headRow = Ui.Row(Ui.Up(rec.Hero.DisplayName(L.Language)), "", L.Format("conf_label", L.ConfidenceName(rec.Confidence)),
+            var headRow = Ui.Row(rec.Hero.DisplayName(L.Language), "", L.Format("conf_label", L.ConfidenceName(rec.Confidence)),
                 rec.Confidence == Confidence.High ? "Accent" : rec.Confidence == Confidence.Medium ? "Purple" : "Muted");
             headRow.Margin = new Thickness(0, 4, 0, 8);
             var pic = Ui.Portrait(rec.Hero, 72);

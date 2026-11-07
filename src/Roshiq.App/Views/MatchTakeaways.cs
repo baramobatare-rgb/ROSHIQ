@@ -20,6 +20,7 @@ public sealed class MatchTakeaways : StackPanel
         var panel = new StackPanel();
         var heading = Ui.Text(title, "Eyebrow"); heading.Foreground = Ui.Res(color);
         panel.Children.Add(heading); panel.Children.Add(Ui.Text(body));
-        Children.Add(new Border { Style = (Style)Application.Current.FindResource("InnerCard"), Margin = new Thickness(0, 0, 0, 8), Child = panel });
+        // информационный блок: без рамки, цветная полоса слева
+        Children.Add(new Border { Style = (Style)Application.Current.FindResource("Callout"), BorderBrush = Ui.Res(color), Child = panel });
     }
 }

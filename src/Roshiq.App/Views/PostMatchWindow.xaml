@@ -23,17 +23,17 @@
 
         <StackPanel x:Name="MistakeBlock">
             <TextBlock Text="{app:T pm_fix, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Warning}" Margin="0,16,0,6" />
-            <Border Style="{StaticResource InnerCard}" BorderBrush="{DynamicResource Warning}">
+            <Border Style="{StaticResource Callout}" BorderBrush="{DynamicResource Warning}" Margin="0">
                 <TextBlock x:Name="MistakeText" TextWrapping="Wrap" Foreground="{DynamicResource Text}" FontSize="14" />
             </Border>
         </StackPanel>
 
         <TextBlock Text="{app:T pm_next_goal, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,16,0,6" />
-        <Border Style="{StaticResource InnerCard}"><TextBlock x:Name="NextGoalText" Style="{StaticResource Value}" /></Border>
+        <Border Style="{StaticResource Callout}" BorderBrush="{DynamicResource Accent}" Margin="0"><TextBlock x:Name="NextGoalText" Style="{StaticResource Value}" /></Border>
         <TextBlock x:Name="BasisText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,14,0,0" />
         <DockPanel Margin="0,18,0,0">
-            <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T diag_close, Upper=True}" Click="Close_Click" IsCancel="True" />
-            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T pm_more, Upper=True}" Click="More_Click" IsDefault="True" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T diag_close}" Click="Close_Click" IsCancel="True" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T pm_more}" Click="More_Click" IsDefault="True" />
             <CheckBox x:Name="DontShow" Content="{app:T pm_dont_show}" VerticalAlignment="Center" />
         </DockPanel>
     </StackPanel>

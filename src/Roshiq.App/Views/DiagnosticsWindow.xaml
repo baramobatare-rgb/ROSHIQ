@@ -20,11 +20,11 @@
             <StackPanel x:Name="ChecksPanel" />
         </ScrollViewer>
         <DockPanel Grid.Row="2" Margin="0,16,0,0">
-            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close, Upper=True}" Click="Close_Click" IsCancel="True" />
+            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close}" Click="Close_Click" IsCancel="True" />
             <WrapPanel>
-                <Button x:Name="RunButton" Style="{StaticResource GhostButton}" Content="{app:T diag_rerun, Upper=True}" Click="Run_Click" />
-                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_copy, Upper=True}" Click="Copy_Click" />
-                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_logs, Upper=True}" Click="Logs_Click" />
+                <Button x:Name="RunButton" Style="{StaticResource GhostButton}" Content="{app:T diag_rerun}" Click="Run_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_copy}" Click="Copy_Click" />
+                <Button Style="{StaticResource GhostButton}" Content="{app:T diag_logs}" Click="Logs_Click" />
             </WrapPanel>
         </DockPanel>
     </Grid>

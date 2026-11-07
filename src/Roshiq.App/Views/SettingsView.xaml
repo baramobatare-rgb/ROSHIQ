@@ -20,14 +20,14 @@
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T preset_title, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_preset}" /></InlineUIContainer></TextBlock>
                     <WrapPanel>
-                        <RadioButton x:Name="PresetMin" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_minimal, Upper=True}" Checked="Preset_Checked" Margin="0,0,8,8" />
-                        <RadioButton x:Name="PresetNormal" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_normal, Upper=True}" Checked="Preset_Checked" Margin="0,0,8,8" />
-                        <RadioButton x:Name="PresetFull" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_full, Upper=True}" Checked="Preset_Checked" Margin="0,0,8,8" />
+                        <RadioButton x:Name="PresetMin" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_minimal}" Checked="Preset_Checked" Margin="0,0,8,8" />
+                        <RadioButton x:Name="PresetNormal" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_normal}" Checked="Preset_Checked" Margin="0,0,8,8" />
+                        <RadioButton x:Name="PresetFull" Style="{StaticResource Segment}" GroupName="Preset" Content="{app:T preset_full}" Checked="Preset_Checked" Margin="0,0,8,8" />
                     </WrapPanel>
                     <TextBlock x:Name="PresetDescription" Style="{StaticResource MutedText}" TextWrapping="Wrap" />
                     <DockPanel Margin="0,10,0,0">
-                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_run_wizard, Upper=True}" Click="RunWizard_Click" />
-                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_diagnostics, Upper=True}" Click="Diagnostics_Click" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_run_wizard}" Click="RunWizard_Click" />
+                        <Button DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_diagnostics}" Click="Diagnostics_Click" />
                         <CheckBox x:Name="AdvancedBox" Content="{app:T set_show_advanced}" Checked="Advanced_Changed" Unchecked="Advanced_Changed" VerticalAlignment="Center" />
                     </DockPanel>
                 </StackPanel>
@@ -108,18 +108,18 @@
                         <TextBox x:Name="GsiPort" Grid.Column="1" Width="110" HorizontalAlignment="Left" FontFamily="{StaticResource MonoFont}" />
                         <TextBlock Grid.Row="1" Text="{app:T set_dota_path}" Style="{StaticResource FieldLabel}" />
                         <TextBox x:Name="DotaPath" Grid.Row="1" Grid.Column="1" />
-                        <Button Grid.Row="1" Grid.Column="2" Content="{app:T set_detect, Upper=True}" Click="Detect_Click" Margin="8,3,0,3" />
+                        <Button Grid.Row="1" Grid.Column="2" Content="{app:T set_detect}" Click="Detect_Click" Margin="8,3,0,3" />
                     </Grid>
                     <WrapPanel Margin="0,10,0,0">
                         <Button Style="{StaticResource PrimaryButton}" Click="WriteCfg_Click">
                             <StackPanel Orientation="Horizontal">
                                 <ov:Icon Glyph="{StaticResource I.Link}" Size="15" Margin="0,0,8,0" />
-                                <TextBlock Text="{app:T set_write_cfg, Upper=True}" VerticalAlignment="Center" />
+                                <TextBlock Text="{app:T set_write_cfg}" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Content="{app:T save, Upper=True}" Click="SaveGsi_Click" />
-                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_copy_cfg, Upper=True}" Click="CopyCfg_Click" />
-                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_new_token, Upper=True}" Click="NewToken_Click" />
+                        <Button Content="{app:T save}" Click="SaveGsi_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_copy_cfg}" Click="CopyCfg_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_new_token}" Click="NewToken_Click" />
                     </WrapPanel>
                     <TextBlock x:Name="GsiStatus" Style="{StaticResource Value}" Margin="0,8,0,0" />
                     <TextBlock Text="{app:T set_gsi_hint}" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
@@ -143,8 +143,8 @@
                         <StackPanel Margin="0,0,0,8"><TextBlock Text="{app:T set_slot_top}" Style="{StaticResource FieldLabel}" /><TextBox x:Name="LTop" FontFamily="{StaticResource MonoFont}" /></StackPanel>
                     </UniformGrid>
                     <WrapPanel Margin="0,6,0,0">
-                        <Button Content="{app:T save, Upper=True}" Click="SaveVision_Click" />
-                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_open_templates, Upper=True}" Click="OpenTemplates_Click" />
+                        <Button Content="{app:T save}" Click="SaveVision_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T set_open_templates}" Click="OpenTemplates_Click" />
                     </WrapPanel>
                     <TextBlock x:Name="VisionStatus" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
                 </StackPanel>
@@ -222,10 +222,10 @@
                     <TextBlock x:Name="SteamWarning" Style="{StaticResource MutedText}" Foreground="{DynamicResource Warning}"
                                TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,10" />
                     <WrapPanel>
-                        <Button x:Name="SteamSignInButton" Content="{app:T steam_signin, Upper=True}" Click="SteamSignIn_Click" />
-                        <Button Style="{StaticResource GhostButton}" Content="{app:T steam_find_local, Upper=True}" Click="SteamFindLocal_Click" />
-                        <Button x:Name="SteamRefreshButton" Style="{StaticResource GhostButton}" Content="{app:T steam_refresh, Upper=True}" Click="SteamRefresh_Click" />
-                        <Button x:Name="SteamUnlinkButton" Style="{StaticResource GhostButton}" Content="{app:T steam_unlink, Upper=True}" Click="SteamUnlink_Click" />
+                        <Button x:Name="SteamSignInButton" Content="{app:T steam_signin}" Click="SteamSignIn_Click" />
+                        <Button Style="{StaticResource GhostButton}" Content="{app:T steam_find_local}" Click="SteamFindLocal_Click" />
+                        <Button x:Name="SteamRefreshButton" Style="{StaticResource GhostButton}" Content="{app:T steam_refresh}" Click="SteamRefresh_Click" />
+                        <Button x:Name="SteamUnlinkButton" Style="{StaticResource GhostButton}" Content="{app:T steam_unlink}" Click="SteamUnlink_Click" />
                     </WrapPanel>
                     <StackPanel x:Name="SteamLocalList" Margin="0,6,0,0" />
                     <TextBlock x:Name="SteamStatus" Style="{StaticResource MutedText}" Margin="0,4,0,6" TextWrapping="Wrap" />
@@ -244,9 +244,9 @@
                     <TextBlock x:Name="StoragePath" Style="{StaticResource Value}" FontFamily="{StaticResource MonoFont}" FontSize="12.5" />
                     <TextBlock Text="{app:T set_storage_hint}" Style="{StaticResource MutedText}" Margin="0,4,0,10" />
                     <WrapPanel>
-                        <Button Content="{app:T set_open_folder, Upper=True}" Click="OpenFolder_Click" />
-                        <Button Content="{app:T set_export, Upper=True}" Click="Export_Click" />
-                        <Button Content="{app:T set_import, Upper=True}" Click="Import_Click" />
+                        <Button Content="{app:T set_open_folder}" Click="OpenFolder_Click" />
+                        <Button Content="{app:T set_export}" Click="Export_Click" />
+                        <Button Content="{app:T set_import}" Click="Import_Click" />
                     </WrapPanel>
                     <TextBlock x:Name="StorageStatus" Style="{StaticResource MutedText}" />
                 </StackPanel>
