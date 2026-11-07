@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -8,7 +8,7 @@ using Roshiq.Recommendations;
 namespace Roshiq.App.Views;
 
 /// <summary>
-/// Схема карты Dota, нарисованная кодом (без картинок Valve): половины сторон, река, лес, три линии с вышками,
+/// Карта Dota: фон — нарисованная картинка (Assets/Map/minimap.jpg, см. SOURCES.txt), запасной вариант — схема кодом (без картинок Valve): половины сторон, река, лес, три линии с вышками,
 /// древние, логова Рошана. Точки — в долях карты 0…1, (0,0) — левый нижний угол (база Radiant), (1,1) — правый верхний (Dire).
 /// По желанию — тепловой слой: где точек больше, там пятно ярче.
 /// </summary>
@@ -29,6 +29,135 @@ public static class MiniMap
         double S(double v) => v * size;
         Point P(double x, double y) => new(S(x), S(1 - y));
 
+        // 0.17.3: фон — нарисованная карта (Assets/Map/minimap.jpg, см. SOURCES.txt); если ресурса нет — схема кодом
+        var art = MapArt.Value;
+        if (art != null)
+        {
+            canvas.Children.Add(new Image { Source = art, Width = size, Height = size, Stretch = Stretch.Fill, IsHitTestVisible = false });
+            // лёгкое затемнение, чтобы метки и смерти читались на детальном рисунке
+            canvas.Children.Add(new Rectangle { Width = size, Height = size, Fill = new SolidColorBrush(Color.FromArgb(38, 0, 0, 0)), IsHitTestVisible = false });
+        }
+        else
+            DrawSchematic(canvas, size, S, P);
+
+        // метки построек, лагерей и рун — только на схеме; на нарисованной карте они уже есть
+        if (art == null)
+        {
+            // базы и древние
+            canvas.Children.Add(Base(0, S(1 - MapZones.BaseSize), S(MapZones.BaseSize), RadiantC));
+            canvas.Children.Add(Base(S(1 - MapZones.BaseSize), 0, S(MapZones.BaseSize), DireC));
+            canvas.Children.Add(Marker(P(0.09, 0.09), Math.Max(9, size / 26), RadiantC, true, Loc.T("map_ancient") + " · Radiant"));
+            canvas.Children.Add(Marker(P(0.91, 0.91), Math.Max(9, size / 26), DireC, true, Loc.T("map_ancient") + " · Dire"));
+
+            // вышки: по три на линию у каждой стороны (схематичные места)
+            double t = Math.Max(5, size / 52);
+            foreach (var (x, y) in new[]
+                     {
+                         (0.08, 0.62), (0.08, 0.44), (0.08, 0.26),
+                         (0.36, 0.36), (0.28, 0.28), (0.21, 0.21),
+                         (0.80, 0.08), (0.52, 0.08), (0.30, 0.08),
+                     })
+            {
+                canvas.Children.Add(Marker(P(x, y), t, RadiantC, false, Loc.T("map_tower") + " · Radiant"));
+                canvas.Children.Add(Marker(P(1 - x, 1 - y), t, DireC, false, Loc.T("map_tower") + " · Dire"));
+            }
+
+            // логова Рошана
+            foreach (var (x, y) in new[] { (0.36, 0.64), (0.64, 0.36) })
+                canvas.Children.Add(Ring(P(x, y), Math.Max(10, size / 22), Loc.T("map_roshan")));
+
+            // лагеря леса (треугольники), зеркально для двух сторон
+            double camp = Math.Max(6, size / 48);
+            foreach (var (x, y) in new[] { (0.27, 0.36), (0.36, 0.24), (0.46, 0.17), (0.58, 0.16), (0.70, 0.17), (0.20, 0.50), (0.26, 0.58), (0.44, 0.31) })
+            {
+                canvas.Children.Add(Camp(P(x, y), camp, RadiantC, Loc.T("map_camp")));
+                canvas.Children.Add(Camp(P(1 - x, 1 - y), camp, DireC, Loc.T("map_camp")));
+            }
+
+            // аванпосты — по одному на стороне, ближе к своей лёгкой линии
+            foreach (var (x, y, c) in new[] { (0.62, 0.24, RadiantC), (0.38, 0.76, DireC) })
+                canvas.Children.Add(Outpost(P(x, y), Math.Max(10, size / 30), c, Loc.T("map_outpost")));
+
+            // руны: силы — у реки, богатства — в лесу
+            foreach (var (x, y) in new[] { (0.30, 0.71), (0.70, 0.29) })
+                canvas.Children.Add(Rune(P(x, y), Math.Max(8, size / 38), Color.FromRgb(79, 163, 247), Loc.T("map_power_rune")));
+            foreach (var (x, y) in new[] { (0.30, 0.44), (0.70, 0.56), (0.46, 0.06), (0.54, 0.94) })
+                canvas.Children.Add(Rune(P(x, y), Math.Max(7, size / 44), Color.FromRgb(242, 194, 75), Loc.T("map_bounty_rune")));
+
+            // Торментеры — по одному в углах у лёгких линий противников
+            foreach (var (x, y) in new[] { (0.80, 0.24), (0.20, 0.76) })
+                canvas.Children.Add(Ring(P(x, y), Math.Max(9, size / 30), Loc.T("map_tormentor"), Color.FromRgb(255, 150, 80)));
+
+            if (labels)
+            {
+                canvas.Children.Add(Label("TOP", P(0.12, 0.985), size));
+                canvas.Children.Add(Label("MID", P(0.53, 0.47), size));
+                canvas.Children.Add(Label("BOT", P(0.80, 0.135), size));
+            }
+        }
+
+        var list = points.ToList();
+        // тепловой слой: мягкие пятна, которые складываются там, где смертей много
+        if (heat && list.Count > 0)
+        {
+            double hr = S(0.10);
+            foreach (var p in list)
+            {
+                var c = (p.Fill as SolidColorBrush)?.Color ?? Colors.OrangeRed;
+                var spot = new Ellipse
+                {
+                    Width = hr * 2, Height = hr * 2, IsHitTestVisible = false,
+                    Fill = new RadialGradientBrush(Color.FromArgb(110, c.R, c.G, c.B), Color.FromArgb(0, c.R, c.G, c.B))
+                };
+                Canvas.SetLeft(spot, S(p.X) - hr);
+                Canvas.SetTop(spot, S(1 - p.Y) - hr);
+                canvas.Children.Add(spot);
+            }
+        }
+
+        double r = Math.Max(6, size / 40);
+        foreach (var p in list)
+        {
+            var dot = new Ellipse
+            {
+                Width = r, Height = r, Fill = p.Fill, Opacity = 0.95,
+                Stroke = new SolidColorBrush(Color.FromArgb(190, 0, 0, 0)), StrokeThickness = 1,
+                ToolTip = p.Tip
+            };
+            ToolTipService.SetInitialShowDelay(dot, 100);
+            Canvas.SetLeft(dot, S(p.X) - r / 2);
+            Canvas.SetTop(dot, S(1 - p.Y) - r / 2);
+            canvas.Children.Add(dot);
+        }
+        return new Border
+        {
+            Width = size + 2, Height = size + 2, CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1),
+            BorderBrush = Ui.Res("Line"), Background = Ui.Res("Panel2"), Child = canvas, ClipToBounds = true,
+            HorizontalAlignment = HorizontalAlignment.Left
+        };
+    }
+
+    /// <summary>Есть ли нарисованный фон (тогда метки построек не рисуются).</summary>
+    public static bool HasArt => MapArt.Value != null;
+
+    private static readonly Lazy<ImageSource?> MapArt = new(() =>
+    {
+        try
+        {
+            var bmp = new System.Windows.Media.Imaging.BitmapImage();
+            bmp.BeginInit();
+            bmp.UriSource = new Uri("pack://application:,,,/Assets/Map/minimap.jpg", UriKind.Absolute);
+            bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bmp.EndInit();
+            bmp.Freeze();
+            return bmp;
+        }
+        catch { return null; }
+    });
+
+    /// <summary>Запасной вариант без картинки: прежняя схема кодом.</summary>
+    private static void DrawSchematic(Canvas canvas, double size, Func<double, double> S, Func<double, double, Point> P)
+    {
         // половины сторон: лёгкий оттенок своей команды
         canvas.Children.Add(Poly(new[] { P(0, 0), P(0, 1), P(1, 0) }, Color.FromArgb(18, RadiantC.R, RadiantC.G, RadiantC.B)));
         canvas.Children.Add(Poly(new[] { P(1, 1), P(0, 1), P(1, 0) }, Color.FromArgb(18, DireC.R, DireC.G, DireC.B)));
@@ -61,97 +190,6 @@ public static class MiniMap
         Lane(P(0.14, 0.08), P(0.92, 0.08)); Lane(P(0.92, 0.08), P(0.92, 0.86));
         Lane(P(0.16, 0.16), P(0.84, 0.84));
 
-        // базы и древние
-        canvas.Children.Add(Base(0, S(1 - MapZones.BaseSize), S(MapZones.BaseSize), RadiantC));
-        canvas.Children.Add(Base(S(1 - MapZones.BaseSize), 0, S(MapZones.BaseSize), DireC));
-        canvas.Children.Add(Marker(P(0.09, 0.09), Math.Max(9, size / 26), RadiantC, true, Loc.T("map_ancient") + " · Radiant"));
-        canvas.Children.Add(Marker(P(0.91, 0.91), Math.Max(9, size / 26), DireC, true, Loc.T("map_ancient") + " · Dire"));
-
-        // вышки: по три на линию у каждой стороны (схематичные места)
-        double t = Math.Max(5, size / 52);
-        foreach (var (x, y) in new[]
-                 {
-                     (0.08, 0.62), (0.08, 0.44), (0.08, 0.26),
-                     (0.36, 0.36), (0.28, 0.28), (0.21, 0.21),
-                     (0.80, 0.08), (0.52, 0.08), (0.30, 0.08),
-                 })
-        {
-            canvas.Children.Add(Marker(P(x, y), t, RadiantC, false, Loc.T("map_tower") + " · Radiant"));
-            canvas.Children.Add(Marker(P(1 - x, 1 - y), t, DireC, false, Loc.T("map_tower") + " · Dire"));
-        }
-
-        // логова Рошана
-        foreach (var (x, y) in new[] { (0.36, 0.64), (0.64, 0.36) })
-            canvas.Children.Add(Ring(P(x, y), Math.Max(10, size / 22), Loc.T("map_roshan")));
-
-        // лагеря леса (треугольники), зеркально для двух сторон
-        double camp = Math.Max(6, size / 48);
-        foreach (var (x, y) in new[] { (0.27, 0.36), (0.36, 0.24), (0.46, 0.17), (0.58, 0.16), (0.70, 0.17), (0.20, 0.50), (0.26, 0.58), (0.44, 0.31) })
-        {
-            canvas.Children.Add(Camp(P(x, y), camp, RadiantC, Loc.T("map_camp")));
-            canvas.Children.Add(Camp(P(1 - x, 1 - y), camp, DireC, Loc.T("map_camp")));
-        }
-
-        // аванпосты — по одному на стороне, ближе к своей лёгкой линии
-        foreach (var (x, y, c) in new[] { (0.62, 0.24, RadiantC), (0.38, 0.76, DireC) })
-            canvas.Children.Add(Outpost(P(x, y), Math.Max(10, size / 30), c, Loc.T("map_outpost")));
-
-        // руны: силы — у реки, богатства — в лесу
-        foreach (var (x, y) in new[] { (0.30, 0.71), (0.70, 0.29) })
-            canvas.Children.Add(Rune(P(x, y), Math.Max(8, size / 38), Color.FromRgb(79, 163, 247), Loc.T("map_power_rune")));
-        foreach (var (x, y) in new[] { (0.30, 0.44), (0.70, 0.56), (0.46, 0.06), (0.54, 0.94) })
-            canvas.Children.Add(Rune(P(x, y), Math.Max(7, size / 44), Color.FromRgb(242, 194, 75), Loc.T("map_bounty_rune")));
-
-        // Торментеры — по одному в углах у лёгких линий противников
-        foreach (var (x, y) in new[] { (0.80, 0.24), (0.20, 0.76) })
-            canvas.Children.Add(Ring(P(x, y), Math.Max(9, size / 30), Loc.T("map_tormentor"), Color.FromRgb(255, 150, 80)));
-
-        if (labels)
-        {
-            canvas.Children.Add(Label("TOP", P(0.12, 0.985), size));
-            canvas.Children.Add(Label("MID", P(0.53, 0.47), size));
-            canvas.Children.Add(Label("BOT", P(0.80, 0.135), size));
-        }
-
-        var list = points.ToList();
-        // тепловой слой: мягкие пятна, которые складываются там, где смертей много
-        if (heat && list.Count > 0)
-        {
-            double hr = S(0.10);
-            foreach (var p in list)
-            {
-                var c = (p.Fill as SolidColorBrush)?.Color ?? Colors.OrangeRed;
-                var spot = new Ellipse
-                {
-                    Width = hr * 2, Height = hr * 2, IsHitTestVisible = false,
-                    Fill = new RadialGradientBrush(Color.FromArgb(80, c.R, c.G, c.B), Color.FromArgb(0, c.R, c.G, c.B))
-                };
-                Canvas.SetLeft(spot, S(p.X) - hr);
-                Canvas.SetTop(spot, S(1 - p.Y) - hr);
-                canvas.Children.Add(spot);
-            }
-        }
-
-        double r = Math.Max(6, size / 40);
-        foreach (var p in list)
-        {
-            var dot = new Ellipse
-            {
-                Width = r, Height = r, Fill = p.Fill, Opacity = 0.95,
-                Stroke = new SolidColorBrush(Color.FromArgb(190, 0, 0, 0)), StrokeThickness = 1,
-                ToolTip = p.Tip
-            };
-            ToolTipService.SetInitialShowDelay(dot, 100);
-            Canvas.SetLeft(dot, S(p.X) - r / 2);
-            Canvas.SetTop(dot, S(1 - p.Y) - r / 2);
-            canvas.Children.Add(dot);
-        }
-        return new Border
-        {
-            Width = size + 2, Height = size + 2, CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1),
-            BorderBrush = Ui.Res("Line"), Background = Ui.Res("Panel2"), Child = canvas, ClipToBounds = true,
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
     }
 
     private static Polygon Poly(IEnumerable<Point> pts, Color fill) => new()
@@ -218,8 +256,8 @@ public static class MiniMap
         var tri = new Polygon
         {
             Points = new PointCollection { new(size / 2, 0), new(size, size), new(0, size) },
-            Fill = new SolidColorBrush(Color.FromArgb(110, c.R, c.G, c.B)), Stroke = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)),
-            StrokeThickness = 0.8, ToolTip = tip
+            Fill = new SolidColorBrush(Color.FromArgb(190, c.R, c.G, c.B)), Stroke = new SolidColorBrush(Color.FromArgb(200, 0, 0, 0)),
+            StrokeThickness = 1, ToolTip = tip
         };
         Canvas.SetLeft(tri, at.X - size / 2);
         Canvas.SetTop(tri, at.Y - size / 2);
@@ -256,7 +294,8 @@ public static class MiniMap
         var tb = new TextBlock
         {
             Text = text, FontSize = Math.Max(9, size / 34), FontWeight = FontWeights.SemiBold, IsHitTestVisible = false,
-            Foreground = Ui.Res("Faint")
+            Foreground = new SolidColorBrush(Color.FromArgb(230, 255, 255, 255)),
+            Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 3, ShadowDepth = 0, Opacity = 0.9 }
         };
         Canvas.SetLeft(tb, at.X);
         Canvas.SetTop(tb, at.Y);

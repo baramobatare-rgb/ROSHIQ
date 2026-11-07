@@ -387,7 +387,7 @@ public partial class HistoryView
             Leg("Red", L.Get("deathmap_mid"));
             Leg("Purple", L.Get("deathmap_late"));
             side.Children.Add(legend);
-            side.Children.Add(Ui.Text(L.Get("deathmap_legend"), "MutedText", 4));
+            side.Children.Add(Ui.Text(L.Get(MiniMap.HasArt ? "deathmap_legend_art" : "deathmap_legend"), "MutedText", 4));
         }
         DeathMapPanel.Children.Add(grid);
     }

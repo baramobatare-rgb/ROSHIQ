@@ -670,6 +670,8 @@ internal static class StringsExtra
         ["deathmap_top"] = ("Чаще всего вы умираете здесь: {0} — {1}% смертей.", "You die most often here: {0} — {1}% of deaths."),
         ["deathmap_legend"] = ("Квадраты — вышки, крупные ромбы — древние, треугольники — лагеря леса, кольца с точкой — аванпосты, синие ромбики — руны силы, жёлтые — руны богатства, пунктир — Рошан (фиолетовый) и Торментеры (оранжевый). Наведите на значок — подпись. Своя схема, места примерные.",
             "Squares — towers, large diamonds — ancients, triangles — jungle camps, rings with a dot — outposts, blue diamonds — power runes, yellow — bounty runes, dashed — Roshan (purple) and Tormentors (orange). Hover an icon for its name. Our own schematic; positions are approximate."),
+        ["deathmap_legend_art"] = ("Точки — ваши смерти, наведите на точку — матч, герой и минута. Чем краснее пятно, тем чаще вы там умираете. Положение примерное.",
+            "Dots are your deaths; hover a dot for the match, hero and minute. The redder the spot, the more often you die there. Positions are approximate."),
         ["map_roshan"] = ("Логово Рошана", "Roshan pit"),
         ["map_camp"] = ("Лагерь леса", "Jungle camp"),
         ["map_outpost"] = ("Аванпост", "Outpost"),

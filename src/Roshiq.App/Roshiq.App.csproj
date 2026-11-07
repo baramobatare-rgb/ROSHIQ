@@ -20,6 +20,8 @@
   <ItemGroup>
     <Resource Include="Assets\roshiq.ico" />
     <Resource Include="Assets\Brand\**\*.ico;Assets\Brand\**\*.png" />
+    <!-- Фон карты смертей: картинка автора проекта (см. Assets\Map\SOURCES.txt), без графики Valve -->
+    <Resource Include="Assets\Map\minimap.jpg" />
     <EmbeddedResource Include="Assets\Portraits.zip" />
     <!-- Портреты героев: собирает tools\fetch-hero-art.ps1 (вызывается из build.ps1) -->
     <EmbeddedResource Include="Assets\HeroArt.zip" Condition="Exists('Assets\HeroArt.zip')" />
