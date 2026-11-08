@@ -18,6 +18,10 @@ public sealed class Choice<T>
     public string Display { get; }
     /// <summary>Группа в списке (для героев — основной атрибут).</summary>
     public AttributeGroup? Group { get; init; }
+    /// <summary>Вторая строка карточки (дата · длительность). null — однострочный элемент.</summary>
+    public string? Subtitle { get; init; }
+    /// <summary>Короткая видимая пометка справа во второй строке (например, «неполная запись»).</summary>
+    public string? Note { get; init; }
     /// <summary>Картинка слева (портрет героя). null — без картинки.</summary>
     public ImageSource? Icon { get; init; }
     /// <summary>Заголовок группы (СИЛА, ЛОВКОСТЬ…) — не выбирается, только разделяет список.</summary>

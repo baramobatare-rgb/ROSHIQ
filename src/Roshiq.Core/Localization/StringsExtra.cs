@@ -61,6 +61,9 @@ internal static class StringsExtra
         ["hist_need_online"] = ("Сначала разрешите сеть: «Настройки → Данные → Разрешить загрузку».", "Allow network access first: Settings → Data."),
         ["hist_importing"] = ("Загрузка…", "Loading…"),
         ["hist_import_done"] = ("Добавлено новых матчей: {0} из {1}.", "New matches added: {0} of {1}."),
+        ["hist_import_done2"] = ("Получено {2}: новых {0}, дополнен итог у {1}.", "Received {2}: {0} new, result filled in for {1}."),
+        ["hist_import_done_failed"] = ("Получено {3}: новых {0}, дополнен итог у {1}, не записано {2} — подробности в журнале.",
+            "Received {3}: {0} new, result filled in for {1}, {2} not written — see the log."),
         ["hist_import_empty"] = ("OpenDota не вернул матчей. Проверьте Steam ID и открытость профиля.", "OpenDota returned no matches. Check the Steam ID and profile privacy."),
         ["hist_import_error"] = ("Не удалось загрузить: {0}", "Failed to load: {0}"),
 

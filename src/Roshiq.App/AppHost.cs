@@ -1045,7 +1045,7 @@ public sealed class AppHost : IDisposable
         {
             using var client = new OpenDotaClient(s.Data.OpenDotaApiKey);
             var rows = await client.GetRecentMatchesAsync(account, CancellationToken.None);
-            int added = History.Import(rows);
+            int added = History.Import(rows).Added;
             bool? visible = rows.Count > 0 ? true : History.All().Any(m => m.Source == "GSI") ? false : null;
             if (visible != null && visible != s.Data.PublicMatchData)
             {
@@ -1913,7 +1913,9 @@ public sealed class AppHost : IDisposable
         {
             lock (_unsaved)
             {
-                _unsaved.RemoveAll(r => History.Save(r));
+                // то же правило, что при повторных попытках: устаревшую версию поверх более полной не пишем
+                var needed = UnsavedQueuePolicy.StillNeeded(_unsaved, History.Find);
+                _unsaved.RemoveAll(r => needed.All(n => n.Id != r.Id) || History.Save(r));
                 History.SavePending(_unsaved.ToList());   // что не записалось — останется в очереди до следующего запуска
             }
         }

@@ -414,11 +414,39 @@ public sealed class MatchHistoryStore
     private readonly object _sync = new();
     // кэш: запись (только для порядка и поиска) + её JSON; наружу всегда отдаётся новая копия из JSON
     private List<(MatchRecord Meta, string Json)>? _cache;
+    private int _revision;
+    private long _deserialized;
     private readonly List<string> _quarantined = new();
 
     public MatchHistoryStore(string directory) { _dir = directory; }
 
     public event EventHandler? Changed;
+
+    /// <summary>
+    /// Номер версии истории: растёт при каждом успешном сохранении (в том числе при замене записи того же Id,
+    /// например исправленного результата) и удалении. Дёшево — без чтения записей; по нему интерфейс понимает,
+    /// нужно ли перечитывать историю.
+    /// </summary>
+    public int Revision { get { lock (_sync) return _revision; } }
+
+    /// <summary>Сколько матчей в истории (без копирования записей).</summary>
+    public int Count { get { lock (_sync) { _cache ??= LoadFromDisk(); return _cache.Count; } } }
+
+    /// <summary>Сколько раз записи разбирались из JSON (для тестов и замеров).</summary>
+    public long Deserializations => Interlocked.Read(ref _deserialized);
+
+    /// <summary>Самый новый матч (независимая копия одной записи) или null.</summary>
+    public MatchRecord? Latest()
+    {
+        lock (_sync)
+        {
+            _cache ??= LoadFromDisk();
+            if (_cache.Count == 0) return null;
+            var newest = _cache[0];
+            foreach (var e in _cache) if (e.Meta.StartedUtc > newest.Meta.StartedUtc) newest = e;
+            return FromJson(newest.Json);
+        }
+    }
 
     /// <summary>Файлы истории, которые не удалось прочитать и которые переименованы в «.bad» (для диагностики).</summary>
     public IReadOnlyList<string> Quarantined { get { lock (_sync) return _quarantined.ToList(); } }
@@ -451,7 +479,11 @@ public sealed class MatchHistoryStore
         }
     }
 
-    private static MatchRecord FromJson(string json) => JsonSerializer.Deserialize<MatchRecord>(json, Json)!;
+    private MatchRecord FromJson(string json)
+    {
+        Interlocked.Increment(ref _deserialized);
+        return JsonSerializer.Deserialize<MatchRecord>(json, Json)!;
+    }
 
     private List<(MatchRecord Meta, string Json)> LoadFromDisk()
     {
@@ -502,6 +534,14 @@ public sealed class MatchHistoryStore
     /// </summary>
     public bool Save(MatchRecord record)
     {
+        if (!SaveCore(record)) return false;
+        Changed?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    /// <summary>Запись без уведомления (для пакетного импорта: одно уведомление на всю пачку).</summary>
+    private bool SaveCore(MatchRecord record)
+    {
         lock (_sync)
         {
             _cache ??= LoadFromDisk();
@@ -517,9 +557,9 @@ public sealed class MatchHistoryStore
                 return false;
             }
             _cache.RemoveAll(x => x.Meta.Id == record.Id);
-            _cache.Add((FromJson(json), json));
+            _cache.Add((JsonSerializer.Deserialize<MatchRecord>(json, Json)!, json));
+            _revision++;
         }
-        Changed?.Invoke(this, EventArgs.Empty);
         return true;
     }
 
@@ -528,7 +568,7 @@ public sealed class MatchHistoryStore
         lock (_sync)
         {
             _cache ??= LoadFromDisk();
-            _cache.RemoveAll(x => x.Meta.Id == id);
+            if (_cache.RemoveAll(x => x.Meta.Id == id) > 0) _revision++;
             try { if (File.Exists(FileFor(id))) File.Delete(FileFor(id)); }
             catch (Exception ex) { Log.Warn("Не удалось удалить матч: " + ex.Message); }
         }
@@ -632,29 +672,29 @@ public sealed class MatchHistoryStore
     }
 
     /// <summary>
-    /// Добавить матчи из OpenDota. Матч, уже записанный по GSI, не дублируется: у него только
-    /// дополняется итог, если он был неизвестен. Возвращает число новых матчей.
+    /// Добавить матчи из OpenDota. Матчи, уже записанные через GSI, не дублируются — у них только
+    /// дополняется итог, если он был неизвестен. Пачка записывается файл за файлом (не одной транзакцией):
+    /// что не записалось — честно попадает в <see cref="ImportResult.Failed"/>. Уведомление <see cref="Changed"/> — одно на пачку.
     /// </summary>
-    public int Import(IEnumerable<RecentMatchRow> rows)
+    public ImportResult Import(IEnumerable<RecentMatchRow> rows)
     {
-        int added = 0;
-        var existing = All();
+        int added = 0, updated = 0, failed = 0;
+        var byMatch = new Dictionary<string, MatchRecord>();
+        foreach (var m in All()) if (m.MatchId != null) byMatch.TryAdd(m.MatchId, m);
         foreach (var row in rows)
         {
             var mid = row.MatchId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var gsi = existing.FirstOrDefault(x => x.MatchId == mid);
             var result = row.Won switch { true => MatchResult.Win, false => MatchResult.Loss, _ => MatchResult.Unknown };
-            if (gsi != null)
+            if (byMatch.TryGetValue(mid, out var known))
             {
-                if (gsi.Result == MatchResult.Unknown && result != MatchResult.Unknown)
-                {
-                    var copy = Clone(gsi);       // правим копию: кэш меняется только через успешный Save
-                    copy.Result = result;
-                    Save(copy);
-                }
+                // запись GSI главнее: дополняем только неизвестный итог
+                if (known.Result != MatchResult.Unknown || result == MatchResult.Unknown) continue;
+                var copy = Clone(known);
+                copy.Result = result;
+                if (SaveCore(copy)) { updated++; byMatch[mid] = copy; } else failed++;
                 continue;
             }
-            if (Save(new MatchRecord
+            var rec = new MatchRecord
             {
                 Id = "od-" + mid,
                 MatchId = mid,
@@ -670,11 +710,16 @@ public sealed class MatchHistoryStore
                 LastHits = row.LastHits,
                 Gpm = row.GoldPerMin,
                 Xpm = row.XpPerMin
-            })) added++;
+            };
+            if (SaveCore(rec)) { added++; byMatch[mid] = rec; } else failed++;
         }
-        return added;
+        if (added + updated > 0) Changed?.Invoke(this, EventArgs.Empty);
+        return new ImportResult(added, updated, failed);
     }
 }
+
+/// <summary>Итог импорта: добавлено новых, дополнено существующих, не записано из-за ошибки.</summary>
+public sealed record ImportResult(int Added, int Updated, int Failed);
 
 public sealed record GroupStats(string Key, int Games, int Wins, int Losses, double AvgGpm, double AvgXpm, double AvgKills, double AvgDeaths, double AvgAssists)
 {

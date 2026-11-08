@@ -59,7 +59,7 @@ public partial class DashboardView : UserControl, IRefreshable
         else
         {
             mode = "idle";
-            var last = h.History.All().FirstOrDefault();
+            var last = h.History.Latest();   // одна запись, а не вся история на каждое обновление
             if (last != null)
             {
                 var hero = h.Database.FindHero(last.HeroId)?.DisplayName(L.Language) ?? "?";
@@ -332,11 +332,13 @@ public partial class DashboardView : UserControl, IRefreshable
     /// <summary>Последние матчи: полоса побед и поражений, винрейт, KDA и главный урок прошлой игры.</summary>
     private void ShowRecent(Loc L)
     {
-        var all = App.Host.History.All();
-        var known = all.Where(m => m.Result != MatchResult.Unknown).Take(20).ToList();
-        var key = all.Count + "|" + (all.FirstOrDefault()?.Id ?? "") + "|" + L.Language;
+        // историю перечитываем, только если она изменилась (в том числе исправлен итог старого матча),
+        // сменился язык или наступил новый день (недельная статистика); иначе — ни одного разбора JSON
+        var key = App.Host.History.Revision + "|" + L.Language + "|" + DateTime.Now.Date.ToString("yyyyMMdd");
         if (key == _recentKey) return;
         _recentKey = key;
+        var all = App.Host.History.All();
+        var known = all.Where(m => m.Result != MatchResult.Unknown).Take(20).ToList();
         ShowWeek(L, all);
         RecentCard.Visibility = all.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         if (all.Count == 0) return;

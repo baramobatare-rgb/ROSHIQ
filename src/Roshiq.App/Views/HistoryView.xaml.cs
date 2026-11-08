@@ -15,6 +15,13 @@ public partial class HistoryView : UserControl, IRefreshable
 {
     private bool _ready;
     private MatchRecord? _selected;
+    // 0.17.7: один снимок истории на обновление — его используют список, разбор матча и все вкладки
+    private IReadOnlyList<MatchRecord> _all = Array.Empty<MatchRecord>();
+    private string? _listKey;          // версия истории | язык | день, по которым построен список
+    private bool _refreshQueued;       // несколько фоновых уведомлений подряд склеиваются в одно обновление
+    private bool? _narrow;
+    /// <summary>Если область уже этой ширины, разбор не помещается справа от списка — список встаёт сверху.</summary>
+    private const double NarrowWidth = 900;
 
     /// <summary>Матч, который выбрать при следующем обновлении (переход из итога матча).</summary>
     public static string? PendingSelectId { get; set; }
@@ -34,16 +41,56 @@ public partial class HistoryView : UserControl, IRefreshable
         Loaded += (_, _) => { if (PendingTab is { } tab) { PendingTab = null; SelectTab(tab); } };
         Ui.HeroTemplate(MatchList);
         Ui.HeroTemplate(CompareHero);
-        App.Host.History.Changed += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) Refresh(); });
+        App.Host.History.Changed += (_, _) => RequestRefresh();
         App.Host.Reviews.Saved += (_, id) => Dispatcher.InvokeAsync(() =>
         {
             if (!IsLoaded) return;
             FillCompareHeroes();
             if (_selected?.MatchId == id && !_reviewBusy) ShowMatch(_selected);
         });
-        App.Host.SteamChanged += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) ShowPatterns(App.Host.History.All()); });
+        App.Host.SteamChanged += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) ShowPatterns(_all); });
         App.Host.Goals.Changed += (_, _) => Dispatcher.InvokeAsync(() => { if (IsLoaded) ShowGoals(); });
-        Loc.Instance.PropertyChanged += (_, _) => { if (IsLoaded) Refresh(); };
+        Loc.Instance.PropertyChanged += (_, _) => { _listKey = null; RequestRefresh(); };
+    }
+
+    /// <summary>Обновить при ближайшем простое; повторные запросы до этого момента склеиваются в один.</summary>
+    private void RequestRefresh()
+    {
+        if (_refreshQueued) return;
+        _refreshQueued = true;
+        Dispatcher.InvokeAsync(() =>
+        {
+            _refreshQueued = false;
+            if (IsLoaded) Refresh();
+        }, System.Windows.Threading.DispatcherPriority.Background);
+    }
+
+    private void MatchesGrid_SizeChanged(object sender, SizeChangedEventArgs e) => ApplyMatchesLayout(e.NewSize.Width);
+
+    /// <summary>Узкое окно (или крупный масштаб): список матчей над разбором, во всю ширину.</summary>
+    private void ApplyMatchesLayout(double width)
+    {
+        bool narrow = width > 0 && width < NarrowWidth;
+        if (_narrow == narrow) return;
+        _narrow = narrow;
+        ListColumn.Width = narrow ? new GridLength(1, GridUnitType.Star) : new GridLength(340);
+        ReviewColumn.Width = narrow ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+        Grid.SetRow(ReviewCard, narrow ? 1 : 0);
+        Grid.SetColumn(ReviewCard, narrow ? 0 : 1);
+        ListCard.Margin = narrow ? new Thickness(0, 0, 0, 12) : new Thickness(0, 0, 8, 16);
+        ReviewCard.Margin = narrow ? new Thickness(0, 0, 0, 16) : new Thickness(8, 0, 0, 16);
+        MatchList.Height = narrow ? 280 : 420;
+    }
+
+    private static ScrollViewer? FindScroll(DependencyObject root)
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is ScrollViewer sv) return sv;
+            if (FindScroll(child) is { } found) return found;
+        }
+        return null;
     }
 
     private static string HeroName(MatchRecord m) =>
@@ -58,19 +105,40 @@ public partial class HistoryView : UserControl, IRefreshable
 
     public void Refresh()
     {
-        _ready = false;
         var L = Loc.Instance;
-        var all = App.Host.History.All();
+        var key = App.Host.History.Revision + "|" + L.Language + "|" + DateTime.Now.Date.ToString("yyyyMMdd", CultureInfo.InvariantCulture);
+        if (key == _listKey && MatchList.Items.Count > 0)
+        {
+            // история не менялась (переход на вкладку) — список и прокрутку не трогаем; только запрошенный матч
+            if (PendingSelectId is { } wanted)
+            {
+                PendingSelectId = null;
+                if (MatchList.Items.OfType<Choice<MatchRecord>>().FirstOrDefault(c => c.Value.Id == wanted) is { } item)
+                {
+                    MatchList.SelectedItem = item;
+                    MatchList.ScrollIntoView(item);
+                }
+            }
+            return;
+        }
+        _listKey = key;
+        _ready = false;
+        var all = _all = App.Host.History.All();
         var keep = PendingSelectId ?? _selected?.Id;
+        bool jumpTo = PendingSelectId != null;
         PendingSelectId = null;
+        var scroll = FindScroll(MatchList);
+        double offset = scroll?.VerticalOffset ?? 0;
         MatchList.Items.Clear();
         foreach (var m in all)
         {
             var date = m.StartedUtc.ToLocalTime().ToString("dd.MM HH:mm", CultureInfo.InvariantCulture);
             var hero = App.Host.Database.FindHero(m.HeroId) ?? App.Host.Database.FindHero(m.HeroKey);
-            MatchList.Items.Add(new Choice<MatchRecord>(m,
-                $"{date} · {HeroName(m)} · {ResultText(m.Result)} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OD")}{(m.Partial ? " · " + Loc.T("hist_partial") : "")}")
+            // карточка в две строки: «герой · итог» и «дата · длительность»; неполнота — видимой пометкой
+            MatchList.Items.Add(new Choice<MatchRecord>(m, $"{HeroName(m)} · {ResultText(m.Result)}")
             {
+                Subtitle = $"{date} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OpenDota")}",
+                Note = m.Partial ? Loc.T("hist_partial") : null,
                 Icon = Roshiq.App.Services.HeroArt.Portrait(hero?.Key),
                 Group = null
             });
@@ -83,6 +151,10 @@ public partial class HistoryView : UserControl, IRefreshable
                        ?? MatchList.Items.OfType<Choice<MatchRecord>>().FirstOrDefault();
         MatchList.SelectedItem = toSelect;
         if (toSelect == null) ShowMatch(null);
+        // фоновое обновление не сбрасывает прокрутку списка; переход к конкретному матчу — показывает его
+        if (jumpTo && toSelect != null) MatchList.ScrollIntoView(toSelect);
+        else if (scroll != null && offset > 0)
+            Dispatcher.InvokeAsync(() => scroll.ScrollToVerticalOffset(offset), System.Windows.Threading.DispatcherPriority.Loaded);
         ShowStats(all);
         ShowRecurring(all);
         FillCompareHeroes();
@@ -239,7 +311,7 @@ public partial class HistoryView : UserControl, IRefreshable
         TakeawaysPanel.Children.Clear();
         if (m.DurationSec >= PostMatch.MinDurationSec)
         {
-            var summary = PostMatch.Build(m, App.Host.History.All(), k => App.Host.Database.FindItem(k)?.Name);
+            var summary = PostMatch.Build(m, _all, k => App.Host.Database.FindItem(k)?.Name);
             TakeawaysPanel.Children.Add(new MatchTakeaways(summary));
         }
         SummaryChips.Children.Clear();
@@ -256,7 +328,7 @@ public partial class HistoryView : UserControl, IRefreshable
         DrawChart();
 
         ItemsPanel.Children.Clear();
-        var history = App.Host.History.All();
+        var history = _all;
         int i = 1;
         foreach (var (key, at) in m.ItemTimings.Where(x => !MatchRecorder.IsRecipe(x.Key)).OrderBy(x => x.Value))
         {
@@ -294,7 +366,7 @@ public partial class HistoryView : UserControl, IRefreshable
     {
         var L = Loc.Instance;
         BreakdownPanel.Children.Clear();
-        var bd = PlayerReport.Breakdown(m, App.Host.History.All());
+        var bd = PlayerReport.Breakdown(m, _all);
         if (bd == null) { BreakdownPanel.Children.Add(Ui.Text(L.Get("bd_none"), "MutedText")); return; }
         BreakdownPanel.Children.Add(new TextBlock
         {
@@ -594,8 +666,10 @@ public partial class HistoryView : UserControl, IRefreshable
         {
             using var client = new OpenDotaClient(d.OpenDotaApiKey);
             var rows = await client.GetRecentMatchesAsync(account.Value, CancellationToken.None);
-            int added = App.Host.History.Import(rows);
-            ImportStatus.Text = rows.Count == 0 ? L.Get("hist_import_empty") : L.Format("hist_import_done", added, rows.Count);
+            var result = App.Host.History.Import(rows);
+            ImportStatus.Text = rows.Count == 0 ? L.Get("hist_import_empty")
+                : result.Failed > 0 ? L.Format("hist_import_done_failed", result.Added, result.Updated, result.Failed, rows.Count)
+                : L.Format("hist_import_done2", result.Added, result.Updated, rows.Count);
         }
         catch (Exception ex)
         {

@@ -272,7 +272,7 @@ public class MatchHistoryTests
             {
                 new RecentMatchRow { MatchId = 111, PlayerSlot = 1, RadiantWin = true, HeroId = 2, Duration = 2000 },
                 new RecentMatchRow { MatchId = 222, PlayerSlot = 130, RadiantWin = true, HeroId = 5, Duration = 1800, StartTime = 1730000000 },
-            });
+            }).Added;
             Assert.Equal(1, added);
             var all = new MatchHistoryStore(dir).All(); // перечитать с диска
             Assert.Equal(2, all.Count);

@@ -13,14 +13,19 @@
                 <RadioButton x:Name="TabImport" Style="{StaticResource Segment}" GroupName="HistTabs" Content="{app:T hist_tab_import}" Checked="Tab_Checked" />
             </WrapPanel>
             <StackPanel x:Name="MatchesSection">
-                <Grid>
+                <!-- Широкое окно: список слева, разбор справа. Узкое (см. ApplyMatchesLayout): список над разбором. -->
+                <Grid x:Name="MatchesGrid" SizeChanged="MatchesGrid_SizeChanged">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="340" />
-                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition x:Name="ListColumn" Width="340" />
+                        <ColumnDefinition x:Name="ReviewColumn" Width="*" />
                     </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
                     <!-- Список матчей -->
-                    <Border Style="{StaticResource Card}" Margin="0,0,8,16" VerticalAlignment="Top">
+                    <Border x:Name="ListCard" Style="{StaticResource Card}" Margin="0,0,8,16" VerticalAlignment="Top">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
                                 <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T hist_matches, Upper=True}" /></TextBlock>
@@ -33,7 +38,7 @@
                     </Border>
 
                     <!-- Разбор выбранного матча -->
-                    <Border Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
+                    <Border x:Name="ReviewCard" Grid.Column="1" Style="{StaticResource Card}" Margin="8,0,0,16">
                         <StackPanel>
                             <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T hist_review, Upper=True}" /></TextBlock>
                             <ContentControl x:Name="EmptyState" Focusable="False" />

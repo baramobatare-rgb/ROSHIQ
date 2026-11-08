@@ -122,6 +122,17 @@
     </Style>
 
     <!-- ===== Кнопки: контурная (по умолчанию) и основная ===== -->
+    <!-- Рамка фокуса с клавиатуры (Tab): WPF показывает её только при навигации клавиатурой, не при щелчке мышью -->
+    <Style x:Key="KeyboardFocus">
+        <Setter Property="Control.Template">
+            <Setter.Value>
+                <ControlTemplate>
+                    <Rectangle Margin="-2" RadiusX="8" RadiusY="8" StrokeThickness="2" Stroke="{DynamicResource Accent}" SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="Button">
         <Setter Property="app:Motion.Kind" Value="Button" />
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
@@ -292,7 +303,7 @@
         <Setter Property="MinWidth" Value="120" />
         <Setter Property="MinHeight" Value="36" />
         <Setter Property="MaxDropDownHeight" Value="360" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ComboBox">
@@ -337,7 +348,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
         <Setter Property="Margin" Value="0,7,0,7" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -377,7 +388,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Text}" />
         <Setter Property="Margin" Value="0,7,22,7" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -415,7 +426,7 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Margin" Value="0,0,8,8" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="CheckBox">
@@ -453,7 +464,7 @@
         <Setter Property="FontSize" Value="12.5" />
         <Setter Property="Margin" Value="0,0,6,0" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="RadioButton">
@@ -523,7 +534,7 @@
         </Setter>
     </Style>
     <Style TargetType="Slider">
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="Template">
             <Setter.Value>
@@ -651,7 +662,7 @@
         <Setter Property="Padding" Value="12,9" />
         <Setter Property="Margin" Value="0,1" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">
@@ -694,7 +705,15 @@
                         <ScaleTransform ScaleX="1" ScaleY="1" />
                     </Border.RenderTransform>
                 </Border>
-                <TextBlock Grid.Column="1" Text="{Binding Display}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
+                    <!-- вторая строка (карточка матча): дата · длительность и короткая видимая пометка, например «неполная запись» -->
+                    <DockPanel x:Name="SubRow" Margin="0,1,0,0">
+                        <TextBlock x:Name="NoteText" DockPanel.Dock="Right" Text="{Binding Note}" Foreground="{DynamicResource Warning}"
+                                   FontSize="11" Margin="8,0,0,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Subtitle}" Foreground="{DynamicResource Muted}" FontSize="12" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                </StackPanel>
             </Grid>
             <!-- Заголовок группы атрибута: цветная точка, название, число героев и линия до края -->
             <Grid x:Name="HeaderRow" Visibility="Collapsed">
@@ -714,6 +733,12 @@
         <DataTemplate.Triggers>
             <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
                 <Setter TargetName="Pic" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Subtitle}" Value="{x:Null}">
+                <Setter TargetName="SubRow" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Note}" Value="{x:Null}">
+                <Setter TargetName="NoteText" Property="Visibility" Value="Collapsed" />
             </DataTrigger>
             <DataTrigger Binding="{Binding IsHeader}" Value="True">
                 <Setter TargetName="HeroRow" Property="Visibility" Value="Collapsed" />
@@ -768,7 +793,7 @@
     <Style x:Key="TopTab" TargetType="ListBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource Muted}" />
         <Setter Property="Cursor" Value="Hand" />
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource KeyboardFocus}" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ListBoxItem">

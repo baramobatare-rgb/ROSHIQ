@@ -20,7 +20,11 @@ class Program
         try
         {
             Environment.SetEnvironmentVariable("ROSHIQ_HOME", Path.Combine(Path.GetTempPath(), "Roshiq.UiSmoke", Guid.NewGuid().ToString("N")));
-            var app = new App(); app.InitializeComponent(); app.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            // Обычный Application с теми же словарями, что в App.xaml: настоящий App при первой прокачке диспетчера
+            // выполнил бы OnStartup (проверка единственного экземпляра, окна запуска), а тест должен работать рядом с установленной программой.
+            var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
+            app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Roshiq.Overlay;component/Icons.xaml") });
+            app.Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("pack://application:,,,/Roshiq;component/Theme.xaml") });
             var host = new AppHost();
             typeof(App).GetProperty("Host")!.SetValue(null, host);
             host.Settings.Current.Gsi.Enabled = false;
@@ -172,6 +176,7 @@ class Program
             onGsi.Invoke(host, new object[] { snapshot with { MatchId = "smoke-render", TeamName = "radiant" } });
             recognition = recognition with { SessionId = host.AutoDraftGeneration };
             onVision.Invoke(host, new object[] { recognition }); onVision.Invoke(host, new object[] { recognition });
+            HistoryUiChecks.Run(host);
             int renderIndex = Array.IndexOf(args, "--render");
             if (renderIndex >= 0 && renderIndex + 1 < args.Length)
             {
