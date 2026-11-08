@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ROSHIQ — бесплатный помощник для Dota 2: драфт, оверлей, разбор матча</title>
+<meta name="description" content="ROSHIQ — бесплатный помощник для Dota 2 с открытым кодом: контрпики в драфте, оверлей с подсказками в игре и разбор матча. Только официальный Game State Integration — без чтения памяти. Free open-source Dota 2 helper for Windows.">
+<meta name="keywords" content="помощник для доты, оверлей dota 2, контрпики дота 2, разбор матча дота, dota 2 helper, dota 2 overlay, game state integration">
+<link rel="canonical" href="https://baramobatare-rgb.github.io/ROSHIQ/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="ROSHIQ — помощник для Dota 2, который играет честно">
+<meta property="og:description" content="Драфт, подсказки в игре и разбор матча. Бесплатно, с открытым кодом, без чтения памяти игры.">
+<meta property="og:image" content="https://baramobatare-rgb.github.io/ROSHIQ/site/og.png">
+<meta property="og:url" content="https://baramobatare-rgb.github.io/ROSHIQ/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://baramobatare-rgb.github.io/ROSHIQ/site/og.png">
+<link rel="icon" type="image/png" href="site/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#060C08;--bg2:#0B140E;--acc:#B5FF4D;--red:#FF5A5A;--txt:#EEF6EA;--mut:#8FA393;--line:rgba(181,255,77,.16);--card:rgba(14,24,17,.78);--r:26px}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font:400 18px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+:focus-visible{outline:3px solid var(--acc);outline-offset:3px;border-radius:8px}
+
+/* шапка */
+header{position:sticky;top:0;z-index:20;backdrop-filter:blur(12px);background:rgba(6,12,8,.72);border-bottom:1px solid var(--line)}
+.nav{display:flex;align-items:center;gap:20px;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.02em;text-decoration:none;font-size:20px}
+.brand img{width:34px;height:34px;border-radius:9px}
+.brand b{color:var(--acc)}
+.nav nav{display:flex;gap:22px;margin-left:auto;font-size:15px}
+.nav nav a{text-decoration:none;color:var(--mut)} .nav nav a:hover{color:var(--txt)}
+.lang{display:flex;border:1px solid var(--line);border-radius:30px;overflow:hidden;font:700 13px "JetBrains Mono",monospace}
+.lang button{background:none;border:0;color:var(--mut);padding:6px 11px;cursor:pointer}
+.lang button[aria-pressed=true]{background:var(--acc);color:#0A0D07}
+@media (max-width:820px){.nav nav{display:none}.lang{margin-left:auto}}
+
+/* первый экран */
+.hero{position:relative;overflow:hidden;padding:80px 0 120px}
+.hero::before{content:"";position:absolute;inset:-20% -10% auto;height:120%;background:radial-gradient(700px 500px at 30% 30%,rgba(124,255,58,.14),transparent 70%),radial-gradient(500px 400px at 85% 40%,rgba(124,255,58,.08),transparent 70%);pointer-events:none}
+.grid{position:absolute;left:-40%;right:-40%;bottom:-8%;height:46%;transform-origin:50% 0;transform:perspective(600px) rotateX(64deg);
+ background-image:linear-gradient(var(--line) 2px,transparent 2px),linear-gradient(90deg,var(--line) 2px,transparent 2px);background-size:90px 90px;
+ -webkit-mask-image:linear-gradient(to bottom,transparent,#000 40%);mask-image:linear-gradient(to bottom,transparent,#000 40%);animation:grid 6s linear infinite;pointer-events:none}
+@keyframes grid{to{background-position:0 90px}}
+@media (prefers-reduced-motion:reduce){.grid{animation:none}}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.25fr .75fr;gap:48px;align-items:center}
+@media (max-width:900px){.hero .wrap{grid-template-columns:1fr}.hero{padding:48px 0 90px}}
+.tag{display:inline-block;font:700 13px "JetBrains Mono",monospace;letter-spacing:.1em;color:var(--acc);border:1.5px solid rgba(181,255,77,.5);border-radius:30px;padding:6px 14px;background:rgba(181,255,77,.06)}
+h1{font-weight:900;font-size:clamp(38px,5.6vw,68px);line-height:.98;letter-spacing:-.02em;text-transform:uppercase;margin:22px 0 20px}
+h1 em{font-style:normal;color:var(--acc);text-shadow:0 0 40px rgba(181,255,77,.4)}
+.lead{font-size:clamp(18px,2.2vw,22px);color:#cfe0cc;max-width:560px}
+.cta{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:32px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--acc);color:#0A0D07;font-weight:800;font-size:19px;text-decoration:none;padding:17px 30px;border-radius:16px;box-shadow:0 10px 40px rgba(181,255,77,.28);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 50px rgba(181,255,77,.4)}
+.btn2{display:inline-flex;align-items:center;gap:8px;color:var(--txt);text-decoration:none;font-weight:700;padding:16px 22px;border-radius:16px;border:1.5px solid var(--line)}
+.btn2:hover{border-color:var(--acc)}
+.small{margin-top:14px;color:var(--mut);font-size:14px}
+.phone{justify-self:center;width:min(330px,80vw);aspect-ratio:9/16;border-radius:30px;overflow:hidden;border:2px solid rgba(181,255,77,.35);box-shadow:0 30px 90px rgba(0,0,0,.6),0 0 80px rgba(124,255,58,.18);background:#000}
+.phone iframe{width:100%;height:100%;border:0;display:block}
+
+/* секции */
+section{padding:90px 0;position:relative}
+.alt{background:linear-gradient(180deg,var(--bg),var(--bg2) 20%,var(--bg2) 80%,var(--bg))}
+h2{font-weight:900;font-size:clamp(32px,4.6vw,54px);line-height:1;text-transform:uppercase;letter-spacing:-.01em;margin:16px 0 14px}
+h2 em{font-style:normal;color:var(--acc)}
+.sub{color:var(--mut);max-width:640px;font-size:19px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px}
+@media (max-width:900px){.cards{grid-template-columns:1fr 1fr}} @media (max-width:600px){.cards{grid-template-columns:1fr}}
+.card{background:var(--card);border:1.5px solid rgba(181,255,77,.18);border-radius:var(--r);padding:28px;transition:border-color .2s,transform .2s}
+.card:hover{border-color:rgba(181,255,77,.5);transform:translateY(-3px)}
+.ic{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;background:rgba(181,255,77,.12);color:var(--acc);margin-bottom:18px}
+.ic svg{width:28px;height:28px}
+.card h3{font-size:22px;font-weight:800;margin-bottom:8px}
+.card p{color:#c3d3c1;font-size:16.5px}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:44px}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.list{list-style:none;display:grid;gap:14px;margin-top:6px}
+.list li{display:flex;gap:14px;align-items:flex-start;font-size:17px}
+.mark{flex:none;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:900}
+.ok{background:rgba(181,255,77,.14);color:var(--acc)} .no{background:rgba(255,90,90,.14);color:var(--red)}
+.card.bad{border-color:rgba(255,90,90,.28)}
+.card h4{font:700 13px "JetBrains Mono",monospace;letter-spacing:.12em;text-transform:uppercase;margin-bottom:18px}
+
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:44px;counter-reset:s}
+@media (max-width:800px){.steps{grid-template-columns:1fr}}
+.step{counter-increment:s;position:relative;padding-top:64px}
+.step::before{content:"0" counter(s);position:absolute;top:22px;left:28px;font:700 30px "JetBrains Mono",monospace;color:var(--acc)}
+.step b{display:block;font-size:21px;margin-bottom:6px}
+
+.faq{margin-top:36px;display:grid;gap:12px;max-width:860px}
+details{background:var(--card);border:1.5px solid rgba(181,255,77,.16);border-radius:18px;padding:0 24px}
+details[open]{border-color:rgba(181,255,77,.45)}
+summary{cursor:pointer;list-style:none;padding:20px 0;font-weight:800;font-size:19px;display:flex;justify-content:space-between;gap:16px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--acc);font:700 24px "JetBrains Mono",monospace;line-height:1}
+details[open] summary::after{content:"–"}
+details p{color:#c3d3c1;padding-bottom:20px}
+code{font-family:"JetBrains Mono",monospace;font-size:.9em;background:rgba(181,255,77,.08);padding:1px 6px;border-radius:6px}
+
+.final{text-align:center}
+.final .btn{font-size:21px;padding:20px 36px}
+footer{border-top:1px solid var(--line);padding:40px 0 60px;color:var(--mut);font-size:14.5px}
+.foot{display:flex;flex-wrap:wrap;gap:24px;justify-content:space-between;align-items:center}
+.links{display:flex;gap:18px;flex-wrap:wrap}
+.links a{text-decoration:none;color:var(--txt)} .links a:hover{color:var(--acc)}
+
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap nav">
+    <a class="brand" href="#top"><img src="site/logo.png" alt="" width="34" height="34"><span>ROSHI<b>Q</b></span></a>
+    <nav aria-label="Разделы">
+      <a href="#features" data-i18n="n1">Что умеет</a>
+      <a href="#fair" data-i18n="n2">Без бана</a>
+      <a href="#start" data-i18n="n3">Как начать</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="lang" role="group" aria-label="Язык / Language">
+      <button type="button" data-lang="ru" aria-pressed="true">RU</button>
+      <button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div class="grid" aria-hidden="true"></div>
+  <div class="wrap">
+    <div>
+      <span class="tag" data-i18n="tag">// БЕСПЛАТНО · ОТКРЫТЫЙ КОД</span>
+      <h1 data-i18n="h1">Помощник для Dota&nbsp;2, который играет <em>честно</em></h1>
+      <p class="lead" data-i18n="lead">Драфт, подсказки в игре и разбор матча. Бесплатно и с открытым кодом — без чтения памяти игры и без автонажатий.</p>
+      <div class="cta">
+        <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
+          <span data-i18n="dl">Скачать для Windows</span></a>
+        <a class="btn2" href="https://github.com/baramobatare-rgb/ROSHIQ"><span data-i18n="src">Исходный код</span> ↗</a>
+      </div>
+      <p class="small" data-i18n="req">Windows 10/11 · без прав администратора · обновляется в один клик</p>
+    </div>
+    <div class="phone reveal">
+      <iframe src="https://www.youtube-nocookie.com/embed/fBB8ht-FUa8?rel=0" title="ROSHIQ — короткое видео" loading="lazy"
+        allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="alt">
+  <div class="wrap">
+    <span class="tag" data-i18n="t2">01 · ЧТО УМЕЕТ</span>
+    <h2 data-i18n="h2a">Подсказывает <em>до, во время и после</em> матча</h2>
+    <p class="sub" data-i18n="s2">Всё работает у тебя на компьютере. Интернет нужен только для статистики и обновлений — его можно выключить одной галочкой.</p>
+    <div class="cards">
+      <article class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+        <h3 data-i18n="c1h">Драфт</h3><p data-i18n="c1p">Контрпики и синергии под твою роль — с коротким объяснением «почему». Учитывает твой пул героев.</p></article>
+      <article class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-9 9H5v-6z"/><path d="M12 6l6 6"/></svg></div>
+        <h3 data-i18n="c2h">Сборки</h3><p data-i18n="c2p">Предметы по фазам игры для героя и роли, актуальная мета и тайминги ключевых предметов.</p></article>
+      <article class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M14 8h4v4h-4z"/></svg></div>
+        <h3 data-i18n="c3h">Оверлей в игре</h3><p data-i18n="c3p">Прозрачная панель поверх Dota: руны, Рошан, «нет ТП», выкуп, вещи в тайнике. Мышь проходит сквозь неё.</p></article>
+      <article class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+        <h3 data-i18n="c4h">После матча</h3><p data-i18n="c4p">Что получилось и одна главная ошибка. Сравнение — только с твоими играми в той же роли.</p></article>
+      <article class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg></div>
+        <h3 data-i18n="c5h">Личный тренер</h3><p data-i18n="c5p">История матчей и цель на следующую игру. Привязка Steam без пароля.</p></article>
+      <article class="card reveal"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></div>
+        <h3 data-i18n="c6h">Само работает</h3><p data-i18n="c6p">Прячется при запуске Dota, само определяет роль и обновляется в один клик — без переустановки.</p></article>
+    </div>
+  </div>
+</section>
+
+<section id="fair">
+  <div class="wrap">
+    <span class="tag" data-i18n="t3">02 · БЕЗ БАНА</span>
+    <h2 data-i18n="h2b">Честно — значит <em>по правилам</em></h2>
+    <p class="sub" data-i18n="s3">Dota 2 сама отправляет ROSHIQ время матча, героя, золото и инвентарь через Game State Integration — официальный механизм Valve, который используют стримерские оверлеи.</p>
+    <div class="two">
+      <div class="card reveal"><h4 style="color:var(--acc)" data-i18n="doh">Что делает</h4>
+        <ul class="list">
+          <li><span class="mark ok">✓</span><span data-i18n="d1">получает данные, которые Dota 2 отправляет сама;</span></li>
+          <li><span class="mark ok">✓</span><span data-i18n="d2">показывает подсказки поверх игры и в своём окне;</span></li>
+          <li><span class="mark ok">✓</span><span data-i18n="d3">по желанию берёт публичную статистику OpenDota;</span></li>
+          <li><span class="mark ok">✓</span><span data-i18n="d4">хранит историю и настройки у тебя на компьютере.</span></li>
+        </ul></div>
+      <div class="card bad reveal"><h4 style="color:var(--red)" data-i18n="noh">Чего не делает</h4>
+        <ul class="list">
+          <li><span class="mark no">✕</span><span data-i18n="x1">не читает память игры и не внедряет код;</span></li>
+          <li><span class="mark no">✕</span><span data-i18n="x2">не нажимает клавиши и не управляет героем;</span></li>
+          <li><span class="mark no">✕</span><span data-i18n="x3">не использует скрытую от тебя информацию;</span></li>
+          <li><span class="mark no">✕</span><span data-i18n="x4">не просит пароль Steam.</span></li>
+        </ul></div>
+    </div>
+  </div>
+</section>
+
+<section id="start" class="alt">
+  <div class="wrap">
+    <span class="tag" data-i18n="t4">03 · КАК НАЧАТЬ</span>
+    <h2 data-i18n="h2c">Три шага — <em>и в игру</em></h2>
+    <div class="steps">
+      <div class="card step reveal"><b data-i18n="st1">Скачай</b><span data-i18n="st1p">установщик с GitHub и запусти. Права администратора и .NET не нужны.</span></div>
+      <div class="card step reveal"><b data-i18n="st2">Пройди мастер</b><span data-i18n="st2p">язык, роль и связь с игрой — одной кнопкой.</span></div>
+      <div class="card step reveal"><b data-i18n="st3">Перезапусти Dota&nbsp;2</b><span data-i18n="st3p">и играй. <code>F8</code> — показать или скрыть оверлей.</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq">
+  <div class="wrap">
+    <span class="tag">04 · FAQ</span>
+    <h2 data-i18n="h2d">Частые <em>вопросы</em></h2>
+    <div class="faq">
+      <details><summary data-i18n="q1">Не забанят?</summary><p data-i18n="a1">ROSHIQ использует только Game State Integration — официальный способ, которым Valve разрешает программам получать данные из Dota 2. Программа не трогает файлы игры (кроме файла настройки GSI в папке cfg), не читает память и ничего не нажимает. При этом ROSHIQ — неофициальный проект и не одобрен Valve.</p></details>
+      <details><summary data-i18n="q2">Нужен ли интернет?</summary><p data-i18n="a2">Нет. Без интернета работают драфт по правилам, сборки, таймеры, подсказки и итог матча. Интернет добавляет статистику OpenDota, мету, разбор матчей и обновления.</p></details>
+      <details><summary data-i18n="q3">Оверлей не виден поверх игры</summary><p data-i18n="a3">Включи в Dota 2 «Окно без рамки» (Настройки → Видео). В эксклюзивном полноэкранном режиме прозрачные окна поверх игры не отображаются.</p></details>
+      <details><summary data-i18n="q4">Это правда бесплатно?</summary><p data-i18n="a4">Да. Без подписок, рекламы и платных функций. Исходный код открыт на GitHub — любой может проверить, что внутри.</p></details>
+      <details><summary data-i18n="q5">Windows пишет «защитила ваш компьютер»</summary><p data-i18n="a5">Нажми «Подробнее» → «Выполнить в любом случае»: у программы пока нет платной цифровой подписи. Целостность файла можно проверить по SHA256SUMS.txt в релизе.</p></details>
+    </div>
+  </div>
+</section>
+
+<section class="final alt">
+  <div class="wrap">
+    <h2 data-i18n="h2e">Попробуй <em>в следующем матче</em></h2>
+    <p class="sub" style="margin:0 auto 30px" data-i18n="s5">Бесплатно. Открытый код. Только официальный Game State Integration.</p>
+    <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest"><span data-i18n="dl">Скачать для Windows</span></a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <div class="links">
+      <a href="https://github.com/baramobatare-rgb/ROSHIQ">GitHub</a>
+      <a href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ">YouTube</a>
+      <a href="https://www.tiktok.com/@baramobatare">TikTok</a>
+      <a href="https://vk.ru/roshiq" data-i18n="vk">ВКонтакте</a>
+    </div>
+    <p data-i18n="legal">ROSHIQ — неофициальный проект, не связан с Valve. Dota 2 — товарный знак Valve Corporation.</p>
+  </div>
+</footer>
+
+<script>
+const EN={n1:"Features",n2:"No ban",n3:"Get started",tag:"// FREE · OPEN SOURCE",
+h1:'A Dota&nbsp;2 helper that plays <em>fair</em>',
+lead:"Draft, in-game tips and match review. Free and open source — no memory reading, no automated input.",
+dl:"Download for Windows",src:"Source code",req:"Windows 10/11 · no admin rights · one-click updates",
+t2:"01 · FEATURES",h2a:'Helps <em>before, during and after</em> the match',
+s2:"Everything runs on your PC. Internet is only for stats and updates — and you can turn it off with one checkbox.",
+c1h:"Draft",c1p:"Counters and synergies for your role, with a short “why”. Takes your hero pool into account.",
+c2h:"Builds",c2p:"Items by game phase for your hero and role, the current meta and key item timings.",
+c3h:"In-game overlay",c3p:"A transparent panel over Dota: runes, Roshan, “no TP”, buyback, stash. Clicks pass through it.",
+c4h:"After the match",c4p:"What went well and one main mistake — compared only with your own games in the same role.",
+c5h:"Personal coach",c5p:"Match history and a goal for your next game. Steam link without a password.",
+c6h:"Just works",c6p:"Hides when Dota starts, detects your role and updates in one click — no reinstall.",
+t3:"02 · NO BAN",h2b:'Fair means <em>by the rules</em>',
+s3:"Dota 2 itself sends ROSHIQ the match time, hero, gold and inventory via Game State Integration — Valve’s official mechanism used by streaming overlays.",
+doh:"What it does",d1:"receives data Dota 2 sends on its own;",d2:"shows tips over the game and in its window;",d3:"optionally uses public OpenDota stats;",d4:"keeps history and settings on your PC.",
+noh:"What it doesn’t do",x1:"no memory reading, no code injection;",x2:"no key presses, no hero control;",x3:"no information hidden from you;",x4:"never asks for your Steam password.",
+t4:"03 · GET STARTED",h2c:'Three steps — <em>and play</em>',
+st1:"Download",st1p:"the installer from GitHub and run it. No admin rights or .NET needed.",
+st2:"Run the wizard",st2p:"language, role and game connection — one button.",
+st3:"Restart Dota&nbsp;2",st3p:'and play. <code>F8</code> shows or hides the overlay.',
+h2d:'Frequently asked <em>questions</em>',
+q1:"Will I get banned?",a1:"ROSHIQ only uses Game State Integration — the official way Valve lets programs receive data from Dota 2. It doesn’t touch game files (except the GSI config in the cfg folder), doesn’t read memory and presses nothing. ROSHIQ is an unofficial project and isn’t endorsed by Valve.",
+q2:"Do I need internet?",a2:"No. Draft rules, builds, timers, tips and the match summary work offline. Internet adds OpenDota stats, meta, match reviews and updates.",
+q3:"The overlay isn’t visible over the game",a3:"Switch Dota 2 to “Borderless window” (Settings → Video). Transparent windows can’t appear over exclusive fullscreen.",
+q4:"Is it really free?",a4:"Yes. No subscriptions, ads or paid features. The source code is open on GitHub — anyone can check what’s inside.",
+q5:"Windows says “Windows protected your PC”",a5:"Click “More info” → “Run anyway”: the app doesn’t have a paid code signature yet. You can verify the file with SHA256SUMS.txt in the release.",
+h2e:'Try it <em>in your next match</em>',s5:"Free. Open source. Only Valve’s official Game State Integration.",vk:"VK",
+legal:"ROSHIQ is an unofficial project, not affiliated with Valve. Dota 2 is a trademark of Valve Corporation."};
+const RU={};
+document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
+function setLang(l){
+  const d=l==='en'?EN:RU;
+  document.querySelectorAll('[data-i18n]').forEach(e=>{const v=d[e.dataset.i18n];if(v!=null)e.innerHTML=v;});
+  document.documentElement.lang=l;
+  document.querySelectorAll('.lang button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lang===l)));
+  try{localStorage.setItem('roshiq-lang',l)}catch(e){}
+}
+document.querySelectorAll('.lang button').forEach(b=>b.addEventListener('click',()=>setLang(b.dataset.lang)));
+let start='ru';
+try{start=localStorage.getItem('roshiq-lang')||(/^ru|^uk|^be|^kk/i.test(navigator.language)?'ru':'en')}catch(e){}
+if(start==='en')setLang('en');
+const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}}),{threshold:.12});
+document.querySelectorAll('.reveal').forEach(e=>io.observe(e));
+</script>
+</body>
+</html>
