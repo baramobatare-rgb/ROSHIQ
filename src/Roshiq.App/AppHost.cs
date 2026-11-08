@@ -1244,10 +1244,21 @@ public sealed class AppHost : IDisposable
         if (name != null) ShowEventToast("ROSHIQ", Loc.Instance.Format("prof_applied", name), priority: TipPriority.Urgent, kind: "profile", ttlSec: 10);
     }
 
+    /// <summary>Сторож уже предупредил в этом запуске Dota — ждём, когда данные всё-таки пойдут, чтобы записать это в журнал.</summary>
+    private bool _gsiWarned;
+
     private void TickGsiWatchdog()
     {
         var problem = GsiWatch.Tick(Overlay.Game.Found, Settings.Current.Gsi.Enabled, Gsi?.LastPacketUtc, Gsi?.PacketsRejected ?? 0, DateTime.UtcNow);
+        if (!Overlay.Game.Found) _gsiWarned = false;
+        else if (_gsiWarned && GsiWatch.GameSinceUtc is DateTime since && Gsi?.LastPacketUtc is DateTime packet && packet >= since)
+        {
+            // для разбора: предупреждение было, но связь появилась — через сколько после запуска игры
+            _gsiWarned = false;
+            Log.Info($"Сторож GSI: данные пошли через {(packet - since).TotalSeconds:0} с после запуска Dota 2");
+        }
         if (problem == GsiProblem.None) return;
+        _gsiWarned = true;
         Log.Warn("Сторож GSI: Dota 2 запущена, а данных нет (" + problem + ")");
         var L = Loc.Instance;
         ShowEventToast(L.Get("gsi_watch_header").ToUpperInvariant(),

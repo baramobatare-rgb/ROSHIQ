@@ -12,6 +12,8 @@ public partial class App : Application
     private Mutex? _singleInstance;
     private StartupState _startup = new(0, false);
     private bool _uiErrorSaved;
+    /// <summary>Программа закрывается (выход, установщик обновления, завершение сеанса Windows).</summary>
+    private static volatile bool _exiting;
 
     /// <summary>Сохранить отчёт о сбое (никогда не бросает исключений).</summary>
     public static string? SaveCrashReport(Exception ex, string where, string prefix = CrashReport.Prefix)
@@ -39,6 +41,7 @@ public partial class App : Application
         }
 
         DispatcherUnhandledException += OnUiException;
+        Dispatcher.ShutdownStarted += (_, _) => _exiting = true;
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
             Log.Error("Необработанное исключение", args.ExceptionObject as Exception);
@@ -146,6 +149,14 @@ public partial class App : Application
     private void OnUiException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         // Сбой интерфейса не должен ронять приложение (и тем более влиять на игру)
+        e.Handled = true;
+        if (_exiting || Dispatcher.HasShutdownStarted)
+        {
+            // при закрытии оформление уже выгружается, и запоздалая перерисовка может не найти цвет («Accent») —
+            // на работу это не влияет; пишем в журнал, но отчёт об ошибке не создаём
+            Log.Warn("Ошибка интерфейса при закрытии: " + e.Exception.GetType().Name + ": " + e.Exception.Message);
+            return;
+        }
         Log.Error("Ошибка интерфейса", e.Exception);
         if (!_uiErrorSaved)
         {
@@ -155,8 +166,15 @@ public partial class App : Application
         e.Handled = true;
     }
 
+    protected override void OnSessionEnding(SessionEndingCancelEventArgs e)
+    {
+        _exiting = true;   // выход из Windows или закрытие установщиком через Restart Manager
+        base.OnSessionEnding(e);
+    }
+
     protected override void OnExit(ExitEventArgs e)
     {
+        _exiting = true;
         try { Host?.Dispose(); } catch { }
         if (e.ApplicationExitCode == 0 && Host != null) CrashGuard.MarkStable(AppPaths.StartupGuard);
         try { _singleInstance?.ReleaseMutex(); } catch { }

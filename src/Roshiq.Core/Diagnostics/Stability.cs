@@ -115,6 +115,36 @@ public static class CrashReport
         catch { }
     }
 
+    /// <summary>Версия программы, записанная в отчёте («Версия: 0.17.9»); null — строки нет или файл не прочитать.</summary>
+    public static string? VersionOf(string reportPath)
+    {
+        try
+        {
+            foreach (var line in File.ReadLines(reportPath).Take(6))
+                if (line.StartsWith("Версия:", StringComparison.Ordinal)) return line["Версия:".Length..].Trim();
+        }
+        catch { }
+        return null;
+    }
+
+    /// <summary>
+    /// Самый свежий отчёт (сбой или ошибка интерфейса) именно этой версии программы, иначе null.
+    /// Отчёты прошлых версий к текущей не относятся: после обновления они не должны выглядеть как «недавние ошибки».
+    /// </summary>
+    public static string? LatestForVersion(string dir, string version)
+    {
+        try
+        {
+            if (!Directory.Exists(dir)) return null;
+            return Directory.GetFiles(dir, "*.txt")
+                .Where(f => Path.GetFileName(f) is string n && (n.StartsWith(Prefix, StringComparison.Ordinal) || n.StartsWith(ErrorPrefix, StringComparison.Ordinal))
+                            && !n.Equals(SeenFile, StringComparison.OrdinalIgnoreCase))
+                .Where(f => VersionOf(f) == version)
+                .OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
+        }
+        catch { return null; }
+    }
+
     /// <summary>Самый свежий отчёт с данным префиксом (crash- или error-), иначе null.</summary>
     public static string? Latest(string dir, string prefix = Prefix)
     {
@@ -149,6 +179,9 @@ public sealed class GsiWatchdog
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(90);
 
     private DateTime? _gameSinceUtc;
+
+    /// <summary>Когда замечен запуск Dota (UTC); null — игра не запущена.</summary>
+    public DateTime? GameSinceUtc => _gameSinceUtc;
     private long _rejectedAtStart;
     private bool _warned;
 

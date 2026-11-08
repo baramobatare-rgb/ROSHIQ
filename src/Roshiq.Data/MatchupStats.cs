@@ -32,6 +32,8 @@ public sealed class MatchupStatsCache : IMatchupStatsProvider
 {
     private readonly string _path;
     private readonly object _sync = new();
+    /// <summary>Запись файла по одной: несколько загрузок, закончившихся одновременно, не дерутся за matchups.json.</summary>
+    private readonly object _saveSync = new();
     private Dictionary<int, HeroMatchups> _data = new();
 
     public MatchupStatsCache(string path)
@@ -79,14 +81,24 @@ public sealed class MatchupStatsCache : IMatchupStatsProvider
 
     private void SaveToDisk()
     {
-        try
+        lock (_saveSync)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            string json;
-            lock (_sync) json = JsonSerializer.Serialize(_data);
-            File.WriteAllText(_path, json);
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    string json;
+                    lock (_sync) json = JsonSerializer.Serialize(_data);
+                    Roshiq.Core.Settings.AtomicFile.WriteAllText(_path, json);   // целиком или никак: обрыв не оставит половину файла
+                    return;
+                }
+                catch (IOException) when (attempt < 2)
+                {
+                    Thread.Sleep(150);   // файл держит кто-то снаружи (антивирус, второй экземпляр) — короткая повторная попытка
+                }
+                catch (Exception ex) { Log.Warn("Не удалось сохранить кэш статистики: " + ex.Message); return; }
+            }
         }
-        catch (Exception ex) { Log.Warn("Не удалось сохранить кэш статистики: " + ex.Message); }
     }
 
     public sealed class HeroMatchups

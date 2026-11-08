@@ -152,10 +152,8 @@ public static class DiagnosticsRunner
                 list.Add(new(CheckStatus.Ok, L.Get("diag_history"), L.Format("diag_history_ok", host.History.All().Count)));
         }
 
-        // 9. Ошибки
-        var crash = CrashReport.Latest(AppPaths.CrashReports);
-        var error = CrashReport.Latest(AppPaths.CrashReports, CrashReport.ErrorPrefix);
-        var newest = new[] { crash, error }.Where(p => p != null).Select(p => p!).OrderByDescending(p => File.GetLastWriteTime(p)).FirstOrDefault();
+        // 9. Ошибки — только этой версии: отчёт, оставшийся от прошлой версии, к текущей не относится
+        var newest = CrashReport.LatestForVersion(AppPaths.CrashReports, Roshiq.App.Services.AppUpdater.CurrentVersion.ToString());
         if (newest != null && DateTime.Now - File.GetLastWriteTime(newest) < TimeSpan.FromDays(7))
             list.Add(new(CheckStatus.Warning, L.Get("diag_errors"), L.Format("diag_errors_recent", File.GetLastWriteTime(newest).ToString("g", CultureInfo.CurrentCulture)),
                 L.Get("diag_fix_show"), () => { OpenPath(newest); return Task.FromResult<string?>(null); }));
