@@ -305,10 +305,10 @@ function setLang(l){
   document.querySelectorAll('[data-i18n]').forEach(e=>{const v=d[e.dataset.i18n];if(v!=null)e.innerHTML=v;});
   document.documentElement.lang=l;
   const b=document.getElementById('lang');b.textContent=l==='en'?'Русский':'English';b.setAttribute('aria-label',l==='en'?'Переключить на русский':'Switch to English');
-  try{localStorage.setItem('roshiq-lang',l)}catch(e){}
+  try{localStorage.setItem('roshiq-site-lang',l)}catch(e){}
 }
 document.getElementById('lang').addEventListener('click',()=>setLang(lang==='ru'?'en':'ru'));
-try{if(localStorage.getItem('roshiq-lang')==='en')setLang('en')}catch(e){}
+try{if(localStorage.getItem('roshiq-site-lang')==='en')setLang('en')}catch(e){}
 </script>
 </body>
 </html>
