@@ -196,6 +196,9 @@ public partial class MainWindow : Window
             UpdateButton.Style = (Style)FindResource("GhostButton");
             UpdateText.Text = L.Get("top_update_check");
             UpdateButton.ToolTip = L.Format("top_update_check_tip", AppUpdater.CurrentVersion.ToString(3));
+            // последняя проверка не удалась — причина видна в подсказке, а не только «Не удалось» на 3 секунды
+            if (App.Host.Updates.Last is { Succeeded: false } last)
+                UpdateButton.ToolTip += "\n" + AppUpdater.Describe(last);
         }
         UpdateButton.Margin = new Thickness(0, 0, 10, 0);
         UpdateButton.Padding = new Thickness(10, 7, 10, 7);
@@ -258,10 +261,9 @@ public partial class MainWindow : Window
             UpdateText.Visibility = Visibility.Visible;
             try
             {
-                var info = await AppUpdater.CheckAsync(d.UpdateRepo!, CancellationToken.None);
-                App.Host.SetAvailableUpdate(info);
+                var result = await App.Host.CheckForUpdateAsync(manual: true);
                 _updateBusy = false;
-                if (info == null) FlashUpdateNote(L.Get("top_update_latest"));
+                if (AppUpdater.ShortStatus(result) is { } note) FlashUpdateNote(note);
             }
             catch (Exception ex)
             {

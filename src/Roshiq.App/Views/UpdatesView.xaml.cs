@@ -215,9 +215,8 @@ public partial class UpdatesView : UserControl, IRefreshable
         AppStatus.Text = Loc.T("upd_checking");
         try
         {
-            var info = await AppUpdater.CheckAsync(repo, CancellationToken.None);
-            App.Host.SetAvailableUpdate(info);
-            AppStatus.Text = info == null ? Loc.T("upd_app_latest") : Loc.Instance.Format("upd_app_available", info.Tag);
+            var result = await App.Host.CheckForUpdateAsync(manual: true);
+            AppStatus.Text = AppUpdater.Describe(result);
         }
         catch (Exception ex) { AppStatus.Text = Loc.Instance.Format("upd_check_error", ex.Message); }
         finally { CheckApp.IsEnabled = true; }

@@ -5,6 +5,7 @@ using Roshiq.Core.Diagnostics;
 using Roshiq.Core.Localization;
 using Roshiq.Core.Models;
 using Roshiq.Core.Settings;
+using Roshiq.Core.Updates;
 using Roshiq.Data;
 using Roshiq.Draft;
 using Roshiq.GSI;
@@ -139,7 +140,9 @@ public sealed class AppHost : IDisposable
     public MatchAlerts Alerts { get; } = new();
     public RoshanTracker Roshan { get; } = new();
     /// <summary>Найденное обновление ROSHIQ на GitHub (если проверка включена).</summary>
-    public AppUpdateInfo? AvailableUpdate { get; private set; }
+    public ReleaseInfo? AvailableUpdate { get; private set; }
+    /// <summary>0.17.4: единая проверка обновлений — один запрос на всех, кэш, пауза после лимита GitHub, резервный источник.</summary>
+    public UpdateCoordinator Updates { get; } = new(ReleaseChecker.CreateDefault(AppUpdater.CurrentVersion), () => AppUpdater.CurrentVersion);
 
     public Hero? CurrentHero { get; private set; }
     public GameStateSnapshot? LastGsi { get; private set; }
@@ -1596,10 +1599,24 @@ public sealed class AppHost : IDisposable
         }
     }
 
-    public void SetAvailableUpdate(AppUpdateInfo? info)
+    public void SetAvailableUpdate(ReleaseInfo? info)
     {
         AvailableUpdate = info;
         RaiseChanged();
+    }
+
+    /// <summary>
+    /// Проверить обновление через общий координатор. Удачный ответ обновляет <see cref="AvailableUpdate"/>,
+    /// неудачный — нет (найденная раньше версия не пропадает из-за сбоя сети).
+    /// </summary>
+    public async Task<UpdateCheckResult> CheckForUpdateAsync(bool manual)
+    {
+        var repo = Settings.Current.Data.UpdateRepo;
+        var result = await Updates.CheckAsync(repo ?? "", manual);
+        if (!result.FromCache && !result.Succeeded) Log.Warn($"Обновление ROSHIQ: {result.Status} {result.Message}");
+        if (result.Succeeded) AvailableUpdate = result.Release;
+        RaiseChanged();
+        return result;
     }
 
     public void AcknowledgePatch()
@@ -1653,7 +1670,11 @@ public sealed class AppHost : IDisposable
             }
             if (!string.IsNullOrWhiteSpace(d.UpdateRepo))
             {
-                try { AvailableUpdate = await AppUpdater.CheckAsync(d.UpdateRepo!, CancellationToken.None); }
+                try
+                {
+                    var r = await CheckForUpdateAsync(manual: false);
+                    if (!r.Succeeded) error ??= AppUpdater.Describe(r);
+                }
                 catch (Exception ex) { error ??= ex.Message; Log.Warn("Обновление ROSHIQ: " + ex.Message); }
             }
 
