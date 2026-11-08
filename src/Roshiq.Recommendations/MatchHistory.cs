@@ -72,6 +72,17 @@ public sealed class MatchRecord
     /// тогда покрытие оценивается по точкам графика (<see cref="Samples"/>).
     /// </summary>
     public List<CoverageSpan> Coverage { get; set; } = new();
+    /// <summary>
+    /// Предметы, впервые увиденные сразу после пропуска данных (или когда запись началась не с начала игры):
+    /// их время в <see cref="ItemTimings"/> — верхняя граница, а не момент покупки. В сравнениях не участвуют.
+    /// </summary>
+    public List<string> ApproxItems { get; set; } = new();
+
+    public bool IsApproxTiming(string itemKey) => ApproxItems.Contains(itemKey, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Только точные тайминги предметов (без увиденных после пропуска).</summary>
+    [JsonIgnore] public IEnumerable<KeyValuePair<string, int>> ExactItemTimings => ItemTimings.Where(kv => !IsApproxTiming(kv.Key));
+
     /// <summary>Смерти, которые известны только по счётчику (пропуск данных): ни места, ни времени — на карту и в фазы не идут.</summary>
     public int UnlocatedDeaths { get; set; }
     /// <summary>Видели конец матча (POST_GAME). null — запись старше 0.17.5, неизвестно.</summary>
@@ -131,6 +142,51 @@ public sealed class MatchRecord
     }
 
     [JsonIgnore] public bool FromGsi => Source == "GSI";
+}
+
+/// <summary>Что делать с контрольной записью незаконченного матча.</summary>
+public enum CheckpointAction
+{
+    /// <summary>Тот же матч ещё идёт — продолжить запись.</summary>
+    Resume,
+    /// <summary>Матч уже не продолжить — сохранить как неполный.</summary>
+    SaveAsPartial,
+    /// <summary>В истории уже есть завершённая или не менее полная запись — контрольную выбросить.</summary>
+    Discard
+}
+
+public static class CheckpointPolicy
+{
+    /// <summary>
+    /// Запись в истории не хуже кандидата того же матча (кандидата сохранять не нужно): завершённая главнее
+    /// незавершённой, иначе — та, что длиннее (при равной длине остаётся сохранённая).
+    /// </summary>
+    public static bool IsAtLeastAsComplete(MatchRecord existing, MatchRecord candidate)
+    {
+        if (existing.Ended == true && candidate.Ended != true) return true;
+        if (candidate.Ended == true && existing.Ended != true) return false;
+        return existing.DurationSec >= candidate.DurationSec;
+    }
+
+    /// <param name="checkpoint">Контрольная запись.</param>
+    /// <param name="saved">Запись того же Id, уже лежащая в истории (если есть).</param>
+    /// <param name="liveMatchId">Номер матча из первого свежего снимка GSI (null — пока неизвестно / решение при запуске).</param>
+    /// <param name="recorderBusy">Запись уже ведёт другой матч.</param>
+    public static CheckpointAction Decide(MatchRecord checkpoint, MatchRecord? saved, string? liveMatchId, bool recorderBusy)
+    {
+        // авария между сохранением итоговой записи и удалением контрольной: итоговая главнее
+        if (saved != null && IsAtLeastAsComplete(saved, checkpoint)) return CheckpointAction.Discard;
+        if (liveMatchId != null && liveMatchId == checkpoint.MatchId && !recorderBusy) return CheckpointAction.Resume;
+        return CheckpointAction.SaveAsPartial;
+    }
+}
+
+/// <summary>Какие матчи из очереди несохранённых ещё нужно записать.</summary>
+public static class UnsavedQueuePolicy
+{
+    /// <summary>Убрать из очереди матчи, для которых в истории уже есть не менее полная версия (см. <see cref="CheckpointPolicy.IsAtLeastAsComplete"/>).</summary>
+    public static List<MatchRecord> StillNeeded(IEnumerable<MatchRecord> pending, Func<string, MatchRecord?> findSaved) =>
+        pending.Where(r => findSaved(r.Id) is not { } saved || !CheckpointPolicy.IsAtLeastAsComplete(saved, r)).ToList();
 }
 
 /// <summary>Отрезок игрового времени [From, To] (секунды), по которому приходили данные.</summary>
@@ -243,6 +299,9 @@ public sealed class MatchRecorder
         if (Current == null) return completed;
 
         var r = Current;
+        // был ли пропуск данных перед этим снимком (по покрытию: работает и после восстановления из контрольной записи)
+        // первый снимок после старта игры (clock > 0) — запись началась не с начала: что уже в инвентаре, куплено раньше
+        bool afterGap = t.Clock is int gc && (r.Coverage.Count > 0 ? gc - r.Coverage[^1].To > GapSec : gc > 0);
         // покрытие: продолжаем текущий отрезок или открываем новый после пропуска
         if (t.Clock is int c && (InProgress(t.GameState) || PostGame(t.GameState)))
         {
@@ -306,6 +365,7 @@ public sealed class MatchRecorder
                     var item = kv.Value;
                     if (item == "empty" || IgnoredItems.Contains(item) || IsRecipe(item) || r.ItemTimings.ContainsKey(item)) continue;
                     r.ItemTimings[item] = Math.Max(0, clock);
+                    if (afterGap && !r.IsApproxTiming(item)) r.ApproxItems.Add(item);   // куплен где-то в пропуске
                 }
             }
         }
@@ -352,7 +412,8 @@ public sealed class MatchHistoryStore
 
     private readonly string _dir;
     private readonly object _sync = new();
-    private List<MatchRecord>? _cache;
+    // кэш: запись (только для порядка и поиска) + её JSON; наружу всегда отдаётся новая копия из JSON
+    private List<(MatchRecord Meta, string Json)>? _cache;
     private readonly List<string> _quarantined = new();
 
     public MatchHistoryStore(string directory) { _dir = directory; }
@@ -366,18 +427,35 @@ public sealed class MatchHistoryStore
     public static MatchRecord Clone(MatchRecord r) =>
         JsonSerializer.Deserialize<MatchRecord>(JsonSerializer.Serialize(r, Json), Json)!;
 
+    /// <summary>
+    /// Все матчи, новые сверху. Каждый вызов возвращает новые независимые копии: изменения этих объектов не видны
+    /// ни другим читателям, ни кэшу, ни диску — менять историю можно только через <see cref="Save"/>.
+    /// </summary>
     public IReadOnlyList<MatchRecord> All()
     {
         lock (_sync)
         {
             _cache ??= LoadFromDisk();
-            return _cache.OrderByDescending(m => m.StartedUtc).ToList();
+            return _cache.OrderByDescending(e => e.Meta.StartedUtc).Select(e => FromJson(e.Json)).ToList().AsReadOnly();
         }
     }
 
-    private List<MatchRecord> LoadFromDisk()
+    /// <summary>Запись по Id (независимая копия) или null.</summary>
+    public MatchRecord? Find(string id)
     {
-        var list = new List<MatchRecord>();
+        lock (_sync)
+        {
+            _cache ??= LoadFromDisk();
+            foreach (var e in _cache) if (e.Meta.Id == id) return FromJson(e.Json);
+            return null;
+        }
+    }
+
+    private static MatchRecord FromJson(string json) => JsonSerializer.Deserialize<MatchRecord>(json, Json)!;
+
+    private List<(MatchRecord Meta, string Json)> LoadFromDisk()
+    {
+        var list = new List<(MatchRecord, string)>();
         try
         {
             if (!Directory.Exists(_dir)) return list;
@@ -389,8 +467,9 @@ public sealed class MatchHistoryStore
                 if (!file.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
                 try
                 {
-                    var r = JsonSerializer.Deserialize<MatchRecord>(File.ReadAllText(file), Json);
-                    if (r != null && !string.IsNullOrWhiteSpace(r.Id)) list.Add(r);
+                    var text = File.ReadAllText(file);
+                    var r = JsonSerializer.Deserialize<MatchRecord>(text, Json);
+                    if (r != null && !string.IsNullOrWhiteSpace(r.Id)) list.Add((r, text));
                     else Quarantine(file, "пустая запись");
                 }
                 catch (Exception ex) when (ex is JsonException or NotSupportedException or ArgumentException) { Quarantine(file, ex.Message); }
@@ -437,8 +516,8 @@ public sealed class MatchHistoryStore
                 Log.Warn($"Не удалось сохранить матч {record.Id}: {ex.Message}");
                 return false;
             }
-            _cache.RemoveAll(x => x.Id == record.Id);
-            _cache.Add(JsonSerializer.Deserialize<MatchRecord>(json, Json)!);
+            _cache.RemoveAll(x => x.Meta.Id == record.Id);
+            _cache.Add((FromJson(json), json));
         }
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
@@ -449,11 +528,54 @@ public sealed class MatchHistoryStore
         lock (_sync)
         {
             _cache ??= LoadFromDisk();
-            _cache.RemoveAll(x => x.Id == id);
+            _cache.RemoveAll(x => x.Meta.Id == id);
             try { if (File.Exists(FileFor(id))) File.Delete(FileFor(id)); }
             catch (Exception ex) { Log.Warn("Не удалось удалить матч: " + ex.Message); }
         }
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ------------------------------------------------------------------ очередь несохранённых матчей
+
+    public const string PendingFile = "_unsaved.pending";
+    private string PendingPath => Path.Combine(_dir, PendingFile);
+
+    /// <summary>
+    /// Запомнить матчи, которые не удалось записать (чтобы повторить и после перезапуска). Пустой список — удалить файл.
+    /// Пишется отдельным файлом: сбой одного файла матча не мешает записать очередь.
+    /// </summary>
+    public bool SavePending(IReadOnlyCollection<MatchRecord> pending)
+    {
+        try
+        {
+            lock (_sync)
+            {
+                if (pending.Count == 0) { if (File.Exists(PendingPath)) File.Delete(PendingPath); }
+                else AtomicFile.WriteAllText(PendingPath, JsonSerializer.Serialize(pending, Json));
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Очередь несохранённых матчей не записана: " + ex.Message);
+            return false;
+        }
+    }
+
+    public IReadOnlyList<MatchRecord> LoadPending()
+    {
+        try
+        {
+            if (!File.Exists(PendingPath)) return Array.Empty<MatchRecord>();
+            return JsonSerializer.Deserialize<List<MatchRecord>>(File.ReadAllText(PendingPath), Json)?.Where(r => !string.IsNullOrWhiteSpace(r.Id)).ToList()
+                   ?? (IReadOnlyList<MatchRecord>)Array.Empty<MatchRecord>();
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Очередь несохранённых матчей не читается: " + ex.Message);
+            try { File.Move(PendingPath, PendingPath + ".bad", overwrite: true); } catch { }
+            return Array.Empty<MatchRecord>();
+        }
     }
 
     // ------------------------------------------------------------------ контрольная запись текущего матча
@@ -560,6 +682,7 @@ public sealed record GroupStats(string Key, int Games, int Wins, int Losses, dou
     public double? WinRate => Wins + Losses == 0 ? null : (double)Wins / (Wins + Losses);
 }
 
+/// <summary>Медианный тайминг предмета. SameHero — выборка «тот же герой в той же роли», иначе «та же роль».</summary>
 public sealed record ItemBenchmark(int AvgSec, int Matches, bool SameHero);
 
 /// <summary>Статистика по собственной истории. Ничего не выдумывается: только ваши записанные матчи.</summary>
@@ -582,14 +705,25 @@ public static class MatchStats
             .Select(g => (g.Key, Group(g.Key.ToString(), g.ToList())))
             .OrderBy(x => x.Key).ToList();
 
-    /// <summary>Средний тайминг предмета по другим вашим матчам: сначала на этом герое, иначе на этой позиции.</summary>
+    /// <summary>Сколько точных наблюдений нужно, чтобы начать сравнение (порог начала, а не «высокая уверенность»).</summary>
+    public const int MinBenchmarkMatches = 3;
+
+    /// <summary>
+    /// Медианный тайминг предмета по другим вашим матчам. Роль текущего матча должна быть известна:
+    /// сначала тот же герой в той же роли, иначе та же роль. Матчи с неизвестной ролью и тайминги,
+    /// увиденные после пропуска данных, не участвуют. Меньше 3 точных наблюдений — сравнения нет.
+    /// <see cref="ItemBenchmark.SameHero"/> = true означает «тот же герой и та же роль».
+    /// </summary>
     public static ItemBenchmark? Benchmark(IEnumerable<MatchRecord> records, MatchRecord current, string itemKey)
     {
-        var others = records.Where(m => m.Id != current.Id && m.ItemTimings.ContainsKey(itemKey)).ToList();
-        var sameHero = others.Where(m => m.HeroId == current.HeroId).ToList();
-        if (sameHero.Count > 0) return new ItemBenchmark((int)Math.Round(Median(sameHero.Select(m => m.ItemTimings[itemKey]))), sameHero.Count, true);
-        var samePos = others.Where(m => current.Position != null && m.Position == current.Position).ToList();
-        if (samePos.Count > 0) return new ItemBenchmark((int)Math.Round(Median(samePos.Select(m => m.ItemTimings[itemKey]))), samePos.Count, false);
+        if (current.Position is not Position role) return null;
+        var exact = records.Where(m => m.Id != current.Id && m.Position == role
+                                       && m.ItemTimings.ContainsKey(itemKey) && !m.IsApproxTiming(itemKey)).ToList();
+        var heroRole = exact.Where(m => m.HeroId == current.HeroId).ToList();
+        if (heroRole.Count >= MinBenchmarkMatches)
+            return new ItemBenchmark((int)Math.Round(Median(heroRole.Select(m => m.ItemTimings[itemKey]))), heroRole.Count, true);
+        if (exact.Count >= MinBenchmarkMatches)
+            return new ItemBenchmark((int)Math.Round(Median(exact.Select(m => m.ItemTimings[itemKey]))), exact.Count, false);
         return null;
     }
 

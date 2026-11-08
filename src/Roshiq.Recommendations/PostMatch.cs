@@ -134,18 +134,18 @@ public static class PostMatch
         return new Insight("next_goal", 0, ru, en);
     }
 
-    /// <summary>Самый заметный ключевой предмет: разница с вашим средним временем на этом герое (сек).</summary>
+    /// <summary>
+    /// Самый заметный ключевой предмет: разница с вашим медианным временем на этом герое в этой роли (сек).
+    /// Только точные тайминги — увиденные после пропуска данных не сравниваются.
+    /// </summary>
     private static (string Name, int Yours, int Delta)? ItemTimingDelta(MatchRecord m, IReadOnlyList<MatchRecord> pool, Func<string, string?>? itemName)
     {
-        var sameHero = pool.Where(h => h.HeroId == m.HeroId).ToList();
-        if (sameHero.Count < 3) return null;
         (string, int, int)? best = null;
-        foreach (var (key, yours) in m.ItemTimings)
+        foreach (var (key, yours) in m.ExactItemTimings)
         {
             if (MatchRecorder.IgnoredItems.Contains(key) || MatchRecorder.IsRecipe(key) || yours < 600) continue;
-            var times = sameHero.Where(h => h.ItemTimings.ContainsKey(key)).Select(h => h.ItemTimings[key]).ToList();
-            if (times.Count < 3) continue;
-            int delta = yours - (int)times.Average();
+            if (MatchStats.Benchmark(pool, m, key) is not { SameHero: true } bench) continue;
+            int delta = yours - bench.AvgSec;
             if (best == null || Math.Abs(delta) > Math.Abs(best.Value.Item3))
                 best = (itemName?.Invoke(key) is { Length: > 0 } n ? n : Pretty(key), yours, delta);
         }

@@ -203,22 +203,46 @@ public class MatchHistoryTests
     }
 
     [Fact]
-    public void Benchmark_PrefersSameHero()
+    public void Benchmark_HeroAndRole_ThenRole_MinThree()
     {
-        var a = new MatchRecord { Id = "a", HeroId = 2, Position = Position.Offlane, ItemTimings = { ["item_blink"] = 800 } };
-        var b = new MatchRecord { Id = "b", HeroId = 2, Position = Position.Offlane, ItemTimings = { ["item_blink"] = 1000 } };
-        var c = new MatchRecord { Id = "c", HeroId = 5, Position = Position.Offlane, ItemTimings = { ["item_blink"] = 400 } };
-        var current = new MatchRecord { Id = "x", HeroId = 2, Position = Position.Offlane, ItemTimings = { ["item_blink"] = 900 } };
-        var bench = MatchStats.Benchmark(new[] { a, b, c, current }, current, "item_blink");
+        MatchRecord R(string id, int hero, Position? pos, int at) =>
+            new() { Id = id, HeroId = hero, Position = pos, ItemTimings = { ["item_blink"] = at } };
+        var a = R("a", 2, Position.Offlane, 800);
+        var b = R("b", 2, Position.Offlane, 1000);
+        var c = R("c", 2, Position.Offlane, 900);
+        var d = R("d", 5, Position.Offlane, 400);
+        var heroOtherRole = R("e", 2, Position.SoftSupport, 300);   // тот же герой, другая роль — не в выборке
+        var unknownRole = R("f", 2, null, 100);                      // неизвестная роль — не в выборке
+        var current = R("x", 2, Position.Offlane, 950);
+
+        var bench = MatchStats.Benchmark(new[] { a, b, c, d, heroOtherRole, unknownRole, current }, current, "item_blink");
         Assert.NotNull(bench);
         Assert.True(bench!.SameHero);
         Assert.Equal(900, bench.AvgSec);
-        Assert.Equal(2, bench.Matches);
+        Assert.Equal(3, bench.Matches);
 
-        var other = new MatchRecord { Id = "y", HeroId = 9, Position = Position.Offlane };
-        var roleBench = MatchStats.Benchmark(new[] { a, b, c }, other, "item_blink");
+        // на герое в роли меньше трёх — та же роль
+        var roleBench = MatchStats.Benchmark(new[] { a, b, d }, current, "item_blink");
         Assert.False(roleBench!.SameHero);
         Assert.Equal(3, roleBench.Matches);
+
+        // меньше трёх и в роли — сравнения нет; неизвестная роль текущего матча — сравнения нет
+        Assert.Null(MatchStats.Benchmark(new[] { a, b }, current, "item_blink"));
+        Assert.Null(MatchStats.Benchmark(new[] { a, b, c }, R("y", 2, null, 900), "item_blink"));
+    }
+
+    [Fact]
+    public void Benchmark_SkipsApproximateTimings()
+    {
+        MatchRecord R(string id, int at, bool approx = false)
+        {
+            var m = new MatchRecord { Id = id, HeroId = 2, Position = Position.Offlane, ItemTimings = { ["item_blink"] = at } };
+            if (approx) m.ApproxItems.Add("item_blink");
+            return m;
+        }
+        var current = R("x", 900);
+        Assert.Null(MatchStats.Benchmark(new[] { R("a", 800), R("b", 1000), R("c", 2000, approx: true) }, current, "item_blink"));
+        Assert.Equal(3, MatchStats.Benchmark(new[] { R("a", 800), R("b", 1000), R("c", 900), R("d", 2000, approx: true) }, current, "item_blink")!.Matches);
     }
 
     [Fact]

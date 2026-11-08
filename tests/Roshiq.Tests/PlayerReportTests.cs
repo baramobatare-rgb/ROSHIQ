@@ -97,6 +97,7 @@ public class PlayerReportTests
         {
             var m = M(id, 1, MatchResult.Win);
             for (int c = 0; c <= 2400; c += 300) m.Samples.Add(new MatchSample { Clock = c, LastHits = lhPerMin * c / 60, Gpm = 400 + c / 30 });
+            m.Coverage.Add(new CoverageSpan { From = 0, To = 2400 });
             m.ItemTimings["item_black_king_bar"] = bkb;
             return m;
         }

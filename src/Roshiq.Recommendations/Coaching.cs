@@ -41,7 +41,7 @@ public sealed class PaceAdvisor
     {
         _all = history.Where(m => m.Id != excludeId).ToList();
         var gsi = _all.Where(m => m.FromGsi && m.Samples.Count > 0).ToList();
-        _hero = gsi.Where(m => m.HeroId == heroId).ToList();
+        _hero = gsi.Where(m => m.HeroId == heroId && m.Position == position).ToList();   // тот же герой в той же роли
         _role = gsi.Where(m => m.Position == position).ToList();
         HeroId = heroId;
         Position = position;
@@ -78,7 +78,7 @@ public sealed class PaceAdvisor
     /// <summary>Сравнить время покупки предмета с медианой (нужно минимум 3 прошлых матча). Каждый предмет — один раз.</summary>
     public ItemPace? ItemDue(MatchRecord current, string itemKey, int at)
     {
-        if (!_itemsAnnounced.Add(itemKey)) return null;
+        if (current.IsApproxTiming(itemKey) || !_itemsAnnounced.Add(itemKey)) return null;
         var bench = MatchStats.Benchmark(_all, current, itemKey);
         if (bench == null || bench.Matches < MinMatches) return null;
         return new ItemPace(itemKey, at, bench);
@@ -196,7 +196,8 @@ public static class GoalEngine
             }
             case GoalKind.ItemTiming:
             {
-                if (goal.ItemKey == null || !m.ItemTimings.TryGetValue(goal.ItemKey, out var at)) return null;
+                // тайминг, увиденный после пропуска данных, — не точный: исход цели неизвестен
+                if (goal.ItemKey == null || !m.ItemTimings.TryGetValue(goal.ItemKey, out var at) || m.IsApproxTiming(goal.ItemKey)) return null;
                 return (at <= goal.Target + 60, at);
             }
             default:
@@ -237,7 +238,7 @@ public static class GoalEngine
         int stash = AlertCount(m, MatchAlerts.ItemsInStash, MatchAlerts.WardsInStash);
         if (stash >= 3) candidates.Add((stash, G(GoalKind.CourierStash, 0)));
 
-        foreach (var (item, at) in m.ItemTimings)
+        foreach (var (item, at) in m.ExactItemTimings)
         {
             var bench = MatchStats.Benchmark(others, m, item);
             if (bench == null || bench.Matches < 2 || at - bench.AvgSec < 180) continue;

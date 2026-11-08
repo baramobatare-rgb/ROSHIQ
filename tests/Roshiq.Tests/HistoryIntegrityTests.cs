@@ -217,4 +217,146 @@ public class HistoryIntegrityTests : IDisposable
         Assert.Equal(GamePhases.LaneEnd, DeathAnalysis.EarlyEnd);
         Assert.Equal(GamePhases.MidEnd, DeathAnalysis.MidEnd);
     }
+
+    // ------------------------------------------------------------------ 0.17.5+: доводка по ревью
+
+    [Fact]
+    public void Checkpoint_FinalRecordWins_OverStaleCheckpoint()
+    {
+        var cp = Rec("gsi-1"); cp.DurationSec = 1500; cp.Ended = null;
+        var final = Rec("gsi-1"); final.DurationSec = 1400; final.Ended = true;      // итог сохранён, контрольная не удалена
+        Assert.Equal(CheckpointAction.Discard, CheckpointPolicy.Decide(cp, final, "1", false));
+        Assert.Equal(CheckpointAction.Discard, CheckpointPolicy.Decide(cp, final, null, false));
+
+        var longer = Rec("gsi-1"); longer.DurationSec = 1600; longer.Ended = false;  // уже сохранена более полная неполная
+        Assert.Equal(CheckpointAction.Discard, CheckpointPolicy.Decide(cp, longer, "1", false));
+
+        var shorter = Rec("gsi-1"); shorter.DurationSec = 900; shorter.Ended = false;
+        Assert.Equal(CheckpointAction.Resume, CheckpointPolicy.Decide(cp, shorter, "gsi-1", false));
+        Assert.Equal(CheckpointAction.Resume, CheckpointPolicy.Decide(cp, null, "gsi-1", false));
+        Assert.Equal(CheckpointAction.SaveAsPartial, CheckpointPolicy.Decide(cp, null, "999", false));
+        Assert.Equal(CheckpointAction.SaveAsPartial, CheckpointPolicy.Decide(cp, null, "gsi-1", recorderBusy: true));
+        Assert.Equal(CheckpointAction.SaveAsPartial, CheckpointPolicy.Decide(cp, null, null, false));
+    }
+
+    [Fact]
+    public void Checkpoint_StaleNextToFinal_InStore_FinalKept()
+    {
+        var store = new MatchHistoryStore(_dir);
+        var final = Rec("gsi-1"); final.Ended = true; final.DurationSec = 2000; final.Kills = 11;
+        Assert.True(store.Save(final));
+        var stale = Rec("gsi-1"); stale.DurationSec = 1700; stale.Kills = 8;
+        store.SaveCheckpoint(stale);                                   // авария до ClearCheckpoint
+        var cp = store.LoadCheckpoint()!.Value.Record;
+        Assert.Equal(CheckpointAction.Discard, CheckpointPolicy.Decide(cp, store.Find(cp.Id), null, false));
+        Assert.Equal(11, store.Find("gsi-1")!.Kills);
+    }
+
+    [Fact]
+    public void All_ReturnsIndependentCopies_EveryCall()
+    {
+        var store = new MatchHistoryStore(_dir);
+        store.Save(Rec("a", kills: 5));
+        store.All()[0].Kills = 99;                                     // читающий код испортил объект
+        store.Find("a")!.Kills = 77;
+        Assert.Equal(5, store.All()[0].Kills);                         // следующий All без всякого Save — цел
+        Assert.Equal(5, store.Find("a")!.Kills);                       // и Find (его использует CheckpointPolicy)
+        Assert.NotSame(store.All()[0], store.All()[0]);
+        Assert.Equal(5, new MatchHistoryStore(_dir).All()[0].Kills);   // диск цел
+    }
+
+    [Fact]
+    public void UnsavedQueue_StaleEntry_DoesNotOverwriteFinal()
+    {
+        var store = new MatchHistoryStore(_dir);
+        var final = Rec("gsi-7"); final.Ended = true; final.DurationSec = 2100; final.Kills = 12;
+        Assert.True(store.Save(final));
+        var stale = Rec("gsi-7"); stale.Ended = false; stale.DurationSec = 1500; stale.Kills = 6;   // авария до очистки очереди
+        var fresh = Rec("gsi-8");
+        store.SavePending(new[] { stale, fresh });
+
+        var again = new MatchHistoryStore(_dir);
+        var needed = UnsavedQueuePolicy.StillNeeded(again.LoadPending(), again.Find);
+        Assert.Equal(new[] { "gsi-8" }, needed.Select(r => r.Id));
+        Assert.Equal(12, again.Find("gsi-7")!.Kills);
+
+        // незавершённая сохранённая версия короче — кандидат нужен; завершённый кандидат главнее незавершённой
+        var shortSaved = Rec("s"); shortSaved.Ended = false; shortSaved.DurationSec = 900;
+        var longer = Rec("s"); longer.Ended = false; longer.DurationSec = 1200;
+        Assert.False(CheckpointPolicy.IsAtLeastAsComplete(shortSaved, longer));
+        var endedShorter = Rec("s"); endedShorter.Ended = true; endedShorter.DurationSec = 800;
+        Assert.False(CheckpointPolicy.IsAtLeastAsComplete(shortSaved, endedShorter));
+        Assert.True(CheckpointPolicy.IsAtLeastAsComplete(endedShorter, longer));
+    }
+
+    [Fact]
+    public void PendingQueue_SurvivesRestart()
+    {
+        var store = new MatchHistoryStore(_dir);
+        Assert.True(store.SavePending(new[] { Rec("p1"), Rec("p2") }));
+        var again = new MatchHistoryStore(_dir);
+        Assert.Equal(new[] { "p1", "p2" }, again.LoadPending().Select(r => r.Id));
+        Assert.Empty(again.All());                                     // очередь — не история
+        Assert.True(again.SavePending(Array.Empty<MatchRecord>()));
+        Assert.Empty(new MatchHistoryStore(_dir).LoadPending());
+    }
+
+    [Fact]
+    public void PendingQueue_Corrupt_SetAside()
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(Path.Combine(_dir, MatchHistoryStore.PendingFile), "[{ broken");
+        Assert.Empty(new MatchHistoryStore(_dir).LoadPending());
+        Assert.True(File.Exists(Path.Combine(_dir, MatchHistoryStore.PendingFile + ".bad")));
+    }
+
+    [Fact]
+    public void ItemSeenAfterGap_IsApproximate_ContinuousIsExact()
+    {
+        var trace = FullTrace();                                       // blink появляется на 900 с
+        var gap = Run(new MatchRecorder(), trace.Where(t => t.Clock is < 850 or > 1000));
+        Assert.True(gap.IsApproxTiming("item_blink"));
+        Assert.DoesNotContain(gap.ExactItemTimings, kv => kv.Key == "item_blink");
+
+        var full = Run(new MatchRecorder(), trace);
+        Assert.False(full.IsApproxTiming("item_blink"));
+        Assert.Equal(900, full.ItemTimings["item_blink"]);
+
+        // восстановление без пропуска (все пакеты поданы) — тайминг точный
+        var first = new MatchRecorder();
+        foreach (var t in trace.Take(150)) first.Observe(t);
+        var second = new MatchRecorder();
+        second.Restore(MatchHistoryStore.Clone(first.Current!));
+        Assert.False(Run(second, trace.Skip(150)).IsApproxTiming("item_blink"));
+
+        // запись началась посреди игры — всё, что уже было в инвентаре, приблизительно
+        var late = Run(new MatchRecorder(), trace.Where(t => t.Clock >= 1200));
+        Assert.True(late.IsApproxTiming("item_blink"));
+
+        // стартовый инвентарь: с предматча (clock ≤ 0) — точно; первый снимок на 30-й секунде — уже приблизительно
+        var fromPregame = Run(new MatchRecorder(), new[] { T(-30, 0, item: "item_quelling_blade"), T(-25, 0, item: "item_quelling_blade") });
+        Assert.False(fromPregame.IsApproxTiming("item_quelling_blade"));
+        var from30 = Run(new MatchRecorder(), new[] { T(30, 0, item: "item_quelling_blade"), T(35, 0, item: "item_quelling_blade") });
+        Assert.True(from30.IsApproxTiming("item_quelling_blade"));
+    }
+
+    // ------------------------------------------------------------------ запас на выкуп
+
+    private static InventoryState Late(int gold, int unreliable, int? bbCost = 1800, int? bbCd = 0, int clock = 2400) =>
+        new(clock, true, gold, unreliable, new Dictionary<string, string> { ["teleport0"] = "item_tpscroll" }, Position.Carry, bbCost, bbCd);
+
+    [Fact]
+    public void UnspentGold_RespectsKnownBuybackReserve()
+    {
+        var s = new Roshiq.Core.Settings.AlertSettings { UnspentGoldThreshold = 2000, BuybackFromMinute = 30 };
+        // 3000 при выкупе 1800: сверх запаса 1200 — копит на выкуп, не ругаем
+        Assert.DoesNotContain(MatchAlerts.UnspentGold, MatchAlerts.Conditions(Late(3000, 2500), s));
+        // сверх запаса 3200 и под риском 4000 — подсказываем
+        Assert.Contains(MatchAlerts.UnspentGold, MatchAlerts.Conditions(Late(5000, 4000), s));
+        // выкуп на перезарядке, цена неизвестна или ещё рано — запас не учитываем (как раньше)
+        Assert.Contains(MatchAlerts.UnspentGold, MatchAlerts.Conditions(Late(3000, 2500, bbCd: 40), s));
+        Assert.Contains(MatchAlerts.UnspentGold, MatchAlerts.Conditions(Late(3000, 2500, bbCost: null), s));
+        Assert.Contains(MatchAlerts.UnspentGold, MatchAlerts.Conditions(Late(3000, 2500, bbCd: null), s));
+        Assert.Contains(MatchAlerts.UnspentGold, MatchAlerts.Conditions(Late(3000, 2500, clock: 1200), s));
+    }
 }

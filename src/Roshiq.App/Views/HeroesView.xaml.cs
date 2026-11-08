@@ -282,7 +282,7 @@ public partial class HeroesView : UserControl, IRefreshable
     {
         var games = App.Host.History.All().Where(m => m.HeroId == hero.Id && m.ItemTimings.Count > 0).Take(30).ToList();
         if (games.Count < 2) return new();
-        return games.SelectMany(m => m.ItemTimings).GroupBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
+        return games.SelectMany(m => m.ExactItemTimings).GroupBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase)
             .Where(g => g.Count() >= 2).ToDictionary(g => g.Key, g => (int)g.Average(kv => kv.Value), StringComparer.OrdinalIgnoreCase);
     }
 

@@ -251,6 +251,7 @@ public partial class HistoryView
 
     private IReadOnlyList<MatchRecord> _deathMapSource = Array.Empty<MatchRecord>();
     private int _deathPhase;          // 0 — все, 1 — до 10:00, 2 — 10–30, 3 — после 30
+    private bool _deathMapDimmed;
     private int _deathHero;           // 0 — все герои
 
     private static bool InPhase(int clock, int phase) => phase switch
@@ -299,6 +300,14 @@ public partial class HistoryView
             if (Ui.TryValue<int>(heroBox, out var id) && id != _deathHero) { _deathHero = id; ShowDeathMap(); }
         };
         DeathMapFilters.Children.Add(heroBox);
+        var dim = new CheckBox
+        {
+            Content = L.Get("deathmap_dim_background"), IsChecked = _deathMapDimmed,
+            Margin = new Thickness(12, 3, 0, 6), VerticalAlignment = VerticalAlignment.Center
+        };
+        dim.Checked += (_, _) => { _deathMapDimmed = true; ShowDeathMap(); };
+        dim.Unchecked += (_, _) => { _deathMapDimmed = false; ShowDeathMap(); };
+        DeathMapFilters.Children.Add(dim);
 
         var deaths = all.Where(x => InPhase(x.d.Clock, _deathPhase) && (_deathHero == 0 || x.m.HeroId == _deathHero)).ToList();
         var points = deaths.Select(x =>
@@ -307,13 +316,13 @@ public partial class HistoryView
             var tip = $"{GameTimers.Clock(x.d.Clock)} · {App.Host.Database.FindHero(x.m.HeroId)?.Name ?? "?"} · {x.m.StartedUtc.ToLocalTime():dd.MM}"
                       + (x.d.GoldAtRisk > 0 ? " · " + L.Format("bd_gold", x.d.GoldAtRisk) : "")
                       + (!x.d.HadTeleport ? " · " + L.Get("deathmap_no_tp") : "");
-            return new MiniMap.Point2(px, py, Ui.Res(GamePhases.Of(x.d.Clock) switch { GamePhase.Lane => "Warning", GamePhase.Mid => "Red", _ => "Purple" }), tip);
+            return new MiniMap.Point2(px, py, MiniMap.DeathPhaseBrush(GamePhases.Of(x.d.Clock)), tip);
         }).ToList();
 
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.Children.Add(MiniMap.Create(points, 340, heat: true, labels: true));
+        grid.Children.Add(MiniMap.Create(points, 340, heat: true, labels: true, distinctMarkers: true, dimBackground: _deathMapDimmed));
 
         var side = new StackPanel { Margin = new Thickness(24, 0, 0, 0) };
         Grid.SetColumn(side, 1);
@@ -376,16 +385,16 @@ public partial class HistoryView
             }
             // легенда
             var legend = new WrapPanel { Margin = new Thickness(0, 4, 0, 0) };
-            void Leg(string brush, string text)
+            void Leg(Brush brush, string text)
             {
                 var sp = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 4) };
-                sp.Children.Add(new Ellipse { Width = 9, Height = 9, Fill = Ui.Res(brush), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+                sp.Children.Add(new Ellipse { Width = 10, Height = 10, Fill = brush, Stroke = Brushes.White, StrokeThickness = 1, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
                 sp.Children.Add(new TextBlock { Text = text, Foreground = Ui.Res("Muted"), FontSize = 12 });
                 legend.Children.Add(sp);
             }
-            Leg("Warning", L.Get("deathmap_early"));
-            Leg("Red", L.Get("deathmap_mid"));
-            Leg("Purple", L.Get("deathmap_late"));
+            Leg(MiniMap.DeathPhaseBrush(GamePhase.Lane), L.Get("deathmap_early"));
+            Leg(MiniMap.DeathPhaseBrush(GamePhase.Mid), L.Get("deathmap_mid"));
+            Leg(MiniMap.DeathPhaseBrush(GamePhase.Late), L.Get("deathmap_late"));
             side.Children.Add(legend);
             side.Children.Add(Ui.Text(L.Get(MiniMap.HasArt ? "deathmap_legend_art" : "deathmap_legend"), "MutedText", 4));
         }

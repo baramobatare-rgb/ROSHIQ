@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Roshiq.Core.Localization;
+using Roshiq.Core.Models;
 using Roshiq.Recommendations;
 
 namespace Roshiq.App.Views;
@@ -23,7 +24,7 @@ public static class MiniMap
     private static readonly Color DireC = Color.FromRgb(236, 91, 86);
     private static readonly Color RiverC = Color.FromRgb(79, 163, 247);
 
-    public static FrameworkElement Create(IEnumerable<Point2> points, double size = 260, bool heat = false, bool labels = false)
+    public static FrameworkElement Create(IEnumerable<Point2> points, double size = 260, bool heat = false, bool labels = false, bool distinctMarkers = false, bool dimBackground = false)
     {
         var canvas = new Canvas { Width = size, Height = size, ClipToBounds = true };
         double S(double v) => v * size;
@@ -35,7 +36,7 @@ public static class MiniMap
         {
             canvas.Children.Add(new Image { Source = art, Width = size, Height = size, Stretch = Stretch.Fill, IsHitTestVisible = false });
             // лёгкое затемнение, чтобы метки и смерти читались на детальном рисунке
-            canvas.Children.Add(new Rectangle { Width = size, Height = size, Fill = new SolidColorBrush(Color.FromArgb(38, 0, 0, 0)), IsHitTestVisible = false });
+            canvas.Children.Add(new Rectangle { Width = size, Height = size, Fill = new SolidColorBrush(Color.FromArgb(dimBackground ? (byte)105 : (byte)38, 0, 0, 0)), IsHitTestVisible = false });
         }
         else
             DrawSchematic(canvas, size, S, P);
@@ -115,19 +116,28 @@ public static class MiniMap
             }
         }
 
-        double r = Math.Max(6, size / 40);
+        double r = distinctMarkers ? Math.Max(12, size / 30) : Math.Max(6, size / 40);
         foreach (var p in list)
         {
-            var dot = new Ellipse
+            FrameworkElement marker;
+            if (distinctMarkers)
+            {
+                // A dark halo plus white ring distinguishes recorded events from torches in the art.
+                var ring = new Grid { Width = r, Height = r, ToolTip = p.Tip };
+                ring.Children.Add(new Ellipse { Fill = Brushes.Black, Opacity = 0.95 });
+                ring.Children.Add(new Ellipse { Margin = new Thickness(1.5), Fill = p.Fill, Stroke = Brushes.White, StrokeThickness = 1.5 });
+                marker = ring;
+            }
+            else marker = new Ellipse
             {
                 Width = r, Height = r, Fill = p.Fill, Opacity = 0.95,
                 Stroke = new SolidColorBrush(Color.FromArgb(190, 0, 0, 0)), StrokeThickness = 1,
                 ToolTip = p.Tip
             };
-            ToolTipService.SetInitialShowDelay(dot, 100);
-            Canvas.SetLeft(dot, S(p.X) - r / 2);
-            Canvas.SetTop(dot, S(1 - p.Y) - r / 2);
-            canvas.Children.Add(dot);
+            ToolTipService.SetInitialShowDelay(marker, 100);
+            Canvas.SetLeft(marker, S(p.X) - r / 2);
+            Canvas.SetTop(marker, S(1 - p.Y) - r / 2);
+            canvas.Children.Add(marker);
         }
         return new Border
         {
@@ -135,6 +145,22 @@ public static class MiniMap
             BorderBrush = Ui.Res("Line"), Background = Ui.Res("Panel2"), Child = canvas, ClipToBounds = true,
             HorizontalAlignment = HorizontalAlignment.Left
         };
+    }
+
+    private static readonly Brush LaneDeath = Frozen(0x65, 0xD8, 0xFF);
+    private static readonly Brush MidDeath = Frozen(0xCC, 0x9C, 0xFF);
+    private static readonly Brush LateDeath = Frozen(0xF5, 0xF7, 0xFA);
+
+    public static Brush DeathPhaseBrush(GamePhase phase) => phase switch
+    {
+        GamePhase.Lane => LaneDeath, GamePhase.Mid => MidDeath, _ => LateDeath
+    };
+
+    private static Brush Frozen(byte r, byte g, byte b)
+    {
+        var brush = new SolidColorBrush(Color.FromRgb(r, g, b));
+        brush.Freeze();
+        return brush;
     }
 
     /// <summary>Есть ли нарисованный фон (тогда метки построек не рисуются).</summary>
@@ -146,7 +172,7 @@ public static class MiniMap
         {
             var bmp = new System.Windows.Media.Imaging.BitmapImage();
             bmp.BeginInit();
-            bmp.UriSource = new Uri("pack://application:,,,/Assets/Map/minimap.jpg", UriKind.Absolute);
+            bmp.UriSource = new Uri("pack://application:,,,/Roshiq;component/Assets/Map/minimap.jpg", UriKind.Absolute);
             bmp.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
             bmp.EndInit();
             bmp.Freeze();

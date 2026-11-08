@@ -185,6 +185,7 @@ public sealed class AppHost : IDisposable
     public void Start()
     {
         _ = MarkStableLaterAsync();
+        try { LoadUnsavedQueue(); } catch (Exception ex) { Log.Error("История: очередь несохранённых матчей", ex); }
         try { LoadPendingCheckpoint(); } catch (Exception ex) { Log.Error("История: контрольная запись", ex); }
         if (SafeMode)
         {
@@ -1458,6 +1459,7 @@ public sealed class AppHost : IDisposable
             {
                 _unsaved.RemoveAll(x => x.Id == record.Id);
                 _unsaved.Add(record);
+                History.SavePending(_unsaved.ToList());   // очередь переживёт закрытие программы
             }
             _unsavedRetryUtc = DateTime.UtcNow + UnsavedRetryEvery;
             Log.Warn($"История: матч {record.MatchId} не записан на диск — повторю попытку");
@@ -1472,7 +1474,7 @@ public sealed class AppHost : IDisposable
         }
         lock (_unsaved)
         {
-            _unsaved.RemoveAll(x => x.Id == record.Id);
+            if (_unsaved.RemoveAll(x => x.Id == record.Id) > 0) History.SavePending(_unsaved.ToList());
             if (_unsaved.Count == 0) _saveFailWarned = false;
         }
         History.ClearCheckpoint(record.Id);
@@ -1506,7 +1508,28 @@ public sealed class AppHost : IDisposable
             if (_unsaved.Count == 0 || DateTime.UtcNow < _unsavedRetryUtc) return;
             pending = _unsaved.ToList();
         }
-        foreach (var r in pending) CommitMatch(r);
+        var needed = UnsavedQueuePolicy.StillNeeded(pending, History.Find);
+        lock (_unsaved)
+            if (_unsaved.RemoveAll(x => needed.All(n => n.Id != x.Id)) > 0) History.SavePending(_unsaved.ToList());
+        foreach (var r in needed) CommitMatch(r);
+    }
+
+    /// <summary>Матчи, которые не удалось записать в прошлый раз, — снова в очередь, первая попытка сразу.</summary>
+    private void LoadUnsavedQueue()
+    {
+        var pending = History.LoadPending();
+        if (pending.Count == 0) return;
+        // авария между записью матча и очисткой очереди: в истории уже есть не менее полная версия — её не трогаем
+        var keep = UnsavedQueuePolicy.StillNeeded(pending, History.Find);
+        lock (_unsaved)
+        {
+            foreach (var r in keep)
+                if (_unsaved.All(x => x.Id != r.Id)) _unsaved.Add(r);
+            if (keep.Count != pending.Count) History.SavePending(_unsaved.ToList());
+        }
+        _unsavedRetryUtc = DateTime.MinValue;
+        if (keep.Count > 0) Log.Info($"История: несохранённых матчей с прошлого запуска: {keep.Count} — повторяю запись");
+        if (keep.Count != pending.Count) Log.Info($"История: из очереди убрано {pending.Count - keep.Count} — в истории уже есть более полные версии");
     }
 
     // ------------------------------------------------------------------ контрольная запись незаконченного матча
@@ -1515,7 +1538,7 @@ public sealed class AppHost : IDisposable
     {
         var cp = History.LoadCheckpoint();
         if (cp == null) return;
-        if (DateTime.UtcNow - cp.Value.SavedUtc > CheckpointMaxAge) FinalizeCheckpoint(cp.Value.Record, "контрольная запись старше 3 часов");
+        if (DateTime.UtcNow - cp.Value.SavedUtc > CheckpointMaxAge) ApplyCheckpoint(cp.Value.Record, null, "контрольная запись старше 3 часов");
         else
         {
             _pendingCheckpoint = cp;
@@ -1523,25 +1546,34 @@ public sealed class AppHost : IDisposable
         }
     }
 
-    /// <summary>Первый снимок с номером матча решает судьбу контрольной записи: тот же матч — продолжаем, другой — сохраняем как неполный.</summary>
+    /// <summary>Первый снимок с номером матча решает судьбу контрольной записи (см. <see cref="CheckpointPolicy"/>).</summary>
     private void ResolvePendingCheckpoint(string? matchId)
     {
         if (_pendingCheckpoint is not { } pend || string.IsNullOrWhiteSpace(matchId) || matchId == "0") return;
         _pendingCheckpoint = null;
-        if (matchId == pend.Record.MatchId && _recorder.Current == null)
-        {
-            _recorder.Restore(pend.Record);
-            Log.Info($"История: матч {matchId} продолжен после перезапуска (пропуск отмечен в покрытии)");
-        }
-        else FinalizeCheckpoint(pend.Record, "начался другой матч");
+        ApplyCheckpoint(pend.Record, matchId, matchId == pend.Record.MatchId ? "тот же матч" : "начался другой матч");
     }
 
-    private void FinalizeCheckpoint(MatchRecord r, string why)
+    private void ApplyCheckpoint(MatchRecord cp, string? liveMatchId, string why)
     {
-        r.Ended ??= false;
-        Log.Info($"История: незаконченный матч {r.MatchId} сохраняется как неполный ({why})");
-        if (r.DurationSec >= 120) SaveMatch(r, attachAlerts: false);
-        else History.ClearCheckpoint(r.Id);
+        var saved = History.Find(cp.Id);
+        switch (CheckpointPolicy.Decide(cp, saved, liveMatchId, _recorder.Current != null))
+        {
+            case CheckpointAction.Resume:
+                _recorder.Restore(cp);
+                Log.Info($"История: матч {cp.MatchId} продолжен после перезапуска (пропуск отмечен в покрытии)");
+                break;
+            case CheckpointAction.Discard:
+                History.ClearCheckpoint(cp.Id);
+                Log.Info($"История: контрольная запись матча {cp.MatchId} устарела — в истории уже есть более полная");
+                break;
+            default:
+                cp.Ended ??= false;
+                Log.Info($"История: незаконченный матч {cp.MatchId} сохраняется как неполный ({why})");
+                if (cp.DurationSec >= 120) SaveMatch(cp, attachAlerts: false);
+                else History.ClearCheckpoint(cp.Id);
+                break;
+        }
     }
 
     /// <summary>Итог последнего матча, который ещё не показан (окно откроется, когда пользователь уйдёт из игры).</summary>
@@ -1608,7 +1640,7 @@ public sealed class AppHost : IDisposable
         foreach (var (item, at) in cur.ItemTimings.ToList())
         {
             if (!_paceItemsSeen.Add(item) || !Settings.Current.Automation.ShowBuild) continue;
-            if (at <= 0 || clock - at > 30) continue; // только только что купленные
+            if (at <= 0 || clock - at > 30 || cur.IsApproxTiming(item)) continue; // только только что купленные и точно
             var cost = Costs.Cost(item);
             if (cost is < 1500) continue;
             if (_pace.ItemDue(cur, item, at) is not ItemPace pace || Math.Abs(pace.Delta) < 60) continue;
@@ -1877,7 +1909,15 @@ public sealed class AppHost : IDisposable
         try { _backgroundCts.Cancel(); } catch { }
         // незаконченный матч не закрываем: контрольная запись — после перезапуска он продолжится или сохранится как неполный
         try { if (_recorder.Current is MatchRecord live) History.SaveCheckpoint(live); } catch { }
-        try { lock (_unsaved) foreach (var r in _unsaved) History.Save(r); } catch { }
+        try
+        {
+            lock (_unsaved)
+            {
+                _unsaved.RemoveAll(r => History.Save(r));
+                History.SavePending(_unsaved.ToList());   // что не записалось — останется в очереди до следующего запуска
+            }
+        }
+        catch { }
         try { Settings.Save(); } catch { }
         Gsi?.Dispose();
         Overlay.Dispose();

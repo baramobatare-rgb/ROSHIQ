@@ -262,12 +262,13 @@ public partial class HistoryView : UserControl, IRefreshable
         {
             var item = App.Host.Database.FindItem(key);
             string name = item?.Name ?? Pretty(key);
-            var bench = MatchStats.Benchmark(history, m, key);
-            string detail = bench == null
-                ? L.Get("hist_bench_none")
+            bool approx = m.IsApproxTiming(key);
+            var bench = approx ? null : MatchStats.Benchmark(history, m, key);
+            string detail = approx ? L.Get("hist_item_approx")
+                : bench == null ? L.Get("hist_bench_none")
                 : L.Format(bench.SameHero ? "hist_bench_hero" : "hist_bench_role", GameTimers.Clock(bench.AvgSec), bench.Matches)
                   + " · " + Delta(at - bench.AvgSec);
-            ItemsPanel.Children.Add(Ui.Numbered(i++, name, detail, GameTimers.Clock(at), Ui.ItemIcon(key)));
+            ItemsPanel.Children.Add(Ui.Numbered(i++, name, detail, (approx ? "≤ " : "") + GameTimers.Clock(at), Ui.ItemIcon(key)));
         }
         if (i == 1) ItemsPanel.Children.Add(Ui.State(UiState.Empty, L.Get(m.FromGsi ? "hist_items_none" : "hist_items_od"), ""));
 
@@ -297,7 +298,7 @@ public partial class HistoryView : UserControl, IRefreshable
         if (bd == null) { BreakdownPanel.Children.Add(Ui.Text(L.Get("bd_none"), "MutedText")); return; }
         BreakdownPanel.Children.Add(new TextBlock
         {
-            Text = L.Format("bd_hint", bd.Compared), Style = (Style)FindResource("MutedText"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8)
+            Text = bd.ComparisonBasis is string basis ? L.Format("bd_hint_basis", L.Get(basis), bd.Compared) : L.Get("bd_no_baseline"), Style = (Style)FindResource("MutedText"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 8)
         });
         foreach (var p in bd.Phases)
         {

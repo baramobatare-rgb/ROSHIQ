@@ -24,6 +24,7 @@ class Program
             var host = new AppHost();
             typeof(App).GetProperty("Host")!.SetValue(null, host);
             host.Settings.Current.Gsi.Enabled = false;
+            MapPolishChecks.Run(args);
             var main = new MainWindow(); app.MainWindow = main;
             foreach (var h in host.Database.Heroes)
             {

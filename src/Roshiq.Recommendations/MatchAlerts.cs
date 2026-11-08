@@ -133,7 +133,13 @@ public sealed class MatchAlerts
 
         int atRisk = s.GoldUnreliable ?? s.Gold ?? 0;
         bool saving = s.SavingFor is int target && target > 0 && (s.Gold ?? 0) < target;
-        if (settings.UnspentGold && atRisk >= settings.UnspentGoldThreshold && !saving) list.Add(UnspentGold);
+        // запас на выкуп: только если цена точно известна и выкуп готов (в позднюю игру). Тогда «много золота» —
+        // это и золото под риском, и остаток сверх выкупа не меньше порога. Неизвестный выкуп — как раньше.
+        bool reserveKnown = s.Clock >= settings.BuybackFromMinute * 60 && s.BuybackCost is int reserve && reserve > 0
+                            && s.BuybackCooldown == 0 && s.Gold is not null;
+        int spare = reserveKnown ? s.Gold!.Value - s.BuybackCost!.Value : atRisk;
+        if (settings.UnspentGold && atRisk >= settings.UnspentGoldThreshold && spare >= settings.UnspentGoldThreshold && !saving)
+            list.Add(UnspentGold);
 
         if (settings.Buyback && s.Clock >= settings.BuybackFromMinute * 60 && s.BuybackCost is int bb && bb > 0
             && s.BuybackCooldown == 0 && s.Gold is int gold && gold < bb)

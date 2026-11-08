@@ -40,7 +40,7 @@ public sealed record LateItem(string ItemKey, int Yours, int Usual, int Matches,
     public int Delta => Yours - Usual;
 }
 
-public sealed record MatchBreakdown(IReadOnlyList<PhaseRow> Phases, IReadOnlyList<LateItem> LateItems, int Compared);
+public sealed record MatchBreakdown(IReadOnlyList<PhaseRow> Phases, IReadOnlyList<LateItem> LateItems, int Compared, string? ComparisonBasis = null);
 
 /// <summary>Сравнение с другими игроками: средний процентиль по показателю (0…1, доля игроков ниже вас).</summary>
 public sealed record PercentileRow(string Key, string Ru, string En, double AvgPct, int Matches)
@@ -164,11 +164,16 @@ public static class PlayerReport
     public static MatchBreakdown? Breakdown(MatchRecord m, IEnumerable<MatchRecord> all)
     {
         if (!m.FromGsi || m.Samples.Count < 4 || m.DurationSec < PostMatch.MinDurationSec) return null;
-        var others = all.Where(x => x.Id != m.Id && x.FromGsi && x.Samples.Count >= 4).ToList();
-        // минимум 3 сопоставимые игры: сначала на этом герое, потом на этой роли; меньше — «обычно» не показываем
-        var pool = others.Where(x => x.HeroId == m.HeroId).ToList();
-        if (pool.Count < 3 && m.Position != null) pool = others.Where(x => x.Position == m.Position).ToList();
-        if (pool.Count < 3) pool = new List<MatchRecord>();
+        var others = all.Where(x => x.Id != m.Id && x.FromGsi && x.Samples.Count >= 4 && !x.Partial).ToList();
+        // Known roles must match, including when selecting games on the same hero.
+        var pool = others.Where(x => x.HeroId == m.HeroId && x.Position == m.Position).ToList();
+        string basis = m.Position == null ? "bd_basis_hero" : "bd_basis_hero_role";
+        if (pool.Count < 3 && m.Position != null)
+        {
+            pool = others.Where(x => x.Position == m.Position).ToList();
+            basis = "bd_basis_role";
+        }
+        if (pool.Count < 3) pool.Clear();
 
         var phases = new List<PhaseRow>();
         void Add(string key, string ru, string en, int from, int to)
@@ -176,8 +181,8 @@ public static class PlayerReport
             if (m.DurationSec <= from) return;
             int end = Math.Min(to, m.DurationSec);
             var deaths = m.DeathEvents.Where(d => d.Clock >= from && d.Clock < end).ToList();
-            int? usualLh = Median(pool.Where(x => x.DurationSec >= end).Select(x => x.LastHitsAt(end)).OfType<int>());
-            int? usualGpm = Median(pool.Where(x => x.DurationSec >= end).Select(x => x.GpmAt(end)).OfType<int>());
+            int? usualLh = Median(pool.Where(x => x.DurationSec >= end && x.Covers(from, end)).Select(x => x.LastHitsAt(end)).OfType<int>());
+            int? usualGpm = Median(pool.Where(x => x.DurationSec >= end && x.Covers(from, end)).Select(x => x.GpmAt(end)).OfType<int>());
             phases.Add(new PhaseRow(key, ru, en, from, end, deaths.Count, deaths.Sum(d => d.GoldAtRisk),
                 m.LastHitsAt(end), usualLh, m.GpmAt(end), usualGpm, m.Covers(from, end)));
         }
@@ -189,13 +194,13 @@ public static class PlayerReport
         }
 
         var late = new List<LateItem>();
-        foreach (var (key, at) in m.ItemTimings)
+        foreach (var (key, at) in m.ExactItemTimings)
         {
             if (at < 600 || MatchRecorder.IgnoredItems.Contains(key) || MatchRecorder.IsRecipe(key)) continue;
             if (MatchStats.Benchmark(all, m, key) is { Matches: >= 3 } b && at - b.AvgSec >= 180)
                 late.Add(new LateItem(key, at, b.AvgSec, b.Matches, b.SameHero));
         }
-        return new MatchBreakdown(phases, late.OrderByDescending(x => x.Delta).Take(4).ToList(), pool.Count);
+        return new MatchBreakdown(phases, late.OrderByDescending(x => x.Delta).Take(4).ToList(), pool.Count, pool.Count > 0 ? basis : null);
     }
 
     // ------------------------------------------------------------------ сравнение с другими игроками
