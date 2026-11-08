@@ -178,6 +178,8 @@ public sealed class AppHost : IDisposable
 
     /// <summary>Сторож связи с игрой (Dota запущена, а данных GSI нет).</summary>
     public GsiWatchdog GsiWatch { get; } = new();
+    /// <summary>Журнал подсказок по матчам (logs\tips, только на этом компьютере).</summary>
+    public TipJournal TipLog { get; } = new(Path.Combine(AppPaths.Logs, "tips"));
 
     /// <summary>Dota запущена, а данные GSI не приходят (или приходят с чужим ключом).</summary>
     public event EventHandler<GsiProblem>? GsiProblemDetected;
@@ -1329,6 +1331,10 @@ public sealed class AppHost : IDisposable
             var k = tip.Kind + ":" + outcome.ToString().ToLowerInvariant();
             cur.TipOutcomes[k] = cur.TipOutcomes.TryGetValue(k, out var n) ? n + 1 : 1;
         }
+        // журнал подсказок: всё, что помощник хотел сказать, и что с этим стало — привязано к матчу и времени игры
+        var g = LastGsi;
+        string? matchId = g is { IsInProgress: true } ? g.MatchId : null;
+        TipLog.Add(matchId, matchId != null ? g!.ClockTime : null, tip, outcome, DateTime.Now);
         if (outcome != TipOutcome.Shown) Log.Info($"Совет «{tip.Kind}»: {outcome switch {
             TipOutcome.Dropped => "не показан (оверлей скрыт или уведомления выключены)",
             TipOutcome.Expired => "истёк, не дождавшись показа",

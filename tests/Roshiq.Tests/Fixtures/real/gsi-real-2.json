@@ -1,0 +1,934 @@
+{
+ "Id": "gsi-real-2",
+ "MatchId": "real-2",
+ "Source": "GSI",
+ "StartedUtc": "2026-01-02T12:00:00Z",
+ "HeroId": 74,
+ "HeroKey": "invoker",
+ "Position": "HardSupport",
+ "Team": "radiant",
+ "Result": "Win",
+ "DurationSec": 3107,
+ "Kills": 8,
+ "Deaths": 6,
+ "Assists": 40,
+ "LastHits": 121,
+ "Denies": 8,
+ "Gpm": 512,
+ "Xpm": 1243,
+ "Level": 30,
+ "Samples": [
+  {
+   "Clock": 0,
+   "Gold": 5,
+   "Gpm": 0,
+   "Xpm": 0,
+   "LastHits": 0,
+   "Level": 1
+  },
+  {
+   "Clock": 30,
+   "Gold": 171,
+   "Gpm": 328,
+   "Xpm": 0,
+   "LastHits": 0,
+   "Level": 1
+  },
+  {
+   "Clock": 61,
+   "Gold": 217,
+   "Gpm": 208,
+   "Xpm": 88,
+   "LastHits": 0,
+   "Level": 1
+  },
+  {
+   "Clock": 91,
+   "Gold": 262,
+   "Gpm": 168,
+   "Xpm": 95,
+   "LastHits": 0,
+   "Level": 1
+  },
+  {
+   "Clock": 121,
+   "Gold": 326,
+   "Gpm": 158,
+   "Xpm": 139,
+   "LastHits": 1,
+   "Level": 2
+  },
+  {
+   "Clock": 151,
+   "Gold": 370,
+   "Gpm": 144,
+   "Xpm": 157,
+   "LastHits": 1,
+   "Level": 2
+  },
+  {
+   "Clock": 181,
+   "Gold": 435,
+   "Gpm": 142,
+   "Xpm": 170,
+   "LastHits": 2,
+   "Level": 2
+  },
+  {
+   "Clock": 211,
+   "Gold": 479,
+   "Gpm": 134,
+   "Xpm": 146,
+   "LastHits": 2,
+   "Level": 2
+  },
+  {
+   "Clock": 241,
+   "Gold": 525,
+   "Gpm": 129,
+   "Xpm": 160,
+   "LastHits": 2,
+   "Level": 3
+  },
+  {
+   "Clock": 271,
+   "Gold": 569,
+   "Gpm": 124,
+   "Xpm": 149,
+   "LastHits": 2,
+   "Level": 3
+  },
+  {
+   "Clock": 301,
+   "Gold": 732,
+   "Gpm": 144,
+   "Xpm": 193,
+   "LastHits": 4,
+   "Level": 3
+  },
+  {
+   "Clock": 332,
+   "Gold": 68,
+   "Gpm": 139,
+   "Xpm": 194,
+   "LastHits": 4,
+   "Level": 3
+  },
+  {
+   "Clock": 362,
+   "Gold": 114,
+   "Gpm": 135,
+   "Xpm": 197,
+   "LastHits": 4,
+   "Level": 4
+  },
+  {
+   "Clock": 392,
+   "Gold": 158,
+   "Gpm": 131,
+   "Xpm": 184,
+   "LastHits": 4,
+   "Level": 4
+  },
+  {
+   "Clock": 423,
+   "Gold": 408,
+   "Gpm": 157,
+   "Xpm": 242,
+   "LastHits": 4,
+   "Level": 4
+  },
+  {
+   "Clock": 453,
+   "Gold": 782,
+   "Gpm": 196,
+   "Xpm": 290,
+   "LastHits": 7,
+   "Level": 5
+  },
+  {
+   "Clock": 483,
+   "Gold": 1042,
+   "Gpm": 216,
+   "Xpm": 317,
+   "LastHits": 9,
+   "Level": 6
+  },
+  {
+   "Clock": 513,
+   "Gold": 104,
+   "Gpm": 211,
+   "Xpm": 310,
+   "LastHits": 10,
+   "Level": 6
+  },
+  {
+   "Clock": 543,
+   "Gold": 150,
+   "Gpm": 204,
+   "Xpm": 300,
+   "LastHits": 10,
+   "Level": 6
+  },
+  {
+   "Clock": 573,
+   "Gold": 22,
+   "Gpm": 206,
+   "Xpm": 299,
+   "LastHits": 12,
+   "Level": 6
+  },
+  {
+   "Clock": 603,
+   "Gold": 130,
+   "Gpm": 207,
+   "Xpm": 298,
+   "LastHits": 13,
+   "Level": 6
+  },
+  {
+   "Clock": 633,
+   "Gold": 112,
+   "Gpm": 201,
+   "Xpm": 288,
+   "LastHits": 13,
+   "Level": 6
+  },
+  {
+   "Clock": 663,
+   "Gold": 253,
+   "Gpm": 205,
+   "Xpm": 300,
+   "LastHits": 15,
+   "Level": 7
+  },
+  {
+   "Clock": 693,
+   "Gold": 237,
+   "Gpm": 203,
+   "Xpm": 291,
+   "LastHits": 16,
+   "Level": 7
+  },
+  {
+   "Clock": 724,
+   "Gold": 382,
+   "Gpm": 207,
+   "Xpm": 278,
+   "LastHits": 16,
+   "Level": 7
+  },
+  {
+   "Clock": 754,
+   "Gold": 470,
+   "Gpm": 205,
+   "Xpm": 276,
+   "LastHits": 17,
+   "Level": 7
+  },
+  {
+   "Clock": 784,
+   "Gold": 705,
+   "Gpm": 215,
+   "Xpm": 280,
+   "LastHits": 20,
+   "Level": 7
+  },
+  {
+   "Clock": 814,
+   "Gold": 829,
+   "Gpm": 216,
+   "Xpm": 292,
+   "LastHits": 22,
+   "Level": 7
+  },
+  {
+   "Clock": 844,
+   "Gold": 1133,
+   "Gpm": 231,
+   "Xpm": 300,
+   "LastHits": 26,
+   "Level": 8
+  },
+  {
+   "Clock": 874,
+   "Gold": 1313,
+   "Gpm": 235,
+   "Xpm": 303,
+   "LastHits": 29,
+   "Level": 8
+  },
+  {
+   "Clock": 905,
+   "Gold": 1398,
+   "Gpm": 232,
+   "Xpm": 300,
+   "LastHits": 30,
+   "Level": 8
+  },
+  {
+   "Clock": 935,
+   "Gold": 1528,
+   "Gpm": 233,
+   "Xpm": 302,
+   "LastHits": 34,
+   "Level": 8
+  },
+  {
+   "Clock": 965,
+   "Gold": 639,
+   "Gpm": 233,
+   "Xpm": 298,
+   "LastHits": 34,
+   "Level": 8
+  },
+  {
+   "Clock": 996,
+   "Gold": 687,
+   "Gpm": 229,
+   "Xpm": 296,
+   "LastHits": 34,
+   "Level": 9
+  },
+  {
+   "Clock": 1026,
+   "Gold": 810,
+   "Gpm": 229,
+   "Xpm": 301,
+   "LastHits": 34,
+   "Level": 9
+  },
+  {
+   "Clock": 1056,
+   "Gold": 1203,
+   "Gpm": 245,
+   "Xpm": 319,
+   "LastHits": 34,
+   "Level": 9
+  },
+  {
+   "Clock": 1086,
+   "Gold": 131,
+   "Gpm": 245,
+   "Xpm": 327,
+   "LastHits": 34,
+   "Level": 10
+  },
+  {
+   "Clock": 1116,
+   "Gold": 77,
+   "Gpm": 241,
+   "Xpm": 319,
+   "LastHits": 34,
+   "Level": 10
+  },
+  {
+   "Clock": 1146,
+   "Gold": 126,
+   "Gpm": 237,
+   "Xpm": 313,
+   "LastHits": 34,
+   "Level": 10
+  },
+  {
+   "Clock": 1176,
+   "Gold": 209,
+   "Gpm": 240,
+   "Xpm": 330,
+   "LastHits": 36,
+   "Level": 10
+  },
+  {
+   "Clock": 1206,
+   "Gold": 366,
+   "Gpm": 245,
+   "Xpm": 326,
+   "LastHits": 36,
+   "Level": 10
+  },
+  {
+   "Clock": 1237,
+   "Gold": 462,
+   "Gpm": 243,
+   "Xpm": 331,
+   "LastHits": 36,
+   "Level": 10
+  },
+  {
+   "Clock": 1267,
+   "Gold": 712,
+   "Gpm": 249,
+   "Xpm": 358,
+   "LastHits": 36,
+   "Level": 11
+  },
+  {
+   "Clock": 1298,
+   "Gold": 1311,
+   "Gpm": 271,
+   "Xpm": 406,
+   "LastHits": 37,
+   "Level": 12
+  },
+  {
+   "Clock": 1329,
+   "Gold": 666,
+   "Gpm": 281,
+   "Xpm": 430,
+   "LastHits": 37,
+   "Level": 13
+  },
+  {
+   "Clock": 1359,
+   "Gold": 711,
+   "Gpm": 285,
+   "Xpm": 442,
+   "LastHits": 38,
+   "Level": 13
+  },
+  {
+   "Clock": 1389,
+   "Gold": 1067,
+   "Gpm": 294,
+   "Xpm": 441,
+   "LastHits": 41,
+   "Level": 13
+  },
+  {
+   "Clock": 1419,
+   "Gold": 266,
+   "Gpm": 297,
+   "Xpm": 438,
+   "LastHits": 42,
+   "Level": 13
+  },
+  {
+   "Clock": 1449,
+   "Gold": 838,
+   "Gpm": 314,
+   "Xpm": 474,
+   "LastHits": 42,
+   "Level": 14
+  },
+  {
+   "Clock": 1479,
+   "Gold": 964,
+   "Gpm": 313,
+   "Xpm": 472,
+   "LastHits": 44,
+   "Level": 14
+  },
+  {
+   "Clock": 1509,
+   "Gold": 201,
+   "Gpm": 316,
+   "Xpm": 479,
+   "LastHits": 45,
+   "Level": 14
+  },
+  {
+   "Clock": 1539,
+   "Gold": 1066,
+   "Gpm": 344,
+   "Xpm": 543,
+   "LastHits": 45,
+   "Level": 15
+  },
+  {
+   "Clock": 1569,
+   "Gold": 1114,
+   "Gpm": 339,
+   "Xpm": 534,
+   "LastHits": 45,
+   "Level": 15
+  },
+  {
+   "Clock": 1600,
+   "Gold": 1216,
+   "Gpm": 334,
+   "Xpm": 527,
+   "LastHits": 45,
+   "Level": 16
+  },
+  {
+   "Clock": 1630,
+   "Gold": 1311,
+   "Gpm": 332,
+   "Xpm": 521,
+   "LastHits": 45,
+   "Level": 16
+  },
+  {
+   "Clock": 1660,
+   "Gold": 72,
+   "Gpm": 331,
+   "Xpm": 520,
+   "LastHits": 46,
+   "Level": 16
+  },
+  {
+   "Clock": 1694,
+   "Gold": 351,
+   "Gpm": 341,
+   "Xpm": 514,
+   "LastHits": 50,
+   "Level": 16
+  },
+  {
+   "Clock": 1725,
+   "Gold": 400,
+   "Gpm": 337,
+   "Xpm": 543,
+   "LastHits": 50,
+   "Level": 16
+  },
+  {
+   "Clock": 1755,
+   "Gold": 524,
+   "Gpm": 335,
+   "Xpm": 536,
+   "LastHits": 51,
+   "Level": 17
+  },
+  {
+   "Clock": 1785,
+   "Gold": 571,
+   "Gpm": 331,
+   "Xpm": 566,
+   "LastHits": 51,
+   "Level": 17
+  },
+  {
+   "Clock": 1815,
+   "Gold": 857,
+   "Gpm": 335,
+   "Xpm": 589,
+   "LastHits": 51,
+   "Level": 18
+  },
+  {
+   "Clock": 1845,
+   "Gold": 955,
+   "Gpm": 333,
+   "Xpm": 588,
+   "LastHits": 51,
+   "Level": 18
+  },
+  {
+   "Clock": 1875,
+   "Gold": 1565,
+   "Gpm": 347,
+   "Xpm": 655,
+   "LastHits": 51,
+   "Level": 19
+  },
+  {
+   "Clock": 1905,
+   "Gold": 414,
+   "Gpm": 343,
+   "Xpm": 644,
+   "LastHits": 51,
+   "Level": 19
+  },
+  {
+   "Clock": 1936,
+   "Gold": 265,
+   "Gpm": 339,
+   "Xpm": 641,
+   "LastHits": 51,
+   "Level": 19
+  },
+  {
+   "Clock": 1966,
+   "Gold": 502,
+   "Gpm": 341,
+   "Xpm": 639,
+   "LastHits": 53,
+   "Level": 19
+  },
+  {
+   "Clock": 1996,
+   "Gold": 551,
+   "Gpm": 338,
+   "Xpm": 633,
+   "LastHits": 53,
+   "Level": 19
+  },
+  {
+   "Clock": 2026,
+   "Gold": 705,
+   "Gpm": 337,
+   "Xpm": 640,
+   "LastHits": 53,
+   "Level": 20
+  },
+  {
+   "Clock": 2056,
+   "Gold": 888,
+   "Gpm": 337,
+   "Xpm": 637,
+   "LastHits": 57,
+   "Level": 20
+  },
+  {
+   "Clock": 2086,
+   "Gold": 175,
+   "Gpm": 347,
+   "Xpm": 672,
+   "LastHits": 59,
+   "Level": 20
+  },
+  {
+   "Clock": 2116,
+   "Gold": 226,
+   "Gpm": 343,
+   "Xpm": 677,
+   "LastHits": 59,
+   "Level": 21
+  },
+  {
+   "Clock": 2146,
+   "Gold": 25,
+   "Gpm": 340,
+   "Xpm": 667,
+   "LastHits": 59,
+   "Level": 21
+  },
+  {
+   "Clock": 2176,
+   "Gold": 168,
+   "Gpm": 339,
+   "Xpm": 658,
+   "LastHits": 59,
+   "Level": 21
+  },
+  {
+   "Clock": 2206,
+   "Gold": 219,
+   "Gpm": 336,
+   "Xpm": 649,
+   "LastHits": 59,
+   "Level": 21
+  },
+  {
+   "Clock": 2236,
+   "Gold": 268,
+   "Gpm": 333,
+   "Xpm": 643,
+   "LastHits": 59,
+   "Level": 21
+  },
+  {
+   "Clock": 2266,
+   "Gold": 1313,
+   "Gpm": 356,
+   "Xpm": 738,
+   "LastHits": 64,
+   "Level": 22
+  },
+  {
+   "Clock": 2296,
+   "Gold": 1770,
+   "Gpm": 363,
+   "Xpm": 744,
+   "LastHits": 72,
+   "Level": 22
+  },
+  {
+   "Clock": 2326,
+   "Gold": 377,
+   "Gpm": 366,
+   "Xpm": 744,
+   "LastHits": 74,
+   "Level": 23
+  },
+  {
+   "Clock": 2356,
+   "Gold": 427,
+   "Gpm": 363,
+   "Xpm": 734,
+   "LastHits": 74,
+   "Level": 23
+  },
+  {
+   "Clock": 2386,
+   "Gold": 694,
+   "Gpm": 365,
+   "Xpm": 728,
+   "LastHits": 77,
+   "Level": 23
+  },
+  {
+   "Clock": 2416,
+   "Gold": 1129,
+   "Gpm": 371,
+   "Xpm": 740,
+   "LastHits": 81,
+   "Level": 23
+  },
+  {
+   "Clock": 2446,
+   "Gold": 2413,
+   "Gpm": 398,
+   "Xpm": 928,
+   "LastHits": 81,
+   "Level": 25
+  },
+  {
+   "Clock": 2477,
+   "Gold": 864,
+   "Gpm": 395,
+   "Xpm": 931,
+   "LastHits": 81,
+   "Level": 26
+  },
+  {
+   "Clock": 2507,
+   "Gold": 1091,
+   "Gpm": 395,
+   "Xpm": 929,
+   "LastHits": 83,
+   "Level": 26
+  },
+  {
+   "Clock": 2537,
+   "Gold": 1241,
+   "Gpm": 394,
+   "Xpm": 927,
+   "LastHits": 83,
+   "Level": 26
+  },
+  {
+   "Clock": 2567,
+   "Gold": 2215,
+   "Gpm": 412,
+   "Xpm": 971,
+   "LastHits": 90,
+   "Level": 26
+  },
+  {
+   "Clock": 2598,
+   "Gold": 2200,
+   "Gpm": 417,
+   "Xpm": 961,
+   "LastHits": 90,
+   "Level": 26
+  },
+  {
+   "Clock": 2628,
+   "Gold": 551,
+   "Gpm": 413,
+   "Xpm": 950,
+   "LastHits": 90,
+   "Level": 26
+  },
+  {
+   "Clock": 2658,
+   "Gold": 806,
+   "Gpm": 414,
+   "Xpm": 939,
+   "LastHits": 90,
+   "Level": 26
+  },
+  {
+   "Clock": 2688,
+   "Gold": 1281,
+   "Gpm": 420,
+   "Xpm": 942,
+   "LastHits": 97,
+   "Level": 26
+  },
+  {
+   "Clock": 2718,
+   "Gold": 1683,
+   "Gpm": 424,
+   "Xpm": 943,
+   "LastHits": 102,
+   "Level": 26
+  },
+  {
+   "Clock": 2748,
+   "Gold": 1913,
+   "Gpm": 425,
+   "Xpm": 943,
+   "LastHits": 103,
+   "Level": 26
+  },
+  {
+   "Clock": 2778,
+   "Gold": 209,
+   "Gpm": 428,
+   "Xpm": 941,
+   "LastHits": 105,
+   "Level": 27
+  },
+  {
+   "Clock": 2809,
+   "Gold": 1330,
+   "Gpm": 447,
+   "Xpm": 1043,
+   "LastHits": 111,
+   "Level": 27
+  },
+  {
+   "Clock": 2839,
+   "Gold": 2055,
+   "Gpm": 457,
+   "Xpm": 1038,
+   "LastHits": 113,
+   "Level": 27
+  },
+  {
+   "Clock": 2869,
+   "Gold": 3051,
+   "Gpm": 474,
+   "Xpm": 1128,
+   "LastHits": 116,
+   "Level": 28
+  },
+  {
+   "Clock": 2900,
+   "Gold": 3139,
+   "Gpm": 470,
+   "Xpm": 1119,
+   "LastHits": 116,
+   "Level": 28
+  },
+  {
+   "Clock": 2930,
+   "Gold": 629,
+   "Gpm": 484,
+   "Xpm": 1225,
+   "LastHits": 116,
+   "Level": 29
+  },
+  {
+   "Clock": 2960,
+   "Gold": 1168,
+   "Gpm": 490,
+   "Xpm": 1225,
+   "LastHits": 116,
+   "Level": 29
+  },
+  {
+   "Clock": 2990,
+   "Gold": 167,
+   "Gpm": 499,
+   "Xpm": 1260,
+   "LastHits": 116,
+   "Level": 29
+  },
+  {
+   "Clock": 3020,
+   "Gold": 486,
+   "Gpm": 500,
+   "Xpm": 1261,
+   "LastHits": 121,
+   "Level": 29
+  },
+  {
+   "Clock": 3051,
+   "Gold": 540,
+   "Gpm": 496,
+   "Xpm": 1256,
+   "LastHits": 121,
+   "Level": 29
+  },
+  {
+   "Clock": 3081,
+   "Gold": 1608,
+   "Gpm": 512,
+   "Xpm": 1253,
+   "LastHits": 121,
+   "Level": 30
+  }
+ ],
+ "ItemTimings": {
+  "item_mantle": 0,
+  "item_circlet": 0,
+  "item_recipe_null_talisman": 326,
+  "item_boots": 327,
+  "item_null_talisman": 370,
+  "item_staff_of_wizardry": 493,
+  "item_recipe_rod_of_atos": 573,
+  "item_rod_of_atos": 950,
+  "item_point_booster": 1078,
+  "item_ogre_axe": 1397,
+  "item_blade_of_alacrity": 1482,
+  "item_ultimate_scepter": 1508,
+  "item_aghanims_shard": 1640,
+  "item_chasm_stone": 2068,
+  "item_recipe_gungir": 2077,
+  "item_gungir": 2094,
+  "item_ring_of_tarrasque": 2310,
+  "item_recipe_refresher": 2449,
+  "item_refresher": 2625,
+  "item_recipe_octarine_core": 2912,
+  "item_octarine_core": 3009
+ },
+ "Alerts": {
+  "alert_stash": 3,
+  "alert_wards_stash": 1,
+  "alert_no_tp": 2,
+  "alert_buyback": 1
+ },
+ "AlertsIgnored": {
+  "alert_no_tp": 1
+ },
+ "DeathEvents": [
+  {
+   "Clock": 610,
+   "GoldAtRisk": 62,
+   "HadTeleport": true,
+   "BuybackReady": false,
+   "Level": 6,
+   "X": 4882,
+   "Y": -4279
+  },
+  {
+   "Clock": 1669,
+   "GoldAtRisk": 181,
+   "HadTeleport": true,
+   "BuybackReady": false,
+   "Level": 16,
+   "X": 1166,
+   "Y": 1437
+  },
+  {
+   "Clock": 2137,
+   "GoldAtRisk": 152,
+   "HadTeleport": true,
+   "BuybackReady": false,
+   "Level": 21,
+   "X": -2187,
+   "Y": 2572
+  },
+  {
+   "Clock": 2572,
+   "GoldAtRisk": 1592,
+   "HadTeleport": true,
+   "BuybackReady": true,
+   "Level": 26,
+   "X": 855,
+   "Y": 2818
+  },
+  {
+   "Clock": 2768,
+   "GoldAtRisk": 927,
+   "HadTeleport": true,
+   "BuybackReady": true,
+   "Level": 27,
+   "X": -140,
+   "Y": 368
+  },
+  {
+   "Clock": 3083,
+   "GoldAtRisk": 1279,
+   "HadTeleport": true,
+   "BuybackReady": false,
+   "Level": 30,
+   "X": 4047,
+   "Y": 3986
+  }
+ ]
+}

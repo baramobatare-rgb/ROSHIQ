@@ -1,0 +1,50 @@
+== gsi-real-1 hero=40 pos=HardSupport dur=1593 k/d/a=2/4/17 gpm=303
+partial=False coverage=1.00 samples=53 deaths=4
+postmatch compared=0 basis=- main=- good=kda
+  good: Хорошее участие: 2/4/17.
+breakdown compared=0 basis=- late=0
+  lane 0-600 deaths=0 goldLost=0 lh=8/- gpm=200/- covered=True
+  mid 600-1500 deaths=4 goldLost=587 lh=18/- gpm=272/- covered=True
+  late 1500-1593 deaths=0 goldLost=0 lh=20/- gpm=289/- covered=True
+goal suggest=CarryTeleport target=0 item=-
+  goal GoldOnDeath(1000) = True/0
+  goal FewerDeaths(5) = True/4
+  goal CarryTeleport(0) = False/2
+  goal CourierStash(0) = False/3
+== gsi-real-2 hero=74 pos=HardSupport dur=3107 k/d/a=8/6/40 gpm=512
+partial=False coverage=1.00 samples=103 deaths=6
+postmatch compared=0 basis=- main=- good=kda
+  good: Хорошее участие: 8/6/40.
+breakdown compared=0 basis=- late=0
+  lane 0-600 deaths=0 goldLost=0 lh=13/- gpm=207/- covered=True
+  mid 600-1500 deaths=1 goldLost=62 lh=45/- gpm=316/- covered=True
+  late 1500-3107 deaths=5 goldLost=4131 lh=121/- gpm=512/- covered=True
+goal suggest=GoldOnDeath target=1000 item=-
+  goal GoldOnDeath(1000) = False/2
+  goal FewerDeaths(5) = False/6
+  goal CarryTeleport(0) = False/2
+  goal CourierStash(0) = False/4
+== gsi-real-3 hero=48 pos=Carry dur=2814 k/d/a=21/7/17 gpm=760
+partial=False coverage=1.00 samples=94 deaths=7
+postmatch compared=0 basis=- main=- good=kda
+  good: Хорошее участие: 21/7/17.
+breakdown compared=0 basis=- late=0
+  lane 0-600 deaths=1 goldLost=204 lh=44/- gpm=338/- covered=True
+  mid 600-1500 deaths=2 goldLost=669 lh=233/- gpm=552/- covered=True
+  late 1500-2814 deaths=4 goldLost=5522 lh=493/- gpm=762/- covered=True
+goal suggest=GoldOnDeath target=1000 item=-
+  goal GoldOnDeath(1000) = False/3
+  goal FewerDeaths(5) = False/7
+  goal CarryTeleport(0) = False/4
+  goal CourierStash(0) = False/4
+== od-real-4 hero=105 pos=- dur=2512 k/d/a=9/12/16 gpm=461
+partial=False coverage=0.00 samples=0 deaths=0
+postmatch compared=0 basis=- main=deaths good=win
+  main: Много смертей: 12.
+  good: Победа — отличная работа.
+breakdown -
+goal suggest=- target=- item=-
+  goal GoldOnDeath(1000) = -
+  goal FewerDeaths(5) = -
+  goal CarryTeleport(0) = -
+  goal CourierStash(0) = -

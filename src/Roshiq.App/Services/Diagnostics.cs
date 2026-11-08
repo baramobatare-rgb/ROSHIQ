@@ -160,6 +160,14 @@ public static class DiagnosticsRunner
         else
             list.Add(new(CheckStatus.Ok, L.Get("diag_errors"), L.Get("diag_errors_none")));
 
+        // 9б. Журнал подсказок — чтобы по фактам видеть, что помощник говорил в матчах
+        var tipsDir = host.TipLog.Dir;
+        int tipFiles = host.TipLog.Count();
+        list.Add(tipFiles > 0
+            ? new(CheckStatus.Info, L.Get("diag_tips"), L.Format("diag_tips_files", tipFiles), L.Get("diag_fix_show"),
+                () => { OpenPath(tipsDir); return Task.FromResult<string?>(null); })
+            : new(CheckStatus.Info, L.Get("diag_tips"), L.Get("diag_tips_none")));
+
         // 10. Нагрузка самого ROSHIQ (раньше была на «Обзоре»)
         var mon = host.Monitor;
         list.Add(new(CheckStatus.Info, L.Get("diag_perf"), L.Format("dash_perf_line", mon.CpuPercent.ToString("0.0"), mon.WorkingSetMb.ToString("0"),
