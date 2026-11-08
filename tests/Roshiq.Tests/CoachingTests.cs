@@ -14,8 +14,9 @@ public class CoachingTests
         var m = new MatchRecord
         {
             Id = "gsi-" + id, MatchId = id, Source = "GSI", HeroId = heroId, Position = pos, Gpm = gpm, Deaths = deaths,
-            StartedUtc = when ?? DateTime.UtcNow, Result = result, DurationSec = 2400
+            StartedUtc = when ?? DateTime.UtcNow, Result = result, DurationSec = 2400, Ended = true
         };
+        m.Coverage.Add(new CoverageSpan { From = 0, To = 2400 });     // полная запись (неполные цели не засчитывают)
         if (lh10 != null) m.Samples.Add(new MatchSample { Clock = 600, LastHits = lh10 });
         return m;
     }
@@ -190,9 +191,9 @@ public class CoachingTests
         var s = new AlertSettings();
         var noTp = new Dictionary<string, string> { ["slot0"] = "item_blink", ["teleport0"] = "empty" };
         InventoryState St(int clock) => new(clock, true, 500, null, noTp, Position.Carry);
-        a.Tick(St(300), s);
-        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(St(321), s));
-        a.Tick(St(381), s);
+        for (int c = 300; c <= 319; c++) a.Tick(St(c), s);
+        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(St(320), s));            // выдержка 20 с при тактах раз в секунду
+        for (int c = 321; c <= 380; c++) a.Tick(St(c), s);
         Assert.Equal(1, a.Ignored[MatchAlerts.NoTeleport]);
 
         var history = Enumerable.Range(0, 2).Select(i => new MatchRecord

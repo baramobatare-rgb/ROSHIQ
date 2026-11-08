@@ -45,13 +45,16 @@ public enum TeamPhase { Even, EarlyStronger, LateStronger }
 public sealed record TeamTiming(TeamPhase Ours, IReadOnlyList<Hero> OurEarly, IReadOnlyList<Hero> OurLate,
     IReadOnlyList<Hero> TheirEarly, IReadOnlyList<Hero> TheirLate)
 {
-    /// <summary>Главный план на игру одной строкой.</summary>
+    /// <summary>
+    /// Главный план на игру одной строкой. Это склонность состава по признакам героев, а не оценка текущей силы:
+    /// реальный перевес зависит от фарма, предметов и карты, поэтому формулировки условные.
+    /// </summary>
     public (string Ru, string En)? Plan => Ours switch
     {
-        TeamPhase.EarlyStronger => ("Ваш состав сильнее рано — давите вышки и Рошана до 25–30 минут, не давайте врагу дофармиться.",
-            "Your draft is stronger early — take towers and Roshan before 25–30 minutes, don't let the enemy farm up."),
-        TeamPhase.LateStronger => ("Ваш состав сильнее поздно — переживите первые 15–20 минут, не отдавайте лишних смертей и фармите.",
-            "Your draft is stronger late — survive the first 15–20 minutes, avoid needless deaths and farm."),
+        TeamPhase.EarlyStronger => ("По героям ваш состав скорее силён в начале игры — если линии прошли ровно, выгоднее давить вышки и Рошана до 25–30 минут.",
+            "By hero traits your draft leans early — if the lanes went even, pressuring towers and Roshan before 25–30 minutes pays off."),
+        TeamPhase.LateStronger => ("По героям ваш состав скорее силён позже — если враг давит, не отдавайте лишних смертей и фармите безопасно.",
+            "By hero traits your draft leans late — if the enemy is pressing, avoid needless deaths and farm safely."),
         _ => null
     };
 }
@@ -72,6 +75,15 @@ public static class PowerSpikes
         "item_swift_blink", "item_arcane_blink", "item_wind_waker", "item_witch_blade", "item_parasma", "item_khanda", "item_revenants_brooch"
     };
 
+    /// <summary>Предметы на доход: о них сообщаем нейтрально, без призыва к драке.</summary>
+    public static readonly IReadOnlySet<string> FarmItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+        "item_hand_of_midas", "item_bfury"
+    };
+
+    /// <summary>Ключ текста уведомления о готовом предмете: доходный — «фарм быстрее», остальные — без приказа драться.</summary>
+    public static string ItemMessageKey(string itemKey) => FarmItems.Contains(itemKey) ? "spike_item_farm" : "spike_item";
+
     public static TeamTiming Compare(IReadOnlyList<Hero> allies, IReadOnlyList<Hero> enemies)
     {
         var oe = allies.Where(h => h.Has("early_game")).ToList();
@@ -89,21 +101,27 @@ public static class PowerSpikes
         return new TeamTiming(phase, oe, ol, te, tl);
     }
 
-    /// <summary>Подсказка по времени игры (один раз за матч на каждую): что сейчас выгодно составу.</summary>
-    public static (string Key, string Ru, string En)? ClockReminder(TeamTiming t, int clock)
+    /// <summary>Сколько секунд после окна подсказка по времени ещё уместна (дольше — снимается без показа).</summary>
+    public const int ReminderGraceSec = 60;
+
+    /// <summary>
+    /// Подсказка по времени игры (один раз за матч на каждую). По таймеру известна только склонность состава
+    /// по признакам героев, а не кто сильнее сейчас, — поэтому текст условный. Until — до какой секунды игры она уместна.
+    /// </summary>
+    public static (string Key, string Ru, string En, int Until)? ClockReminder(TeamTiming t, int clock)
     {
         if (t.Ours == TeamPhase.EarlyStronger && clock is >= 720 and < 780)
-            return ("spike_push", "Сейчас ваше время: соберитесь вместе, сносите вышки и берите Рошана, пока враг не дофармился.",
-                "This is your window: group up, take towers and Roshan before the enemy farms up.");
+            return ("spike_push", "По составу это окно для давления: если по фарму вы не отстаёте, вместе выгоднее брать вышки и Рошана сейчас, чем позже.",
+                "By draft this is a window to press: if you are not behind in farm, towers and Roshan together pay off more now than later.", 780 + ReminderGraceSec);
         if (t.Ours == TeamPhase.EarlyStronger && clock is >= 1680 and < 1740)
-            return ("spike_closing", "Окно силы вашего состава закрывается — не затягивайте, ищите решающую драку или Рошана.",
-                "Your draft's power window is closing — don't drag it out, look for a decisive fight or Roshan.");
+            return ("spike_closing", "Ранняя склонность вашего состава со временем слабеет — если есть преимущество, не затягивайте игру.",
+                "Your draft's early lean fades with time — if you have the advantage, don't drag the game out.", 1740 + ReminderGraceSec);
         if (t.Ours == TeamPhase.LateStronger && clock is >= 600 and < 660)
-            return ("spike_survive", "Враг сильнее сейчас — не отдавайте смертей, фармите безопасно, отдавайте вышки, а не героев.",
-                "The enemy is stronger now — don't feed, farm safely, give up towers rather than heroes.");
+            return ("spike_survive", "По героям враг скорее сильнее в этой фазе — если не уверены в драке, берегите героев и отдавайте вышки, а не смерти.",
+                "By hero traits the enemy likely leans stronger in this phase — if unsure about a fight, save heroes and give towers rather than deaths.", 660 + ReminderGraceSec);
         if (t.Ours == TeamPhase.LateStronger && clock is >= 2100 and < 2160)
-            return ("spike_now", "Время работает на вас — ваш состав уже сильнее, можно навязывать драки.",
-                "Time is on your side — your draft is stronger now, you can force fights.");
+            return ("spike_now", "По героям ваш состав скорее выигрывает от долгой игры — если по фарму и предметам не отстаёте, драки становятся выгоднее.",
+                "By hero traits your draft likely gains from a long game — if you are not behind in farm and items, fights get more favourable.", 2160 + ReminderGraceSec);
         return null;
     }
 

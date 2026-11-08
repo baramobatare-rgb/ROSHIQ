@@ -3,7 +3,8 @@ using Roshiq.Core.Models;
 namespace Roshiq.Recommendations;
 
 /// <summary>Итог матча сразу после игры: что получилось и одна главная ошибка — по своей истории, без интернета.</summary>
-public sealed record PostMatchSummary(MatchRecord Match, IReadOnlyList<Insight> Good, Insight? MainMistake, int Compared)
+/// <param name="Basis">Основание сравнения (ключ строки: bd_basis_hero_role / bd_basis_role / bd_basis_hero); null — сравнения нет.</param>
+public sealed record PostMatchSummary(MatchRecord Match, IReadOnlyList<Insight> Good, Insight? MainMistake, int Compared, string? Basis = null)
 {
     public bool HasContent => Good.Count > 0 || MainMistake != null;
 }
@@ -15,16 +16,27 @@ public static class PostMatch
 
     public static bool Worth(MatchRecord m) => m.FromGsi && m.DurationSec >= MinDurationSec;
 
+    /// <summary>Минимум надёжных значений показателя в выборке, чтобы сравнивать с «обычным».</summary>
+    public const int MinValues = 3;
+
     /// <summary>
-    /// Сравнение со своими матчами: сначала на этом герое (от 3 игр), иначе на этой роли, иначе со всеми.
-    /// Положительные пункты — в Good (до двух), самый важный отрицательный — MainMistake.
+    /// Сравнение со своими матчами той же роли: сначала этот герой в этой роли (от 3 игр), иначе эта роль; другие роли — никогда.
+    /// Роль неизвестна — только этот герой с неизвестной ролью. Каждый показатель сравнивается, только если у него
+    /// не меньше 3 надёжных значений; иначе — только абсолютные пороги. Положительные пункты — в Good (до двух),
+    /// самый важный отрицательный — MainMistake.
     /// </summary>
     public static PostMatchSummary Build(MatchRecord m, IEnumerable<MatchRecord> history, Func<string, string?>? itemName = null)
     {
-        var others = history.Where(h => h.Id != m.Id && h.DurationSec >= MinDurationSec).ToList();
-        var pool = others.Where(h => h.HeroId == m.HeroId).ToList();
-        if (pool.Count < 3) pool = others.Where(h => m.Position != null && h.Position == m.Position).ToList();
-        if (pool.Count < 3) pool = others;
+        // обрыв записи (не видели конец матча) — итоговые счётчики неполные, такие игры не берём в «обычное»
+        var others = history.Where(h => h.Id != m.Id && h.DurationSec >= MinDurationSec && h.Ended != false).ToList();
+        var pool = others.Where(h => h.HeroId == m.HeroId && h.Position == m.Position).ToList();
+        string? basis = m.Position == null ? "bd_basis_hero" : "bd_basis_hero_role";
+        if (pool.Count < MinValues && m.Position != null)
+        {
+            pool = others.Where(h => h.Position == m.Position).ToList();
+            basis = "bd_basis_role";
+        }
+        if (pool.Count < MinValues) { pool.Clear(); basis = null; }
 
         var good = new List<Insight>();
         var bad = new List<Insight>();
@@ -39,7 +51,7 @@ public static class PostMatch
                 bad.Add(new("deaths", -3 - (int)Math.Min(2, (deathsPer10 - avg) / Math.Max(0.5, avg)),
                     $"Смертей больше обычного: {m.Deaths} (обычно ~{avg * minutes / 10:0} за такую игру).{DeathPhase(m, true)}",
                     $"More deaths than usual: {m.Deaths} (usually ~{avg * minutes / 10:0} for this length).{DeathPhase(m, false)}"));
-            else if (deathsPer10 <= avg * 0.6 && minutes >= 20)
+            else if (deathsPer10 <= avg * 0.6 && minutes >= 20 && !m.Partial)   // неполную запись за «мало смертей» не хвалим
                 good.Add(new("deaths", 2, $"Мало смертей: {m.Deaths} — заметно реже обычного.", $"Few deaths: {m.Deaths} — clearly fewer than usual."));
         }
         else if (m.Deaths >= 10)
@@ -51,7 +63,7 @@ public static class PostMatch
         int? target = MatchReviewBuilder.LastHitTarget(m.Position);
         if (lh10 is int lh && (m.Position is Position.Carry or Position.Mid or Position.Offlane || m.Position == null))
         {
-            if (poolLh.Count >= 3)
+            if (poolLh.Count >= MinValues)
             {
                 double avg = poolLh.Average();
                 if (lh >= avg * 1.2 && lh >= 30)
@@ -64,9 +76,10 @@ public static class PostMatch
         }
 
         // --- доход
-        if (pool.Count >= 3 && m.Gpm > 0)
+        var poolGpm = pool.Where(h => h.Gpm > 0).Select(h => (double)h.Gpm).ToList();
+        if (poolGpm.Count >= MinValues && m.Gpm > 0)
         {
-            double avg = pool.Where(h => h.Gpm > 0).Select(h => (double)h.Gpm).DefaultIfEmpty(0).Average();
+            double avg = poolGpm.Average();
             if (avg > 0 && m.Gpm >= avg * 1.15)
                 good.Add(new("gpm", 1, $"Хороший фарм: {m.Gpm} золота в минуту (обычно ~{avg:0}).", $"Good farm: {m.Gpm} GPM (usually ~{avg:0})."));
             else if (avg > 0 && m.Gpm <= avg * 0.8 && m.Position is Position.Carry or Position.Mid)
@@ -114,7 +127,7 @@ public static class PostMatch
             good.Add(new("win", 1, "Победа — отличная работа.", "A win — well played."));
 
         var main = bad.OrderBy(b => b.Severity).FirstOrDefault();
-        return new PostMatchSummary(m, good.OrderByDescending(g => g.Severity).Take(2).ToList(), main, pool.Count);
+        return new PostMatchSummary(m, good.OrderByDescending(g => g.Severity).Take(2).ToList(), main, pool.Count, basis);
     }
 
     /// <summary>One concrete next-game action tied to the observed main issue.</summary>

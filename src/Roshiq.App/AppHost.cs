@@ -706,12 +706,22 @@ public sealed class AppHost : IDisposable
     }
 
     /// <summary>Уведомления: совет на линию на старте, подсказки по фазам составов и пики силы по предметам.</summary>
+    /// <summary>Совет на линию уместен только в самом начале игры.</summary>
+    private const int LaneTipUntil = 150;
+
+    /// <summary>Игровое время того же матча по последнему снимку GSI; null — матч другой или не идёт.</summary>
+    private int? LiveClock(string? matchId) =>
+        LastGsi is { IsInProgress: true, ClockTime: int c } g && g.MatchId == matchId ? c : null;
+
     private void TickGameInsights(GameStateSnapshot snap)
     {
         if (!snap.IsInProgress || snap.ClockTime is not int clock) return;
         var a = Settings.Current.Automation;
         var L = Loc.Instance;
 
+        // советы привязаны к моменту игры: если показ задержался (пауза, смерть, напоминание саппорту, пропуск GSI),
+        // перед показом проверяем, что это тот же матч и момент ещё не прошёл
+        var matchId = snap.MatchId;
         if (a.LaneTips && clock is >= 0 and < 40 && _spikesShown.Add("lane_start"))
         {
             var advice = LaneAdvice.Where(x => x.Tips.Count > 0).Take(2).ToList();
@@ -719,15 +729,16 @@ public sealed class AppHost : IDisposable
             {
                 ShowEventToast(L.Get("lane_title").ToUpperInvariant(), string.Join("  ", advice.Select(x =>
                     x.Hero.DisplayName(L.Language) + ": " + (L.Language == Language.Russian ? x.Tips[0].Ru : x.Tips[0].En))),
-                    kind: "lane", ttlSec: 90, inGame: true);
+                    kind: "lane", ttlSec: 90, inGame: true, stillValid: () => LiveClock(matchId) is int c && c < LaneTipUntil);
             }
         }
 
         if (!a.PowerSpikes) return;
         if (CurrentTiming is { } timing && PowerSpikes.ClockReminder(timing, clock) is { } r && _spikesShown.Add(r.Key))
         {
+            int until = r.Until;
             ShowEventToast(L.Get("spike_header").ToUpperInvariant(), L.Language == Language.Russian ? r.Ru : r.En,
-                kind: "spike", key: "spike:" + r.Key, ttlSec: 60, inGame: true);
+                kind: "spike", key: "spike:" + r.Key, ttlSec: 60, inGame: true, stillValid: () => LiveClock(matchId) is int c && c < until);
         }
 
         var owned = snap.InventoryItems;
@@ -743,8 +754,11 @@ public sealed class AppHost : IDisposable
         foreach (var key in PowerSpikes.NewSpikes(owned, _spikeItems, Costs.Cost, core).Where(_ => a.ShowBuild))
         {
             var name = Database.FindItem(key)?.DisplayName(L.Language) ?? key;
-            ShowEventToast(L.Get("spike_item_header").ToUpperInvariant(), L.Format("spike_item", name),
-                kind: "spike_item", key: "spike_item:" + key, ttlSec: 45, inGame: true);
+            var item = key;
+            // доходный предмет — нейтрально, остальные — без приказа драться; предмет продан или отдан — совет снимается
+            ShowEventToast(L.Get("spike_item_header").ToUpperInvariant(), L.Format(PowerSpikes.ItemMessageKey(key), name),
+                kind: "spike_item", key: "spike_item:" + key, ttlSec: 45, inGame: true,
+                stillValid: () => LiveClock(matchId) != null && LastGsi?.InventoryItems?.Contains(item, StringComparer.OrdinalIgnoreCase) == true);
             break; // за раз — одно уведомление
         }
     }
@@ -1627,6 +1641,8 @@ public sealed class AppHost : IDisposable
     private void TickPace(int clock)
     {
         if (!Settings.Current.Alerts.Pace || _pace == null || _recorder.Current is not MatchRecord cur) return;
+        // роль уточнилась после старта (автоопределение) — «обычный темп» берём для настоящей роли, а не прошлой игры
+        if (cur.Position is Position role && role != _pace.Position) _pace = _pace.ForPosition(role);
         var L = Loc.Instance;
         if (_pace.CheckpointDue(clock, LastGsi?.LastHits) is PaceCheck check)
         {

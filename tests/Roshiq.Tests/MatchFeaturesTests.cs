@@ -129,10 +129,10 @@ public class AlertTests
     {
         var a = new MatchAlerts();
         var s = new AlertSettings();
-        Assert.Null(a.Tick(State(300, tp: false), s));
-        Assert.Null(a.Tick(State(310, tp: false), s));
-        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(State(321, tp: false), s));
-        Assert.Null(a.Tick(State(330, tp: false), s)); // кулдаун
+        // такты раз в секунду, как в программе (разрыв больше 10 с — пропуск данных, см. AdviceIntegrityTests)
+        for (int c = 300; c <= 319; c++) Assert.Null(a.Tick(State(c, tp: false), s));
+        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(State(320, tp: false), s));
+        for (int c = 321; c <= 330; c++) Assert.Null(a.Tick(State(c, tp: false), s)); // кулдаун
         Assert.Equal(1, a.Counts[MatchAlerts.NoTeleport]);
     }
 

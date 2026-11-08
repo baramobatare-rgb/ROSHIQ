@@ -32,6 +32,8 @@ public sealed class MatchAlerts
     public static readonly string[] AllKeys = { NoTeleport, WardsInStash, ItemsInStash, UnspentGold, NoBuyback };
     /// <summary>Подсказка считается проигнорированной, если условие держится столько секунд после показа.</summary>
     public const int IgnoreAfterSec = 60;
+    /// <summary>Разрыв игрового времени между тактами больше этого — пропуск данных: непрерывности условия не видели.</summary>
+    public const int GapSec = 10;
 
     private static readonly Dictionary<string, (int SustainSec, int CooldownSec)> Timing = new()
     {
@@ -151,6 +153,13 @@ public sealed class MatchAlerts
     public string? Tick(InventoryState s, AlertSettings settings, int teleportCost = 100)
     {
         if (_lastClock is int prev && s.Clock + 30 < prev) Reset();
+        else if (_lastClock is int last && s.Clock - last > GapSec)
+        {
+            // пропуск данных (переподключение, сбой GSI): время пропуска не идёт ни в «условие держится», ни в оценку показа —
+            // выдержка начинается заново, прошлые показы закрываются без вывода; перерывы и счётчики показов сохраняются
+            _since.Clear();
+            foreach (var (key, shown) in _lastShown) _ignoreChecked.Add((key, shown));
+        }
         _lastClock = s.Clock;
 
         var active = Conditions(s, settings, teleportCost);

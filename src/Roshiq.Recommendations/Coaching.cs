@@ -50,6 +50,18 @@ public sealed class PaceAdvisor
     public int HeroId { get; }
     public Position Position { get; }
 
+    /// <summary>
+    /// Роль матча уточнилась (автоопределение после старта): тот же советник для новой роли.
+    /// Уже объявленные точки и предметы не повторяются; история заново не читается.
+    /// </summary>
+    public PaceAdvisor ForPosition(Position position)
+    {
+        var next = new PaceAdvisor(_all, HeroId, position);
+        next._announced.UnionWith(_announced);
+        next._itemsAnnounced.UnionWith(_itemsAnnounced);
+        return next;
+    }
+
     public (int Avg, int Matches, bool SameHero)? UsualLastHits(int clock)
     {
         static List<int> Values(IEnumerable<MatchRecord> src, int c) =>
@@ -165,18 +177,22 @@ public static class GoalEngine
     private static int AlertCount(MatchRecord m, params string[] keys) =>
         keys.Sum(k => m.Alerts.TryGetValue(k, out var c) ? c : 0);
 
-    /// <summary>Проверить цель на матче. null — по этому матчу цель не измерить (нет данных или другая роль).</summary>
+    /// <summary>
+    /// Проверить цель на матче. null — по этому матчу цель не измерить (нет данных или другая роль).
+    /// Цели «чего-то не было» на неполной записи засчитать нельзя: отсутствие события в пропуске — не доказательство;
+    /// замеченное нарушение при этом остаётся настоящим провалом.
+    /// </summary>
     public static (bool Achieved, int Value)? Evaluate(CoachGoal goal, MatchRecord m)
     {
         if (!m.FromGsi) return null;
+        (bool, int)? Absence(int v) => v == 0 && m.Partial ? null : (v == 0, v);
         switch (goal.Kind)
         {
             case GoalKind.GoldOnDeath:
-            {
-                int v = m.DeathEvents.Count(d => d.GoldAtRisk >= goal.Target);
-                return (v == 0, v);
-            }
+                return Absence(m.DeathEvents.Count(d => d.GoldAtRisk >= goal.Target));
             case GoalKind.FewerDeaths:
+                // не видели конец матча — смерти посчитаны только до обрыва
+                if (m.Deaths <= goal.Target && m.Ended == false) return null;
                 return (m.Deaths <= goal.Target, m.Deaths);
             case GoalKind.LastHits10:
             {
@@ -185,15 +201,9 @@ public static class GoalEngine
                 return (lh >= goal.Target, lh);
             }
             case GoalKind.CarryTeleport:
-            {
-                int v = m.DeathEvents.Count(d => !d.HadTeleport && d.Clock >= 300) + AlertCount(m, MatchAlerts.NoTeleport);
-                return (v == 0, v);
-            }
+                return Absence(m.DeathEvents.Count(d => !d.HadTeleport && d.Clock >= 300) + AlertCount(m, MatchAlerts.NoTeleport));
             case GoalKind.CourierStash:
-            {
-                int v = AlertCount(m, MatchAlerts.ItemsInStash, MatchAlerts.WardsInStash);
-                return (v == 0, v);
-            }
+                return Absence(AlertCount(m, MatchAlerts.ItemsInStash, MatchAlerts.WardsInStash));
             case GoalKind.ItemTiming:
             {
                 // тайминг, увиденный после пропуска данных, — не точный: исход цели неизвестен

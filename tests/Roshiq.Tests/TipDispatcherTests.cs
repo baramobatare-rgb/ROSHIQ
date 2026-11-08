@@ -105,12 +105,12 @@ public class TipDispatcherTests
     {
         var a = new MatchAlerts();
         var s = new AlertSettings();
-        a.Tick(new InventoryState(300, true, 500, null, NoTp, Position.Carry), s);
-        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(new InventoryState(321, true, 500, null, NoTp, Position.Carry), s));
+        for (int c = 300; c <= 319; c++) a.Tick(new InventoryState(c, true, 500, null, NoTp, Position.Carry), s);
+        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(new InventoryState(320, true, 500, null, NoTp, Position.Carry), s));
         a.Retract(MatchAlerts.NoTeleport);                                       // на экран не попала
         Assert.False(a.Counts.ContainsKey(MatchAlerts.NoTeleport));
         // снова можно предложить сразу, без кулдауна, и минуты «игнора» не будет
-        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(new InventoryState(322, true, 500, null, NoTp, Position.Carry), s));
+        Assert.Equal(MatchAlerts.NoTeleport, a.Tick(new InventoryState(321, true, 500, null, NoTp, Position.Carry), s));
         Assert.Equal(1, a.Counts[MatchAlerts.NoTeleport]);
     }
 
@@ -119,16 +119,14 @@ public class TipDispatcherTests
     {
         var a = new MatchAlerts();
         var s = new AlertSettings();
-        a.Tick(new InventoryState(300, true, 500, null, NoTp, Position.Carry), s);
-        a.Tick(new InventoryState(321, true, 500, null, NoTp, Position.Carry), s);
+        for (int c = 300; c <= 339; c++) a.Tick(new InventoryState(c, true, 500, null, NoTp, Position.Carry), s);   // показ на 320
         a.Tick(new InventoryState(340, true, 400, null, WithTp, Position.Carry), s);   // купил телепорт
         Assert.Equal(1, a.Followed[MatchAlerts.NoTeleport]);
         Assert.False(a.Ignored.ContainsKey(MatchAlerts.NoTeleport));
 
         var b = new MatchAlerts();
-        b.Tick(new InventoryState(300, true, 500, null, NoTp, Position.Carry), s);
-        b.Tick(new InventoryState(321, true, 500, null, NoTp, Position.Carry), s);
-        b.Tick(new InventoryState(330, false, 500, null, NoTp, Position.Carry), s);    // умер
+        for (int c = 300; c <= 329; c++) b.Tick(new InventoryState(c, true, 500, null, NoTp, Position.Carry), s);
+        for (int c = 330; c < 400; c++) b.Tick(new InventoryState(c, false, 500, null, NoTp, Position.Carry), s);    // умер
         b.Tick(new InventoryState(400, true, 500, null, NoTp, Position.Carry), s);
         Assert.False(b.Followed.ContainsKey(MatchAlerts.NoTeleport));
         Assert.False(b.Ignored.ContainsKey(MatchAlerts.NoTeleport));
