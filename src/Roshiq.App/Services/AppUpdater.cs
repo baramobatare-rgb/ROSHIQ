@@ -126,9 +126,18 @@ public static class AppUpdater
             throw new InvalidOperationException($"Установщик подписан другим издателем ({theirs ?? "неизвестно"}). Обновление отменено.");
     }
 
+    /// <summary>Программа установлена установщиком — обновление ставится тихо поверх и перезапускает её само.</summary>
+    public static bool CanUpdateSilently => InstallerLaunch.IsInstalledCopy(AppContext.BaseDirectory);
+
+    /// <summary>
+    /// Запустить проверенный установщик. Для установленной копии — тихо (без мастера, с перезапуском ROSHIQ после установки),
+    /// для портативной — обычный мастер.
+    /// </summary>
     public static void RunInstaller(string path)
     {
-        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        bool silent = CanUpdateSilently;
+        Log.Info("Обновление: запуск установщика " + (silent ? "в тихом режиме (перезапуск после установки)" : "с мастером (портативная копия)"));
+        Process.Start(new ProcessStartInfo(path) { UseShellExecute = true, Arguments = InstallerLaunch.Arguments(silent) });
     }
 
     public static void OpenPage(string url)

@@ -71,3 +71,42 @@ public class ReportHygieneTests : IDisposable
         Assert.Null(w.GameSinceUtc);
     }
 }
+
+/// <summary>0.18.1: обновление без переустановки.</summary>
+public class InstallerLaunchTests : IDisposable
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "roshiq-inst-" + Guid.NewGuid().ToString("N"));
+
+    public InstallerLaunchTests() { Directory.CreateDirectory(_dir); }
+
+    public void Dispose() { try { Directory.Delete(_dir, true); } catch { } }
+
+    [Fact]
+    public void InstalledCopy_IsDetectedByUninstaller_PortableIsNot()
+    {
+        Assert.False(Roshiq.Core.Updates.InstallerLaunch.IsInstalledCopy(_dir));                 // распакованный zip
+        File.WriteAllText(Path.Combine(_dir, Roshiq.Core.Updates.InstallerLaunch.UninstallerName), "");
+        Assert.True(Roshiq.Core.Updates.InstallerLaunch.IsInstalledCopy(_dir));
+        Assert.False(Roshiq.Core.Updates.InstallerLaunch.IsInstalledCopy(Path.Combine(_dir, "нет")));
+    }
+
+    [Fact]
+    public void SilentArguments_NoWizard_ClosesApp_NoReboot_PortableGetsWizard()
+    {
+        var silent = Roshiq.Core.Updates.InstallerLaunch.Arguments(true);
+        foreach (var flag in new[] { "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS" })
+            Assert.Contains(flag, silent);
+        Assert.Equal("", Roshiq.Core.Updates.InstallerLaunch.Arguments(false));
+    }
+
+    [Fact]
+    public void InstallerScript_RelaunchesAppOnlyAfterSilentUpdate()
+    {
+        var iss = File.ReadAllText(Path.Combine(RepoRoot(), "installer", "Roshiq.iss"));
+        Assert.Contains("Flags: nowait skipifnotsilent", iss);
+        Assert.Contains("Flags: nowait postinstall skipifsilent", iss);
+    }
+
+    private static string RepoRoot([System.Runtime.CompilerServices.CallerFilePath] string self = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(self)!, "..", ".."));
+}

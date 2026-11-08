@@ -216,6 +216,8 @@ internal static class StringsExtra
         ["upd_app_latest"] = ("У вас последняя версия.", "You have the latest version."),
         ["upd_app_available"] = ("Доступна версия {0}.", "Version {0} is available."),
         ["upd_app_download_confirm"] = ("Скачать {0} ({1} МБ) для версии {2}?", "Download {0} ({1} MB) for version {2}?"),
+        ["upd_app_update_confirm"] = ("Обновить ROSHIQ до {2}? Скачается {1} МБ, обновление установится само, и программа перезапустится — переустанавливать ничего не нужно. Настройки и история сохранятся.",
+            "Update ROSHIQ to {2}? {1} MB will be downloaded, the update installs itself and the app restarts — no reinstall needed. Settings and history are kept."),
         ["upd_app_run_confirm"] = ("Установщик скачан. Запустить его сейчас? ROSHIQ закроется.", "The installer is downloaded. Run it now? ROSHIQ will close."),
         ["upd_app_saved"] = ("Установщик сохранён: {0}", "Installer saved: {0}"),
         ["upd_app_hint"] = ("Проверяется последний релиз на GitHub. Установщик скачивается только по кнопке и запускается после подтверждения.",

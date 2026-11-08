@@ -282,7 +282,8 @@ public partial class MainWindow : Window
 
         if (upd.InstallerUrl == null) { AppUpdater.OpenPage(upd.PageUrl); return; }
         var sizeMb = upd.InstallerSize > 0 ? (upd.InstallerSize / 1048576.0).ToString("0.0") : "?";
-        if (MessageBox.Show(this, L.Format("upd_app_download_confirm", upd.InstallerName ?? "setup.exe", sizeMb, upd.Tag), "ROSHIQ",
+        bool silent = AppUpdater.CanUpdateSilently;
+        if (MessageBox.Show(this, L.Format(silent ? "upd_app_update_confirm" : "upd_app_download_confirm", upd.InstallerName ?? "setup.exe", sizeMb, upd.Tag), "ROSHIQ",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         _updateBusy = true;
         UpdateButton.IsEnabled = false;
@@ -291,7 +292,8 @@ public partial class MainWindow : Window
         {
             var path = await AppUpdater.DownloadAsync(upd, new Progress<double>(p => UpdateText.Text = L.Format("top_update_progress", (int)Math.Round(p * 100))),
                 CancellationToken.None);
-            if (MessageBox.Show(this, L.Get("upd_app_run_confirm"), "ROSHIQ", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            // установленная копия: согласие уже дано — ставим тихо поверх, ROSHIQ перезапустится сам
+            if (silent || MessageBox.Show(this, L.Get("upd_app_run_confirm"), "ROSHIQ", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 AppUpdater.RunInstaller(path);
                 RequestExit();

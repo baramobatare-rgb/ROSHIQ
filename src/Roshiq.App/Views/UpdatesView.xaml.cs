@@ -233,7 +233,8 @@ public partial class UpdatesView : UserControl, IRefreshable
         var upd = App.Host.AvailableUpdate;
         if (upd?.InstallerUrl == null || _downloadCts != null) return;
         var sizeMb = upd.InstallerSize > 0 ? (upd.InstallerSize / 1048576.0).ToString("0.0") : "?";
-        if (MessageBox.Show(Loc.Instance.Format("upd_app_download_confirm", upd.InstallerName ?? "setup.exe", sizeMb, upd.Tag), "ROSHIQ",
+        bool silent = AppUpdater.CanUpdateSilently;
+        if (MessageBox.Show(Loc.Instance.Format(silent ? "upd_app_update_confirm" : "upd_app_download_confirm", upd.InstallerName ?? "setup.exe", sizeMb, upd.Tag), "ROSHIQ",
                 MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         _downloadCts = new CancellationTokenSource();
         InstallApp.IsEnabled = false;
@@ -243,7 +244,7 @@ public partial class UpdatesView : UserControl, IRefreshable
         {
             var path = await AppUpdater.DownloadAsync(upd, new Progress<double>(p => AppProgress.Value = p), _downloadCts.Token);
             AppendHistory($"Скачано обновление ROSHIQ {upd.Tag}");
-            if (MessageBox.Show(Loc.T("upd_app_run_confirm"), "ROSHIQ", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (silent || MessageBox.Show(Loc.T("upd_app_run_confirm"), "ROSHIQ", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 AppUpdater.RunInstaller(path);
                 if (Application.Current.MainWindow is MainWindow main) main.RequestExit();

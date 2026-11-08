@@ -2,7 +2,7 @@
 #define AppName "ROSHIQ"
 ; Версию передаёт build.ps1 (/DAppVersion=…) из Directory.Build.props; значение ниже — для ручной сборки
 #ifndef AppVersion
-  #define AppVersion "0.18.0"
+  #define AppVersion "0.18.1"
 #endif
 #define AppExe "Roshiq.exe"
 
@@ -33,6 +33,9 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
+; тихое обновление из программы (/VERYSILENT /CLOSEAPPLICATIONS): ROSHIQ закрывается сам, перезапуск — записью [Run] ниже
+CloseApplications=yes
+RestartApplications=no
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -58,6 +61,8 @@ Name: "{userdesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; после тихого обновления из самой программы — запустить новую версию
+Filename: "{app}\{#AppExe}"; Flags: nowait skipifnotsilent
 
 [UninstallDelete]
 ; настройки пользователя (%AppData%\Roshiq) намеренно не удаляются
