@@ -48,6 +48,15 @@ public sealed class AppHost : IDisposable
     private readonly GameLaunchWatcher _gameWatch = new();
     private readonly HashSet<string> _importPending = new(StringComparer.Ordinal);
     private MatchRecord? _lastSaved;
+    // 0.17.5: матчи, которые не удалось записать на диск (повторяем), и контрольная запись незаконченного матча
+    private readonly List<MatchRecord> _unsaved = new();
+    private DateTime _unsavedRetryUtc;
+    private bool _saveFailWarned;
+    private (MatchRecord Record, DateTime SavedUtc)? _pendingCheckpoint;
+    private DateTime _lastCheckpointUtc;
+    private static readonly TimeSpan CheckpointEvery = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan CheckpointMaxAge = TimeSpan.FromHours(3);
+    private static readonly TimeSpan UnsavedRetryEvery = TimeSpan.FromSeconds(30);
     private string? _autoSessionKey;
     private DateTime _autoStartedUtc;
     public long AutoDraftGeneration { get; private set; }
@@ -176,6 +185,7 @@ public sealed class AppHost : IDisposable
     public void Start()
     {
         _ = MarkStableLaterAsync();
+        try { LoadPendingCheckpoint(); } catch (Exception ex) { Log.Error("История: контрольная запись", ex); }
         if (SafeMode)
         {
             Log.Warn("Безопасный режим: оверлей, распознавание и фоновые загрузки выключены");
@@ -238,6 +248,7 @@ public sealed class AppHost : IDisposable
                 if (started) _manualScanRequested = false;
             }
             TickGsiWatchdog();
+            RetryUnsavedMatches();
             PumpTips();
 
             RefreshOverlay();
@@ -260,9 +271,15 @@ public sealed class AppHost : IDisposable
         }
         try
         {
+            ResolvePendingCheckpoint(snap.MatchId);
             var completed = _recorder.Observe(ToTick(snap));
             if (completed != null) SaveMatch(completed);
             if (_recorder.Current is MatchRecord cur && cur.Id != _paceMatchId) OnMatchStarted(cur);
+            if (_recorder.Current is MatchRecord live && DateTime.UtcNow - _lastCheckpointUtc >= CheckpointEvery)
+            {
+                _lastCheckpointUtc = DateTime.UtcNow;
+                History.SaveCheckpoint(live);
+            }
         }
         catch (Exception ex) { Log.Error("История матча: ошибка записи", ex); }
         if (snap.MatchId != null && snap.MatchId != _lastMatchId)
@@ -1102,7 +1119,8 @@ public sealed class AppHost : IDisposable
 
         var rows = new List<OverlayRow>();
         var d = DeathAnalysis.Analyze(m);
-        if (d == null || d.Total == 0) rows.Add(new OverlayRow("✓", L.Get("deaths_none")));
+        if (m.Deaths == 0) rows.Add(new OverlayRow("✓", L.Get("deaths_none")));
+        else if (d == null || d.Total == 0) rows.Add(new OverlayRow("?", L.Get("deaths_not_recorded")));
         else
         {
             if (d.WithLotsOfGold > 0) rows.Add(new OverlayRow("×" + d.WithLotsOfGold, L.Format("deaths_gold", d.WithLotsOfGold, DeathAnalysis.LotsOfGold)));
@@ -1417,18 +1435,50 @@ public sealed class AppHost : IDisposable
             Settings.Current.Position, g.ReceivedUtc, g.GoldUnreliable, g.BuybackCost, g.BuybackCooldown, g.HeroX, g.HeroY);
     }
 
-    private void SaveMatch(MatchRecord record)
+    private void SaveMatch(MatchRecord record, bool attachAlerts = true)
     {
-        if (record.MatchId == _lastMatchId || _lastMatchId == null)
+        if (attachAlerts && (record.MatchId == _lastMatchId || _lastMatchId == null))
         {
             record.Alerts = new Dictionary<string, int>(Alerts.Counts);
             record.AlertsIgnored = new Dictionary<string, int>(Alerts.Ignored);
             record.AlertsFollowed = new Dictionary<string, int>(Alerts.Followed);
         }
-        History.Save(record);
+        CommitMatch(record);
+    }
+
+    /// <summary>
+    /// Записать матч на диск. Только после успешной записи матч считается сохранённым: итог, импорт, цели.
+    /// Неудача — матч ждёт повторной попытки (раз в 30 секунд), пользователь видит одно предупреждение.
+    /// </summary>
+    private bool CommitMatch(MatchRecord record)
+    {
+        if (!History.Save(record))
+        {
+            lock (_unsaved)
+            {
+                _unsaved.RemoveAll(x => x.Id == record.Id);
+                _unsaved.Add(record);
+            }
+            _unsavedRetryUtc = DateTime.UtcNow + UnsavedRetryEvery;
+            Log.Warn($"История: матч {record.MatchId} не записан на диск — повторю попытку");
+            if (!_saveFailWarned)
+            {
+                _saveFailWarned = true;
+                ShowEventToast(Loc.T("hist_save_fail_header").ToUpperInvariant(), Loc.T("hist_save_fail"), warning: true,
+                    priority: TipPriority.Background, kind: "history_save", ttlSec: 900);
+            }
+            RaiseChanged();
+            return false;
+        }
+        lock (_unsaved)
+        {
+            _unsaved.RemoveAll(x => x.Id == record.Id);
+            if (_unsaved.Count == 0) _saveFailWarned = false;
+        }
+        History.ClearCheckpoint(record.Id);
         _lastSaved = record;
         MatchSavedSinceGameStart = true;
-        Log.Info($"История: сохранён матч {record.MatchId} ({record.Result})");
+        Log.Info($"История: сохранён матч {record.MatchId} ({record.Result}){(record.Partial ? " — неполная запись" : "")}");
         BuildPostMatch(record);
         _ = AutoImportAfterMatchAsync(record.MatchId);
         try
@@ -1442,6 +1492,56 @@ public sealed class AppHost : IDisposable
             }
         }
         catch (Exception ex) { Log.Error("Цели: ошибка проверки", ex); }
+        return true;
+    }
+
+    /// <summary>Матчей, которые пока не удалось записать на диск.</summary>
+    public int UnsavedMatches { get { lock (_unsaved) return _unsaved.Count; } }
+
+    private void RetryUnsavedMatches()
+    {
+        List<MatchRecord> pending;
+        lock (_unsaved)
+        {
+            if (_unsaved.Count == 0 || DateTime.UtcNow < _unsavedRetryUtc) return;
+            pending = _unsaved.ToList();
+        }
+        foreach (var r in pending) CommitMatch(r);
+    }
+
+    // ------------------------------------------------------------------ контрольная запись незаконченного матча
+
+    private void LoadPendingCheckpoint()
+    {
+        var cp = History.LoadCheckpoint();
+        if (cp == null) return;
+        if (DateTime.UtcNow - cp.Value.SavedUtc > CheckpointMaxAge) FinalizeCheckpoint(cp.Value.Record, "контрольная запись старше 3 часов");
+        else
+        {
+            _pendingCheckpoint = cp;
+            Log.Info($"История: найден незаконченный матч {cp.Value.Record.MatchId} — продолжу, если он ещё идёт");
+        }
+    }
+
+    /// <summary>Первый снимок с номером матча решает судьбу контрольной записи: тот же матч — продолжаем, другой — сохраняем как неполный.</summary>
+    private void ResolvePendingCheckpoint(string? matchId)
+    {
+        if (_pendingCheckpoint is not { } pend || string.IsNullOrWhiteSpace(matchId) || matchId == "0") return;
+        _pendingCheckpoint = null;
+        if (matchId == pend.Record.MatchId && _recorder.Current == null)
+        {
+            _recorder.Restore(pend.Record);
+            Log.Info($"История: матч {matchId} продолжен после перезапуска (пропуск отмечен в покрытии)");
+        }
+        else FinalizeCheckpoint(pend.Record, "начался другой матч");
+    }
+
+    private void FinalizeCheckpoint(MatchRecord r, string why)
+    {
+        r.Ended ??= false;
+        Log.Info($"История: незаконченный матч {r.MatchId} сохраняется как неполный ({why})");
+        if (r.DurationSec >= 120) SaveMatch(r, attachAlerts: false);
+        else History.ClearCheckpoint(r.Id);
     }
 
     /// <summary>Итог последнего матча, который ещё не показан (окно откроется, когда пользователь уйдёт из игры).</summary>
@@ -1775,7 +1875,9 @@ public sealed class AppHost : IDisposable
     {
         _tick.Stop();
         try { _backgroundCts.Cancel(); } catch { }
-        try { if (_recorder.Flush() is MatchRecord last) SaveMatch(last); } catch { }
+        // незаконченный матч не закрываем: контрольная запись — после перезапуска он продолжится или сохранится как неполный
+        try { if (_recorder.Current is MatchRecord live) History.SaveCheckpoint(live); } catch { }
+        try { lock (_unsaved) foreach (var r in _unsaved) History.Save(r); } catch { }
         try { Settings.Save(); } catch { }
         Gsi?.Dispose();
         Overlay.Dispose();

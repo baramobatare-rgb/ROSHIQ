@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Roshiq.Core.Diagnostics;
 using Roshiq.Core.Models;
+using Roshiq.Core.Settings;
 using Roshiq.Data;
 
 namespace Roshiq.Recommendations;
@@ -66,6 +67,56 @@ public sealed class MatchRecord
     public Dictionary<string, int> TipOutcomes { get; set; } = new();
     public List<DeathEvent> DeathEvents { get; set; } = new();
 
+    /// <summary>
+    /// 0.17.5: отрезки игрового времени, по которым реально приходили данные GSI. Пусто — старая запись:
+    /// тогда покрытие оценивается по точкам графика (<see cref="Samples"/>).
+    /// </summary>
+    public List<CoverageSpan> Coverage { get; set; } = new();
+    /// <summary>Смерти, которые известны только по счётчику (пропуск данных): ни места, ни времени — на карту и в фазы не идут.</summary>
+    public int UnlocatedDeaths { get; set; }
+    /// <summary>Видели конец матча (POST_GAME). null — запись старше 0.17.5, неизвестно.</summary>
+    public bool? Ended { get; set; }
+    /// <summary>Запись продолжена после перезапуска программы (из контрольной записи).</summary>
+    public bool Resumed { get; set; }
+
+    /// <summary>Доля отрезка [from, to) игрового времени, покрытая данными (0…1). Конец ограничен длительностью матча.</summary>
+    public double CoverageOf(int from, int to)
+    {
+        to = Math.Min(to, DurationSec);
+        if (to <= from) return 1;
+        var spans = Coverage.Count > 0 ? Coverage : SpansFromSamples();
+        long covered = 0;
+        foreach (var sp in spans)
+        {
+            int a = Math.Max(from, sp.From), b = Math.Min(to, sp.To);
+            if (b > a) covered += b - a;
+        }
+        return Math.Min(1.0, (double)covered / (to - from));
+    }
+
+    /// <summary>Фаза записана достаточно полно (≥ 85%), чтобы делать по ней выводы «чего не было».</summary>
+    public bool Covers(int from, int to) => !FromGsi || CoverageOf(from, to) >= 0.85;
+
+    /// <summary>Запись неполная: пропуски данных, смерти без места или не видели конец матча.</summary>
+    [JsonIgnore] public bool Partial => FromGsi && (UnlocatedDeaths > 0 || Ended == false || CoverageOf(0, DurationSec) < 0.85);
+
+    /// <summary>Для старых записей: отрезки между точками графика (раз в 30 с), разрыв больше 45 с — пропуск.</summary>
+    private List<CoverageSpan> SpansFromSamples()
+    {
+        var list = new List<CoverageSpan>();
+        foreach (var s in Samples.OrderBy(x => x.Clock))
+        {
+            if (list.Count > 0 && s.Clock - list[^1].To <= 45) list[^1].To = s.Clock;
+            else list.Add(new CoverageSpan { From = s.Clock, To = s.Clock });
+        }
+        if (list.Count > 0)
+        {
+            if (list[0].From <= 45) list[0].From = 0;                       // первая точка — в начале игры
+            if (DurationSec - list[^1].To <= 45) list[^1].To = DurationSec; // последняя — в конце
+        }
+        return list;
+    }
+
     /// <summary>Добивания к моменту clock (по ближайшей точке графика в пределах 40 секунд).</summary>
     public int? LastHitsAt(int clock) => SampleAt(clock)?.LastHits;
     public int? GpmAt(int clock) => SampleAt(clock)?.Gpm;
@@ -80,6 +131,13 @@ public sealed class MatchRecord
     }
 
     [JsonIgnore] public bool FromGsi => Source == "GSI";
+}
+
+/// <summary>Отрезок игрового времени [From, To] (секунды), по которому приходили данные.</summary>
+public sealed class CoverageSpan
+{
+    public int From { get; set; }
+    public int To { get; set; }
 }
 
 /// <summary>Состояние матча из GSI, нужное для записи истории.</summary>
@@ -116,6 +174,8 @@ public sealed record MatchTick(
 public sealed class MatchRecorder
 {
     public const int SampleEverySec = 30;
+    /// <summary>Пауза в данных дольше этого — пропуск: смерти за пропуск не получают места и времени.</summary>
+    public const int GapSec = 20;
 
     /// <summary>Расходники и мелочь, которые не показываются в таймингах предметов.</summary>
     public static readonly IReadOnlySet<string> IgnoredItems = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -134,6 +194,24 @@ public sealed class MatchRecorder
     private MatchTick? _prev;
 
     public MatchRecord? Current { get; private set; }
+
+    /// <summary>
+    /// Продолжить матч из контрольной записи после перезапуска программы. Пропуск между записью и первым новым
+    /// снимком отмечается в покрытии, смерти за это время станут «без места».
+    /// </summary>
+    public void Restore(MatchRecord checkpoint)
+    {
+        Current = checkpoint;
+        Current.Resumed = true;
+        _prev = null;
+        _lastSampleClock = checkpoint.Samples.Count > 0 ? checkpoint.Samples.Max(x => x.Clock) : int.MinValue;
+    }
+
+    private static bool Stale(MatchTick prev, MatchTick now)
+    {
+        if (prev.Clock is int a && now.Clock is int b) return b - a > GapSec || b < a;
+        return (now.Utc - prev.Utc).TotalSeconds > GapSec;
+    }
 
     private static bool InProgress(string? state) => state is "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS" or "DOTA_GAMERULES_STATE_PRE_GAME";
     private static bool PostGame(string? state) => state is "DOTA_GAMERULES_STATE_POST_GAME";
@@ -157,31 +235,47 @@ public sealed class MatchRecorder
                 Source = "GSI",
                 StartedUtc = t.Utc,
                 HeroId = t.HeroId.Value,
-                Position = t.Position
+                Position = t.Position,
+                Ended = null
             };
             _lastSampleClock = int.MinValue;
         }
         if (Current == null) return completed;
 
         var r = Current;
-        // смерть: счётчик смертей вырос — состояние берём из предыдущего снимка (до потери золота)
-        if (_prev != null && t.Deaths is int dNow && _prev.Deaths is int dPrev && dNow > dPrev && t.Clock is int deathClock)
+        // покрытие: продолжаем текущий отрезок или открываем новый после пропуска
+        if (t.Clock is int c && (InProgress(t.GameState) || PostGame(t.GameState)))
         {
-            var p = _prev;
-            bool tp = p.Slots.Any(kv => (kv.Key.StartsWith("teleport", StringComparison.Ordinal) && kv.Value == "item_tpscroll")
-                                        || (kv.Key.StartsWith("slot", StringComparison.Ordinal) && kv.Value is "item_travel_boots" or "item_travel_boots_2"));
-            bool? bb = p.BuybackCooldown is int cd && p.BuybackCost is int cost && p.Gold is int g ? cd == 0 && g >= cost : null;
-            for (int i = 0; i < Math.Min(3, dNow - dPrev); i++)
-                r.DeathEvents.Add(new DeathEvent
+            var last = r.Coverage.Count > 0 ? r.Coverage[^1] : null;
+            if (last != null && c >= last.To - 5 && c - last.To <= GapSec) last.To = Math.Max(last.To, c);
+            else r.Coverage.Add(new CoverageSpan { From = c, To = c });
+        }
+        // смерти: счётчик GSI — истина о количестве. Место и время берём только если предыдущий снимок свежий
+        // и смерть ровно одна; всё остальное (пропуск данных, перезапуск, скачок) — «смерть без места».
+        if (t.Deaths is int dNow)
+        {
+            int missing = dNow - r.DeathEvents.Count - r.UnlocatedDeaths;
+            if (missing > 0)
+            {
+                if (_prev is { } p && !Stale(p, t) && p.Deaths is int dPrev && dNow > dPrev && t.Clock is int deathClock)
                 {
-                    Clock = deathClock,
-                    GoldAtRisk = p.GoldUnreliable ?? p.Gold ?? 0,
-                    HadTeleport = tp,
-                    BuybackReady = bb,
-                    Level = p.Level ?? 0,
-                    X = p.HeroX,
-                    Y = p.HeroY
-                });
+                    bool tp = p.Slots.Any(kv => (kv.Key.StartsWith("teleport", StringComparison.Ordinal) && kv.Value == "item_tpscroll")
+                                                || (kv.Key.StartsWith("slot", StringComparison.Ordinal) && kv.Value is "item_travel_boots" or "item_travel_boots_2"));
+                    bool? bb = p.BuybackCooldown is int cd && p.BuybackCost is int cost && p.Gold is int g ? cd == 0 && g >= cost : null;
+                    r.DeathEvents.Add(new DeathEvent
+                    {
+                        Clock = deathClock,
+                        GoldAtRisk = p.GoldUnreliable ?? p.Gold ?? 0,
+                        HadTeleport = tp,
+                        BuybackReady = bb,
+                        Level = p.Level ?? 0,
+                        X = p.HeroX,
+                        Y = p.HeroY
+                    });
+                    missing--;
+                }
+                r.UnlocatedDeaths += missing;
+            }
         }
         _prev = t;
         if (t.HeroId is > 0) r.HeroId = t.HeroId.Value;
@@ -220,6 +314,7 @@ public sealed class MatchRecorder
         {
             if (t.WinTeam is "radiant" or "dire" && r.Team != null)
                 r.Result = t.WinTeam == r.Team ? MatchResult.Win : MatchResult.Loss;
+            r.Ended = true;
             completed = Flush();
         }
         return completed;
@@ -233,11 +328,17 @@ public sealed class MatchRecorder
         _prev = null;
         if (r == null) return null;
         if (r.MatchId != null) _finished.Add(r.MatchId);
+        r.Ended ??= false;
         return r.DurationSec >= 120 ? r : null;
     }
 }
 
-/// <summary>Хранилище истории: по одному JSON-файлу на матч в %AppData%\Roshiq\matches.</summary>
+/// <summary>
+/// Хранилище истории: по одному JSON-файлу на матч в %AppData%\Roshiq\matches.
+/// 0.17.5: запись атомарная (временный файл + замена), <see cref="Save"/> сообщает, удалось ли сохранить,
+/// кэш меняется только после успешной записи и хранит собственную копию записи (правки объекта вызывающим кодом
+/// не попадают в «сохранённое» в обход диска). Повреждённые файлы откладываются в «.bad», а не пропадают молча.
+/// </summary>
 public sealed class MatchHistoryStore
 {
     private static readonly JsonSerializerOptions Json = new()
@@ -247,13 +348,23 @@ public sealed class MatchHistoryStore
         Converters = { new JsonStringEnumConverter() }
     };
 
+    public const string CheckpointFile = "_current.checkpoint";
+
     private readonly string _dir;
     private readonly object _sync = new();
     private List<MatchRecord>? _cache;
+    private readonly List<string> _quarantined = new();
 
     public MatchHistoryStore(string directory) { _dir = directory; }
 
     public event EventHandler? Changed;
+
+    /// <summary>Файлы истории, которые не удалось прочитать и которые переименованы в «.bad» (для диагностики).</summary>
+    public IReadOnlyList<string> Quarantined { get { lock (_sync) return _quarantined.ToList(); } }
+
+    /// <summary>Независимая копия записи (через JSON).</summary>
+    public static MatchRecord Clone(MatchRecord r) =>
+        JsonSerializer.Deserialize<MatchRecord>(JsonSerializer.Serialize(r, Json), Json)!;
 
     public IReadOnlyList<MatchRecord> All()
     {
@@ -270,38 +381,67 @@ public sealed class MatchHistoryStore
         try
         {
             if (!Directory.Exists(_dir)) return list;
-            foreach (var file in Directory.EnumerateFiles(_dir, "*.json"))
+            // недописанные временные файлы — следы оборванной записи; прежняя версия матча цела
+            foreach (var tmp in Directory.GetFiles(_dir, "*" + AtomicFile.TempSuffix))
+                try { File.Delete(tmp); } catch { }
+            foreach (var file in Directory.GetFiles(_dir, "*.json"))
             {
+                if (!file.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) continue;
                 try
                 {
                     var r = JsonSerializer.Deserialize<MatchRecord>(File.ReadAllText(file), Json);
                     if (r != null && !string.IsNullOrWhiteSpace(r.Id)) list.Add(r);
+                    else Quarantine(file, "пустая запись");
                 }
-                catch (Exception ex) { Log.Warn($"История: пропущен файл {Path.GetFileName(file)}: {ex.Message}"); }
+                catch (Exception ex) when (ex is JsonException or NotSupportedException or ArgumentException) { Quarantine(file, ex.Message); }
+                catch (Exception ex) { Log.Warn($"История: не прочитан файл {Path.GetFileName(file)}: {ex.Message}"); }
             }
         }
         catch (Exception ex) { Log.Warn("История матчей недоступна: " + ex.Message); }
         return list;
     }
 
+    private void Quarantine(string file, string reason)
+    {
+        var target = file + ".bad";
+        try
+        {
+            if (File.Exists(target)) target = file + "." + DateTime.UtcNow.ToString("yyyyMMddHHmmss") + ".bad";
+            File.Move(file, target);
+            _quarantined.Add(Path.GetFileName(target));
+            Log.Warn($"История: повреждённый файл {Path.GetFileName(file)} отложен как {Path.GetFileName(target)} ({reason})");
+        }
+        catch (Exception ex) { Log.Warn($"История: повреждённый файл {Path.GetFileName(file)} ({reason}), отложить не удалось: {ex.Message}"); }
+    }
+
     private string FileFor(string id) =>
         Path.Combine(_dir, new string(id.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_').ToArray()) + ".json");
 
-    public void Save(MatchRecord record)
+    /// <summary>
+    /// Сохранить матч. true — запись на диске; false — не удалось (кэш не изменён, причина в логе).
+    /// Повторное сохранение того же Id заменяет прежнюю версию.
+    /// </summary>
+    public bool Save(MatchRecord record)
     {
         lock (_sync)
         {
             _cache ??= LoadFromDisk();
-            _cache.RemoveAll(x => x.Id == record.Id);
-            _cache.Add(record);
+            string json;
             try
             {
-                Directory.CreateDirectory(_dir);
-                File.WriteAllText(FileFor(record.Id), JsonSerializer.Serialize(record, Json));
+                json = JsonSerializer.Serialize(record, Json);
+                AtomicFile.WriteAllText(FileFor(record.Id), json);
             }
-            catch (Exception ex) { Log.Warn("Не удалось сохранить матч: " + ex.Message); }
+            catch (Exception ex)
+            {
+                Log.Warn($"Не удалось сохранить матч {record.Id}: {ex.Message}");
+                return false;
+            }
+            _cache.RemoveAll(x => x.Id == record.Id);
+            _cache.Add(JsonSerializer.Deserialize<MatchRecord>(json, Json)!);
         }
         Changed?.Invoke(this, EventArgs.Empty);
+        return true;
     }
 
     public void Delete(string id)
@@ -314,6 +454,59 @@ public sealed class MatchHistoryStore
             catch (Exception ex) { Log.Warn("Не удалось удалить матч: " + ex.Message); }
         }
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ------------------------------------------------------------------ контрольная запись текущего матча
+
+    private string CheckpointPath => Path.Combine(_dir, CheckpointFile);
+
+    /// <summary>Записать текущий (незаконченный) матч, чтобы продолжить его после перезапуска программы.</summary>
+    public bool SaveCheckpoint(MatchRecord current)
+    {
+        try
+        {
+            lock (_sync) AtomicFile.WriteAllText(CheckpointPath, JsonSerializer.Serialize(current, Json));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Контрольная запись матча не сохранена: " + ex.Message);
+            return false;
+        }
+    }
+
+    /// <summary>Контрольная запись и время её сохранения (UTC), если есть и читается.</summary>
+    public (MatchRecord Record, DateTime SavedUtc)? LoadCheckpoint()
+    {
+        try
+        {
+            if (!File.Exists(CheckpointPath)) return null;
+            var r = JsonSerializer.Deserialize<MatchRecord>(File.ReadAllText(CheckpointPath), Json);
+            if (r == null || string.IsNullOrWhiteSpace(r.Id)) { ClearCheckpoint(); return null; }
+            return (r, File.GetLastWriteTimeUtc(CheckpointPath));
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Контрольная запись матча не читается: " + ex.Message);
+            try { File.Move(CheckpointPath, CheckpointPath + ".bad", overwrite: true); } catch { }
+            return null;
+        }
+    }
+
+    /// <summary>Удалить контрольную запись (матч сохранён). Если указан id — только если запись того же матча.</summary>
+    public void ClearCheckpoint(string? id = null)
+    {
+        try
+        {
+            if (!File.Exists(CheckpointPath)) return;
+            if (id != null)
+            {
+                var r = JsonSerializer.Deserialize<MatchRecord>(File.ReadAllText(CheckpointPath), Json);
+                if (r != null && r.Id != id) return;
+            }
+            File.Delete(CheckpointPath);
+        }
+        catch (Exception ex) { Log.Warn("Контрольная запись матча не удалена: " + ex.Message); }
     }
 
     /// <summary>
@@ -333,12 +526,13 @@ public sealed class MatchHistoryStore
             {
                 if (gsi.Result == MatchResult.Unknown && result != MatchResult.Unknown)
                 {
-                    gsi.Result = result;
-                    Save(gsi);
+                    var copy = Clone(gsi);       // правим копию: кэш меняется только через успешный Save
+                    copy.Result = result;
+                    Save(copy);
                 }
                 continue;
             }
-            Save(new MatchRecord
+            if (Save(new MatchRecord
             {
                 Id = "od-" + mid,
                 MatchId = mid,
@@ -354,8 +548,7 @@ public sealed class MatchHistoryStore
                 LastHits = row.LastHits,
                 Gpm = row.GoldPerMin,
                 Xpm = row.XpPerMin
-            });
-            added++;
+            })) added++;
         }
         return added;
     }

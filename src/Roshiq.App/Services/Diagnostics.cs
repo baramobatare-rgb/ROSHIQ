@@ -140,6 +140,18 @@ public static class DiagnosticsRunner
             list.Add(new(CheckStatus.Error, L.Get("diag_folder"), L.Format("diag_folder_readonly", AppPaths.DataRoot, ex.Message)));
         }
 
+        // 8б. История матчей: незаписанные матчи и отложенные повреждённые файлы
+        {
+            int unsaved = host.UnsavedMatches;
+            var bad = host.History.Quarantined;
+            if (unsaved > 0)
+                list.Add(new(CheckStatus.Error, L.Get("diag_history"), L.Format("diag_history_unsaved", unsaved, AppPaths.Matches)));
+            else if (bad.Count > 0)
+                list.Add(new(CheckStatus.Warning, L.Get("diag_history"), L.Format("diag_history_bad", bad.Count, string.Join(", ", bad.Take(3)), AppPaths.Matches)));
+            else
+                list.Add(new(CheckStatus.Ok, L.Get("diag_history"), L.Format("diag_history_ok", host.History.All().Count)));
+        }
+
         // 9. Ошибки
         var crash = CrashReport.Latest(AppPaths.CrashReports);
         var error = CrashReport.Latest(AppPaths.CrashReports, CrashReport.ErrorPrefix);

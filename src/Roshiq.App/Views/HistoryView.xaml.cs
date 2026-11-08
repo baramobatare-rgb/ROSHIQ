@@ -69,7 +69,7 @@ public partial class HistoryView : UserControl, IRefreshable
             var date = m.StartedUtc.ToLocalTime().ToString("dd.MM HH:mm", CultureInfo.InvariantCulture);
             var hero = App.Host.Database.FindHero(m.HeroId) ?? App.Host.Database.FindHero(m.HeroKey);
             MatchList.Items.Add(new Choice<MatchRecord>(m,
-                $"{date} · {HeroName(m)} · {ResultText(m.Result)} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OD")}")
+                $"{date} · {HeroName(m)} · {ResultText(m.Result)} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OD")}{(m.Partial ? " · " + Loc.T("hist_partial") : "")}")
             {
                 Icon = Roshiq.App.Services.HeroArt.Portrait(hero?.Key),
                 Group = null
@@ -232,7 +232,9 @@ public partial class HistoryView : UserControl, IRefreshable
         Motion.Enter(ReviewPanel, 0, 8);
         var role = m.Position is Position p ? L.PositionName(p) : L.Get("hist_role_unknown");
         MatchMeta.Text = $"{m.StartedUtc.ToLocalTime():g} · {role} · {(m.Team ?? "?").ToUpperInvariant()} · {L.Get(m.FromGsi ? "hist_source_gsi" : "hist_source_od")}" +
-                         (m.MatchId != null ? $" · ID {m.MatchId}" : "");
+                         (m.MatchId != null ? $" · ID {m.MatchId}" : "") +
+                         (m.Partial ? " · " + L.Get("hist_partial") : "");
+        MatchMeta.ToolTip = m.Partial ? L.Get("hist_partial_tip") : null;
 
         TakeawaysPanel.Children.Clear();
         if (m.DurationSec >= PostMatch.MinDurationSec)
@@ -299,6 +301,17 @@ public partial class HistoryView : UserControl, IRefreshable
         });
         foreach (var p in bd.Phases)
         {
+            if (!p.Covered)
+            {
+                // отрезок записан не полностью — не говорим «смертей не было» и не сравниваем
+                var gap = new StackPanel();
+                var gapTitle = Ui.Text(p.Text(L.Language), "Value");
+                gapTitle.FontWeight = FontWeights.SemiBold;
+                gap.Children.Add(gapTitle);
+                gap.Children.Add(new TextBlock { Text = L.Get("bd_no_data"), Style = (Style)FindResource("MutedText"), ToolTip = L.Get("hist_partial_tip") });
+                BreakdownPanel.Children.Add(new Border { Style = (Style)FindResource("Callout"), Margin = new Thickness(0, 0, 0, 8), BorderBrush = Ui.Res("LineStrong"), Child = gap });
+                continue;
+            }
             var parts = new List<string> { L.Format("bd_deaths", p.Deaths) };
             if (p.GoldLost > 0) parts.Add(L.Format("bd_gold", p.GoldLost));
             if (p.LastHits is int lh) parts.Add(L.Format("bd_lh", lh) + (p.LastHitsUsual is int ul ? L.Format("bd_usual", ul) : ""));
@@ -460,6 +473,7 @@ public partial class HistoryView : UserControl, IRefreshable
             DeathsPanel.Children.Add(Ui.Text(L.Format("deaths_clean", d.AvgGoldAtRisk), "MutedText"));
         var times = string.Join(" · ", m.DeathEvents.Select(x => GameTimers.Clock(x.Clock)));
         DeathsPanel.Children.Add(Ui.Text(L.Format("deaths_times", times), "MutedText", 4));
+        if (m.UnlocatedDeaths > 0) DeathsPanel.Children.Add(Ui.Text(L.Format("deaths_unlocated", m.UnlocatedDeaths), "MutedText", 4));
     }
 
     private static string Pretty(string itemKey) =>

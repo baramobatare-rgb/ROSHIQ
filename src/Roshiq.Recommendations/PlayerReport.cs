@@ -30,7 +30,7 @@ public sealed record MistakeStat(string Kind, string Ru, string En, int Count, i
 
 /// <summary>Отрезок матча: смерти, потерянное золото и добивания / золото в минуту к концу отрезка против обычного.</summary>
 public sealed record PhaseRow(string Key, string Ru, string En, int From, int To, int Deaths, int GoldLost,
-    int? LastHits, int? LastHitsUsual, int? Gpm, int? GpmUsual)
+    int? LastHits, int? LastHitsUsual, int? Gpm, int? GpmUsual, bool Covered = true)
 {
     public string Text(Language lang) => lang == Language.English ? En : Ru;
 }
@@ -104,13 +104,17 @@ public static class PlayerReport
         new("deaths", "Много смертей (7+, у саппортов 9+)", "Too many deaths (7+, supports 9+)",
             (m, _) => m.Deaths >= DeathLimit(m.Position)),
         new("early_deaths", "3+ смерти до 10-й минуты", "3+ deaths before 10:00",
-            (m, _) => m.FromGsi ? m.DeathEvents.Count(d => d.Clock < 600) >= 3 : null),
+            (m, _) => !m.FromGsi ? null
+                : m.DeathEvents.Count(d => d.Clock < GamePhases.LaneEnd) >= 3 ? true
+                : m.Covers(0, GamePhases.LaneEnd) && m.UnlocatedDeaths == 0 ? false : null),   // пропуск — не «ошибки не было»
         new("no_tp", "Смерти без телепорта (2+ за игру)", "Deaths without a teleport (2+ per game)",
-            (m, _) => m.FromGsi && m.DeathEvents.Count > 0 ? m.DeathEvents.Count(d => !d.HadTeleport) >= 2 : null),
+            (m, _) => !m.FromGsi || m.DeathEvents.Count == 0 ? null
+                : m.DeathEvents.Count(d => !d.HadTeleport) >= 2 ? true
+                : m.UnlocatedDeaths == 0 ? false : null),
         new("lh10", "Мало добиваний к 10:00 (меньше 75% планки роли)", "Few last hits by 10:00 (under 75% of the role bar)",
             (m, _) => MatchReviewBuilder.LastHitTarget(m.Position) is int target && m.LastHitsAt(600) is int lh ? lh < target * 0.75 : null),
         new("ignored", "Подсказки остались без ответа (3+ за игру)", "Hints left unanswered (3+ per game)",
-            (m, _) => m.FromGsi ? m.AlertsIgnored.Values.Sum() >= 3 : null),
+            (m, _) => !m.FromGsi ? null : m.AlertsIgnored.Values.Sum() >= 3 ? true : m.Partial ? null : false),
         new("low_gpm", "Золото в минуту на 20% ниже вашего обычного на этой роли", "GPM 20% below your usual on this role",
             (m, all) =>
             {
@@ -175,11 +179,14 @@ public static class PlayerReport
             int? usualLh = Median(pool.Where(x => x.DurationSec >= end).Select(x => x.LastHitsAt(end)).OfType<int>());
             int? usualGpm = Median(pool.Where(x => x.DurationSec >= end).Select(x => x.GpmAt(end)).OfType<int>());
             phases.Add(new PhaseRow(key, ru, en, from, end, deaths.Count, deaths.Sum(d => d.GoldAtRisk),
-                m.LastHitsAt(end), usualLh, m.GpmAt(end), usualGpm));
+                m.LastHitsAt(end), usualLh, m.GpmAt(end), usualGpm, m.Covers(from, end)));
         }
-        Add("lane", "Линия (0–10)", "Laning (0–10)", 0, 600);
-        Add("mid", "Середина (10–25)", "Mid game (10–25)", 600, 1500);
-        Add("late", "Поздняя игра (25+)", "Late game (25+)", 1500, int.MaxValue);
+        foreach (var phase in new[] { GamePhase.Lane, GamePhase.Mid, GamePhase.Late })
+        {
+            var (from, to) = GamePhases.Range(phase);
+            var (ru, en) = GamePhases.Name(phase);
+            Add(phase.ToString().ToLowerInvariant(), ru, en, from, to);
+        }
 
         var late = new List<LateItem>();
         foreach (var (key, at) in m.ItemTimings)

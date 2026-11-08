@@ -102,8 +102,8 @@ public sealed record DeathSummary(
 
 public static class DeathAnalysis
 {
-    public const int EarlyEnd = 600;
-    public const int MidEnd = 1500;
+    public const int EarlyEnd = GamePhases.LaneEnd;
+    public const int MidEnd = GamePhases.MidEnd;
     public const int LotsOfGold = 1000;
 
     /// <summary>Сводка по смертям матча (только для матчей, записанных по GSI).</summary>

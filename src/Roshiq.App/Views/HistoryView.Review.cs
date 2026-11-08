@@ -255,9 +255,9 @@ public partial class HistoryView
 
     private static bool InPhase(int clock, int phase) => phase switch
     {
-        1 => clock < 600,
-        2 => clock is >= 600 and < 1800,
-        3 => clock >= 1800,
+        1 => GamePhases.Of(clock) == GamePhase.Lane,
+        2 => GamePhases.Of(clock) == GamePhase.Mid,
+        3 => GamePhases.Of(clock) == GamePhase.Late,
         _ => true
     };
 
@@ -307,7 +307,7 @@ public partial class HistoryView
             var tip = $"{GameTimers.Clock(x.d.Clock)} · {App.Host.Database.FindHero(x.m.HeroId)?.Name ?? "?"} · {x.m.StartedUtc.ToLocalTime():dd.MM}"
                       + (x.d.GoldAtRisk > 0 ? " · " + L.Format("bd_gold", x.d.GoldAtRisk) : "")
                       + (!x.d.HadTeleport ? " · " + L.Get("deathmap_no_tp") : "");
-            return new MiniMap.Point2(px, py, Ui.Res(x.d.Clock < 600 ? "Warning" : x.d.Clock < 1800 ? "Red" : "Purple"), tip);
+            return new MiniMap.Point2(px, py, Ui.Res(GamePhases.Of(x.d.Clock) switch { GamePhase.Lane => "Warning", GamePhase.Mid => "Red", _ => "Purple" }), tip);
         }).ToList();
 
         var grid = new Grid();

@@ -155,7 +155,7 @@ public static class PostMatch
     private static string DeathPhase(MatchRecord m, bool ru)
     {
         if (m.DeathEvents.Count < 4) return "";
-        var groups = m.DeathEvents.GroupBy(d => d.Clock < 600 ? 0 : d.Clock < 1500 ? 1 : 2).OrderByDescending(g => g.Count()).First();
+        var groups = m.DeathEvents.GroupBy(d => (int)GamePhases.Of(d.Clock)).OrderByDescending(g => g.Count()).First();
         if (groups.Count() * 2 < m.DeathEvents.Count) return "";
         string phase = groups.Key switch
         {

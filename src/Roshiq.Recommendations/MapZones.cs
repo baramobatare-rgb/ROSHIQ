@@ -61,7 +61,8 @@ public static class MapZones
             .GroupBy(z => z).Select(g => new ZoneShare(g.Key, g.Count(), list.Count == 0 ? 0 : (double)g.Count() / list.Count))
             .OrderByDescending(z => z.Count).ToList();
         return new DeathMapSummary(list.Count, list.Select(x => x.Match.Id).Distinct().Count(), zones,
-            list.Count(x => x.Death.Clock < 600), list.Count(x => x.Death.Clock is >= 600 and < 1800), list.Count(x => x.Death.Clock >= 1800),
+            list.Count(x => GamePhases.Of(x.Death.Clock) == GamePhase.Lane), list.Count(x => GamePhases.Of(x.Death.Clock) == GamePhase.Mid),
+            list.Count(x => GamePhases.Of(x.Death.Clock) == GamePhase.Late),
             list.Count(x => !x.Death.HadTeleport),
             list.Count == 0 ? 0 : (int)Math.Round(list.Average(x => x.Death.GoldAtRisk)));
     }
