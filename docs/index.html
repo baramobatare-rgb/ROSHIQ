@@ -176,6 +176,56 @@ footer .w{display:flex;flex-wrap:wrap;gap:14px 30px;justify-content:space-betwee
 footer nav{display:flex;flex-wrap:wrap;gap:22px;font-weight:700;color:#fff}
 footer nav a{text-decoration:none}
 footer nav a:hover{color:var(--lime)}
+
+/* матч на ползунке */
+.sub{margin-top:22px;color:var(--soft);font-size:20px;max-width:34em}
+.mt{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px;margin-top:56px;align-items:start}
+.clock{font-weight:900;font-size:clamp(84px,11vw,168px);line-height:.85;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
+.clock small{display:block;font-size:15px;letter-spacing:0;font-weight:700;color:var(--grey);margin-top:18px}
+.track{position:relative;margin-top:34px;padding-top:26px}
+.ticks{position:absolute;left:11px;right:11px;top:0;height:20px}
+.ticks button{position:absolute;top:0;width:10px;height:20px;margin-left:-5px;border:0;border-radius:2px;background:var(--c);cursor:pointer;padding:0;opacity:.55}
+.ticks button.on{opacity:1}
+.ticks button:hover{opacity:1;transform:scaleY(1.2)}
+.track input{width:100%;accent-color:var(--lime);height:22px;cursor:pointer}
+.scale{display:flex;justify-content:space-between;color:var(--grey);font-size:13px;font-weight:600;margin-top:4px;padding:0 4px}
+.play{margin-top:30px;background:var(--lime);color:var(--ink);border:0;border-radius:4px;font:900 17px Inter,sans-serif;padding:16px 26px;cursor:pointer;transition:transform .12s,box-shadow .12s}
+.play:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 #fff}
+.ovl{background:#060907;border:1px solid #2A352C;border-radius:8px;padding:22px;min-height:440px;box-shadow:14px 14px 0 color-mix(in srgb,var(--lime) 22%,transparent)}
+.ovl-h{display:flex;align-items:center;gap:9px;font-weight:800;font-size:14px;color:var(--grey);padding-bottom:16px;border-bottom:1px solid var(--line)}
+.ovl-h i{width:9px;height:9px;border-radius:50%;background:var(--lime)}
+.ovl-h span{margin-left:auto;font-weight:600}
+.tip{position:relative;border-radius:6px;padding:20px 20px 18px;margin-top:22px;background:var(--ink);border-left:6px solid var(--c)}
+.tip em{font-style:normal;font-weight:900;font-size:13px;color:var(--ink);background:var(--c);border-radius:3px;padding:2px 8px}
+.tip b{display:block;font-weight:900;font-size:clamp(24px,2.4vw,32px);line-height:1.05;letter-spacing:-.025em;margin-top:12px}
+.tip span{display:block;color:var(--soft);margin-top:8px;font-size:16px}
+.tip.now{animation:tipin .35s ease-out}
+@keyframes tipin{from{opacity:0;translate:0 10px}}
+.hist{list-style:none;margin-top:20px;display:grid;gap:8px}
+.hist li{display:flex;gap:12px;color:var(--grey);font-size:15px;line-height:1.35}
+.hist li em{font-style:normal;font-weight:800;color:#fff;min-width:44px;font-variant-numeric:tabular-nums}
+.empty{color:var(--grey);margin-top:26px}
+.note{margin-top:18px;color:var(--grey);font-size:14px}
+@media (prefers-reduced-motion:reduce){.tip.now{animation:none}}
+@media (max-width:900px){.mt{grid-template-columns:1fr;gap:36px}.ovl{min-height:0}}
+
+/* ролики */
+.vids{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:50px}
+.vid{position:relative;aspect-ratio:9/16;border-radius:8px;overflow:hidden;background:#000;border:1px solid #2A352C}
+.vid button{all:unset;cursor:pointer;position:absolute;inset:0;display:block}
+.vid img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.vid button:hover img{transform:scale(1.04)}
+.vid button:focus-visible{outline:3px solid var(--lime);outline-offset:-3px}
+.vid .pl{position:absolute;left:50%;top:50%;width:66px;height:66px;margin:-33px 0 0 -33px;border-radius:50%;background:var(--lime);display:grid;place-items:center}
+.vid .pl::before{content:"";border-left:20px solid var(--ink);border-top:12px solid transparent;border-bottom:12px solid transparent;margin-left:5px}
+.vid .cap{position:absolute;left:0;right:0;bottom:0;padding:44px 14px 14px;background:linear-gradient(transparent,rgba(0,0,0,.85));font-weight:800;font-size:15px;line-height:1.25}
+.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+@media (max-width:900px){.vids{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px;margin-right:-20px}.vid{flex:0 0 62%;scroll-snap-align:start}}
+
+/* помощь */
+.help .row h3{font-size:clamp(22px,2.4vw,30px)}
+.help .row p b{color:#fff}
+.help code{font:700 .9em Inter,sans-serif;background:#1A211B;border:1px solid #2A352C;border-radius:3px;padding:1px 6px;color:#fff}
 </style>
 </head>
 <body>
@@ -186,7 +236,7 @@ footer nav a:hover{color:var(--lime)}
   <div class="nav">
     <img id="logo" src="site/logo-green.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
     <span class="sp"></span>
-    <nav aria-label="Разделы"><a href="#what" data-i18n="n1">Что внутри</a><a href="#ban" data-i18n="n2">Про бан</a><a href="#faq" data-i18n="n3">Вопросы</a></nav>
+    <nav aria-label="Разделы"><a href="#match" data-i18n="n0">Как работает</a><a href="#what" data-i18n="n1">Что внутри</a><a href="#ban" data-i18n="n2">Про бан</a><a href="#help" data-i18n="n3">Помощь</a></nav>
     <div class="tp"><button type="button" id="tpBtn" aria-expanded="false" aria-controls="tpp"><i></i><span data-i18n="tp">Тема</span></button>
       <div class="tpp" id="tpp" hidden><b data-i18n="tpa">Цвет</b><div id="tpAcc"></div><b data-i18n="tpb">Фон</b><div id="tpBg"></div></div></div>
     <button class="lang" type="button" id="lang">EN</button>
@@ -212,6 +262,29 @@ footer nav a:hover{color:var(--lime)}
 </header>
 
 <main>
+
+<section class="block" id="match">
+  <div class="w">
+    <h2 data-i18n="h2m">Прокрути матч</h2>
+    <p class="sub" data-i18n="mp">Двигай ползунок — и увидишь, что и когда ROSHIQ подсказывает за игру. Это пример: керри, цифры условные.</p>
+    <div class="mt">
+      <div>
+        <div class="clock" id="mClock" aria-hidden="true">0:00</div>
+        <div class="track">
+          <div class="ticks" id="mTicks"></div>
+          <input type="range" id="mRange" min="0" max="2700" step="5" value="0" data-i18n-aria="mra" aria-label="Время матча">
+          <div class="scale" aria-hidden="true"><span>0:00</span><span>15:00</span><span>30:00</span><span>45:00</span></div>
+        </div>
+        <button class="play" type="button" id="mPlay" data-i18n="mpl">Запустить матч</button>
+      </div>
+      <div class="ovl" aria-live="polite">
+        <div class="ovl-h"><i></i>ROSHIQ<span data-i18n="mov">панель в игре · F8</span></div>
+        <div id="mNow"></div>
+        <ul class="hist" id="mHist"></ul>
+      </div>
+    </div>
+  </div>
+</section>
 <section class="block" id="what">
   <div class="w">
     <h2 data-i18n="h2a">Что внутри</h2>
@@ -257,15 +330,37 @@ footer nav a:hover{color:var(--lime)}
   </div>
 </section>
 
+<section class="block tight" id="video">
+  <div class="w">
+    <h2 data-i18n="h2v">Ролики</h2>
+    <div class="vids" id="vids"></div>
+    <a class="all" href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ/shorts" data-goal="youtube" data-i18n="vall">Все ролики на YouTube</a>
+  </div>
+</section>
+
 <section class="block tight" id="new">
   <div class="w">
     <h2 data-i18n="h2d">Что нового</h2>
     <ul class="news">
-      <li><span class="v">0.18.1</span><div><b data-i18n="v1">Обновление без переустановки</b><span data-i18n="v1d">Кнопка «Обновить» сама скачивает новую версию, проверяет и ставит поверх. Настройки и история остаются.</span></div></li>
-      <li><span class="v">0.18.0</span><div><b data-i18n="v2">Журнал подсказок</b><span data-i18n="v2d">Видно, что программа подсказывала в каждом матче и что с этим стало. Хранится только у тебя.</span></div></li>
-      <li><span class="v">0.17.8</span><div><b data-i18n="v3">Советы честнее</b><span data-i18n="v3d">Итог матча сравнивает только с играми на твоей роли, а после лага подсказки не выскакивают зря.</span></div></li>
+      <li><span class="v">0.18.7</span><div><b data-i18n="v1">Поиск находит все предметы</b><span data-i18n="v1d">Кристалис, Кая, Яша, Санге, блинки и ещё 80 компонентов — их можно добавить в свою сборку.</span></div></li>
+      <li><span class="v">0.18.6</span><div><b data-i18n="v2">Автодрафт на настоящем экране выбора</b><span data-i18n="v2d">Слоты героев переснятые, ultrawide учитывается. И кнопка «Собрать отчёт» — всё для разбора проблемы одним файлом.</span></div></li>
+      <li><span class="v">0.18.3</span><div><b data-i18n="v3">Большие мониторы</b><span data-i18n="v3d">На 1440p, ultrawide и 4K панель и уведомления сами увеличиваются под разрешение игры.</span></div></li>
     </ul>
     <a class="all" href="https://github.com/baramobatare-rgb/ROSHIQ/blob/main/CHANGELOG.md" data-goal="github" data-i18n="all">Вся история изменений</a>
+  </div>
+</section>
+
+<section class="block tight help" id="help">
+  <div class="w">
+    <h2 data-i18n="h2h">Если что-то не так</h2>
+    <div class="rows">
+      <div class="row"><h3 data-i18n="h1q">Windows пишет «Компьютер защищён»</h3><p data-i18n="h1a">Нажми <b>«Подробнее»</b> → <b>«Выполнить в любом случае»</b>. У программы пока нет платной цифровой подписи, поэтому Windows её не узнаёт. Файл можно сверить с <code>SHA256SUMS.txt</code> на странице релиза.</p></div>
+      <div class="row"><h3 data-i18n="h2q">Подсказки в игре не появляются</h3><p data-i18n="h2a2">Открой <b>Настройки → Диагностика</b>. Она проверит связь с игрой, порт и параметр запуска <code>-gamestateintegration</code> — рядом с проблемой будет кнопка «Исправить». Потом перезапусти Dota 2: связь включается только при запуске игры.</p></div>
+      <div class="row"><h3 data-i18n="h3q">Панели не видно поверх игры</h3><p data-i18n="h3a">Переключи Dota 2 в режим <b>«Окно без рамки»</b> (Настройки → Видео). Поверх полноэкранного режима прозрачные окна не рисуются. Показать или скрыть панель — <kbd>F8</kbd>.</p></div>
+      <div class="row"><h3 data-i18n="h4q">Как привязать Steam</h3><p data-i18n="h4a">Обычно ничего делать не нужно: после первого матча аккаунт привяжется из игры сам. Или <b>Настройки → Steam</b>: «Найти Steam на этом ПК» либо «Войти через Steam» — вход идёт на сайте Steam, пароль ROSHIQ не видит.</p></div>
+      <div class="row"><h3 data-i18n="h5q">Матчи и статистика не подтягиваются</h3><p data-i18n="h5a">OpenDota не видит скрытую историю. В Dota 2: <b>Настройки → Параметры → Социальные</b> → включи «Общедоступная история матчей», сыграй матч и обнови профиль в ROSHIQ.</p></div>
+      <div class="row"><h3 data-i18n="h6q">Ничего не помогло</h3><p data-i18n="h6a"><b>Настройки → Диагностика → «Собрать отчёт»</b> — один zip с журналами, без Steam ID и ключей. Пришли его в сообщения <a href="https://vk.ru/roshiq" data-goal="vk">группы ВКонтакте</a> и опиши, что случилось.</p></div>
+    </div>
   </div>
 </section>
 
@@ -274,8 +369,6 @@ footer nav a:hover{color:var(--lime)}
     <h2 data-i18n="h2e">Вопросы</h2>
     <div class="faq">
       <details><summary data-i18n="q1">Нужен ли интернет?</summary><p data-i18n="a1">Нет. Без интернета работают драфт, сборки, таймеры, подсказки и итог матча. Интернет нужен для статистики OpenDota и обновлений, его можно выключить одной галочкой.</p></details>
-      <details><summary data-i18n="q2">Панели не видно поверх игры</summary><p data-i18n="a2">Переключи Dota 2 в режим «Окно без рамки» (Настройки → Видео). Поверх полноэкранного режима прозрачные окна не рисуются.</p></details>
-      <details><summary data-i18n="q3">Windows пишет, что защитила компьютер</summary><p data-i18n="a3">Нажми «Подробнее» → «Выполнить в любом случае». У программы пока нет платной цифровой подписи. Файл можно сверить с SHA256SUMS.txt на странице релиза.</p></details>
       <details><summary data-i18n="q4">Сколько стоит?</summary><p data-i18n="a4">Нисколько. Ни подписок, ни рекламы, ни платных функций. Код открыт — любой может посмотреть, что внутри.</p></details>
       <details><summary data-i18n="q5">Нашёл ошибку или есть идея</summary><p data-i18n="a5">Напиши в комментариях под роликами, в сообществе ВКонтакте или открой issue на GitHub.</p></details>
     </div>
@@ -300,7 +393,8 @@ footer nav a:hover{color:var(--lime)}
 
 <script>
 // Русский всегда по умолчанию; английский — только по кнопке EN.
-const EN={tp:"Theme",tpa:"Colour",tpb:"Background",n1:"What’s inside",n2:"Bans",n3:"FAQ",
+const EN={tp:"Theme",tpa:"Colour",tpb:"Background",n0:"How it works",n1:"What’s inside",n2:"Bans",n3:"Help",
+h2m:"Scroll through a match",mp:"Move the slider to see what ROSHIQ tells you during a game, and when. This is an example: a carry, numbers are made up.",mpl:"Play the match",mov:"in-game panel · F8",h2v:"Videos",vall:"All videos on YouTube",h2h:"If something’s wrong",h1q:"Windows says it protected your PC",h1a:"Click <b>“More info”</b> → <b>“Run anyway”</b>. The app doesn’t have a paid code signature yet, so Windows doesn’t recognise it. You can check the file against <code>SHA256SUMS.txt</code> on the release page.",h2q:"No tips in the game",h2a2:"Open <b>Settings → Diagnostics</b>. It checks the game connection, the port and the <code>-gamestateintegration</code> launch option, with a “Fix” button next to any problem. Then restart Dota 2: the connection only starts when the game launches.",h3q:"The panel isn’t visible over the game",h3a:"Switch Dota 2 to <b>“Borderless window”</b> (Settings → Video). Transparent windows can’t be drawn over exclusive fullscreen. <kbd>F8</kbd> shows or hides the panel.",h4q:"How to link Steam",h4a:"Usually you don’t need to: after your first match the account is linked from the game. Or <b>Settings → Steam</b>: “Find Steam on this PC” or “Sign in with Steam” — you sign in on Steam’s own site, ROSHIQ never sees your password.",h5q:"Matches and stats don’t load",h5a:"OpenDota can’t see a hidden history. In Dota 2: <b>Settings → Options → Social</b> → turn on “Expose public match data”, play a match and refresh the profile in ROSHIQ.",h6q:"Nothing helped",h6a:"<b>Settings → Diagnostics → “Create report”</b> — one zip with logs, without your Steam ID or keys. Send it to the <a href=\"https://vk.ru/roshiq\" data-goal=\"vk\">VK community</a> messages and describe what happened.",
 h1:"Fewer silly deaths. More lanes won.",
 p1:"A free Dota 2 helper: tips during the game and an honest review after. Only Valve’s official Game State Integration — no cheats.",
 dl:"Download for Windows",dlc:"downloads from GitHub — the counter updates itself",dls:"Windows 10 and 11, 78 MB.<br>No admin rights needed.",stamp:"FREE<br>AND OPEN",
@@ -318,9 +412,9 @@ nh:"Doesn’t",x1:"no memory reading, no code injection",x2:"no key presses, no 
 bf:"ROSHIQ is an unofficial project: Valve hasn’t reviewed or approved it. But it does nothing beyond what ordinary stream overlays do.",
 h2c:"Three minutes and you’re in",s1:"Download",s1p:"the installer and run it. No separate .NET install needed.",s2:"Set up",s2p:"language, role and game connection — the connection is one button.",
 s3:"Play",s3p:"restart Dota 2. <kbd>F8</kbd> toggles the panel.",
-h2d:"What’s new",v1:"Updates without reinstalling",v1d:"The Update button downloads, checks and installs the new version in place. Settings and history stay.",
-v2:"Tip log",v2d:"See what the app suggested in each match and what happened to it. Stored only on your PC.",
-v3:"Fairer advice",v3d:"The match summary compares only with games on your role, and tips don’t pop up after lag.",all:"Full changelog",
+h2d:"What’s new",v1:"Search finds every item",v1d:"Crystalys, Kaya, Yasha, Sange, blinks and 80 more components — add them to your own build.",
+v2:"Auto-draft on the real pick screen",v2d:"Hero slots re-measured, ultrawide supported. Plus a Create report button — everything for troubleshooting in one file.",
+v3:"Big monitors",v3d:"On 1440p, ultrawide and 4K the panel and notifications grow with the game resolution.",all:"Full changelog",
 h2e:"Questions",q1:"Do I need internet?",a1:"No. Draft, builds, timers, tips and the match summary work offline. Internet is for OpenDota stats and updates — one checkbox turns it off.",
 q2:"I can’t see the panel over the game",a2:"Switch Dota 2 to “Borderless window” (Settings → Video). Transparent windows can’t be drawn over exclusive fullscreen.",
 q3:"Windows says it protected my PC",a3:"Click “More info” → “Run anyway”. The app doesn’t have a paid code signature yet. You can check the file with SHA256SUMS.txt on the release page.",
@@ -406,6 +500,61 @@ function dlTick(force){
 dlTick(false);
 setInterval(()=>{if(!document.hidden)dlTick(true)},5*60e3);
 document.getElementById('lang').addEventListener('click',()=>{if(dlShown)dlShow(dlShown)});
+// «Прокрути матч»: пример подсказок по игровым часам. Тексты — те же, что в программе; цифры условные.
+const MEV=[
+  [0,'timer','Руна богатства','каждые 3 минуты — таймеры рун на панели','Bounty rune','every 3 minutes — rune timers on the panel'],
+  [252,'warn','Нет свитка телепорта — купи TP.','напомнит, пока ты не ушёл на линию','No teleport scroll — buy a TP.','a reminder before you walk to lane'],
+  [340,'timer','Руна силы через 20 с','руны, лотосы, день и ночь — всё по игровым часам','Power rune in 20 s','runes, lotuses, day and night — all on the game clock'],
+  [600,'pace','Отстаёшь на 8 добиваний','от своих же игр на этой роли, а не от про-игроков','8 last hits behind','compared with your own games on this role, not pro players'],
+  [750,'warn','Предметы в тайнике — доставь курьером.','купил и забыл — бывает с каждым','Items are in the stash — send the courier.','bought and forgot — happens to everyone'],
+  [870,'timer','Терзатель через 30 с','первое появление — на 15:00','Tormentor in 30 s','first spawn at 15:00'],
+  [1100,'warn','2 140 золота при себе: при смерти часть потеряется.','лучше потратить, пока не поймали','2,140 gold on hand: part of it is lost on death.','better spend it before you get caught'],
+  [1445,'timer','Рошан убит — аегис до 29:05','возрождение между 32:05 и 35:05','Roshan killed — Aegis until 29:05','respawns between 32:05 and 35:05'],
+  [1900,'bad','Не хватает 420 золота на байбэк.','предупредит, пока есть время дофармить','420 gold short of buyback.','a warning while there’s still time to farm'],
+  [2700,'after','Итог: одна главная ошибка','и одна цель на следующий матч — в окне программы','Summary: one main mistake','and one goal for the next match — in the app window']];
+const MCOL={timer:'#4DB8FF',warn:'#FFB547',pace:'var(--lime)',bad:'#FF6B57',after:'#fff'};
+const mR=document.getElementById('mRange'),mClock=document.getElementById('mClock'),mNow=document.getElementById('mNow'),
+  mHist=document.getElementById('mHist'),mTicks=document.getElementById('mTicks'),mPlay=document.getElementById('mPlay');
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+let mLast=-2,mAnim=0;
+function mRender(force){
+  const t=+mR.value,en=lang==='en';mClock.textContent=fmt(t);
+  mR.setAttribute('aria-valuetext',fmt(t));mR.setAttribute('aria-label',en?'Match time':'Время матча');
+  let idx=-1;MEV.forEach((e,i)=>{if(e[0]<=t)idx=i});
+  [...mTicks.children].forEach((b,i)=>b.classList.toggle('on',i<=idx));
+  if(idx===mLast&&!force)return;const changed=idx!==mLast;mLast=idx;
+  if(idx<0){mNow.innerHTML='';mHist.innerHTML='';return}
+  const e=MEV[idx],tt=en?e[4]:e[2],nn=en?e[5]:e[3],lab=e[1]==='after'?(en?'after the game':'после игры'):fmt(e[0]);
+  mNow.innerHTML=`<div class="tip${changed?' now':''}" style="--c:${MCOL[e[1]]}"><em>${lab}</em><b>${tt}</b><span>${nn}</span></div>`;
+  mHist.innerHTML=MEV.slice(Math.max(0,idx-4),idx).reverse().map(x=>`<li><em>${fmt(x[0])}</em>${en?x[4]:x[2]}</li>`).join('');
+}
+MEV.forEach(e=>{const b=document.createElement('button');b.type='button';b.style.left=(e[0]/2700*100)+'%';b.style.setProperty('--c',MCOL[e[1]]);
+  b.tabIndex=-1;b.setAttribute('aria-hidden','true');b.onclick=()=>{mStop();mR.value=e[0];mRender()};mTicks.appendChild(b)});
+function mStop(){if(mAnim){cancelAnimationFrame(mAnim);mAnim=0}mPlay.textContent=(lang==='en'?EN:RU).mpl}
+mR.addEventListener('input',()=>{mStop();mRender()});
+mPlay.onclick=()=>{
+  if(mAnim){mStop();return}
+  if(+mR.value>=2700)mR.value=0;
+  const start=+mR.value,t0=performance.now(),dur=(2700-start)/2700*20000;
+  mPlay.textContent=lang==='en'?'Pause':'Пауза';
+  (function f(now){const p=Math.min(1,(now-t0)/dur);mR.value=Math.round(start+(2700-start)*p);mRender();
+    if(p<1)mAnim=requestAnimationFrame(f);else{mAnim=0;mStop()}})(t0);
+  try{window.ym&&ym(114137127,'reachGoal','demo')}catch(_){}
+};
+mRender(true);
+
+// Ролики: превью с YouTube, сам плеер грузится только по нажатию (youtube-nocookie).
+const VIDS=[['lXIt-Keu1Kk','У ROSHIQ появился сайт','ROSHIQ now has a website'],['fBB8ht-FUa8','«Иди дерись!» — а ты без ТП?','“Go fight!” — without a TP?'],
+  ['ARZ3aLvO0KY','Советы, которым можно верить','Tips you can trust'],['-Os1SNdCHgo','Драфт, сборки, разбор матчей','Draft, builds, match reviews']];
+const vids=document.getElementById('vids');
+function vRender(){const en=lang==='en';vids.innerHTML='';
+  VIDS.forEach(([id,ru,eng])=>{const d=document.createElement('div');d.className='vid';
+    d.innerHTML=`<button type="button" aria-label="${(en?'Play: ':'Смотреть: ')+(en?eng:ru)}"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"><span class="pl"></span><span class="cap">${en?eng:ru}</span></button>`;
+    d.querySelector('button').onclick=()=>{d.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="${en?eng:ru}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
+      try{window.ym&&ym(114137127,'reachGoal','video')}catch(_){}};
+    vids.appendChild(d)})}
+vRender();
+document.getElementById('lang').addEventListener('click',()=>{mRender(true);if(!mAnim)mStop();if(!vids.querySelector('iframe'))vRender()});
 </script>
 </body>
 </html>
