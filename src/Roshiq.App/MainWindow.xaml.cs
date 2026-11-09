@@ -509,7 +509,9 @@ public partial class MainWindow : Window
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        DarkTitleBar.Apply(new WindowInteropHelper(this).Handle);
+        var hwnd = new WindowInteropHelper(this).Handle;
+        DarkTitleBar.Apply(hwnd);
+        ThemeManager.Applied += (_, _) => DarkTitleBar.Apply(hwnd);
     }
 
     private void ApplyScale()
@@ -631,7 +633,8 @@ internal static class DarkTitleBar
         {
             int on = 1;
             DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref on, sizeof(int));
-            int caption = 0x000A0B09; // COLORREF 0x00BBGGRR = #090B0A — цвет фона
+            var bg = ThemeManager.CurrentBg;
+            int caption = bg.R | (bg.G << 8) | (bg.B << 16); // COLORREF 0x00BBGGRR — цвет фона темы
             DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref caption, sizeof(int));
         }
         catch

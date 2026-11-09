@@ -1,6 +1,7 @@
 Иконки приложения — набор ROSHIQ Theme Collection (green / red), предоставлен автором проекта.
 green  -> тема Lime, red -> тема Crimson.
 violet -> сгенерирован из green сдвигом оттенка (+149°) для темы Violet; силуэты те же.
+blue / teal / gold / orange -> сгенерированы из green сдвигом оттенка (+98°, +62°, −62°, −82°) для тем Azure, Teal, Gold, Orange.
 app.ico  = Adaptive.ico (16–256 px): иконка окна и панели задач.
 logo.png = Compact 128 px: логотип в верхней панели и превью темы в настройках.
 mark.png = Minimal 64 px: маленький знак в заголовке оверлея и уведомлениях.

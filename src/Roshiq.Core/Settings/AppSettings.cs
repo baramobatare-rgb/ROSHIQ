@@ -12,8 +12,10 @@ public sealed class AppSettings
     public UsageContext UsageContext { get; set; } = UsageContext.Reference;
     public bool Autostart { get; set; }
     public string? LastHeroKey { get; set; }
-    /// <summary>Акцентная тема интерфейса: lime, crimson, violet.</summary>
+    /// <summary>Акцентная тема интерфейса: lime, crimson, violet, azure, teal, gold, orange.</summary>
     public string Theme { get; set; } = "lime";
+    /// <summary>Фон интерфейса: standard, deep, black.</summary>
+    public string Background { get; set; } = "standard";
     /// <summary>Масштаб главного окна (0.85–1.3).</summary>
     public double UiScale { get; set; } = 1.0;
     public bool ReduceMotion { get; set; }
@@ -58,7 +60,8 @@ public sealed class AppSettings
         if (!Enum.IsDefined(Position)) Position = Position.Carry;
         if (!Enum.IsDefined(Language)) Language = Language.Russian;
         if (!Enum.IsDefined(UsageContext)) UsageContext = UsageContext.Reference;
-        if (Theme is not ("lime" or "crimson" or "violet")) Theme = "lime";
+        if (Theme is not ("lime" or "crimson" or "violet" or "azure" or "teal" or "gold" or "orange")) Theme = "lime";
+        if (Background is not ("standard" or "deep" or "black")) Background = "standard";
         UiScale = Math.Clamp(double.IsFinite(UiScale) ? UiScale : 1.0, 0.85, 1.3);
         FavoriteHeroKeys = (FavoriteHeroKeys ?? new()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         PersonalBuilds = (PersonalBuilds ?? new()).Where(x => x != null && !string.IsNullOrWhiteSpace(x.Id)

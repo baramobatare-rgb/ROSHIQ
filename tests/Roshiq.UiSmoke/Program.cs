@@ -14,6 +14,27 @@ class Program
 {
     static void Check(bool condition, string label) { if (!condition) throw new Exception(label); Console.WriteLine("PASS " + label); }
     static T Control<T>(FrameworkElement parent, string name) where T : class => (T)parent.FindName(name);
+    /// <summary>0.18.2: каждый акцент и каждый фон применяются, иконки темы загружаются, фон «Чёрный» — чистый чёрный.</summary>
+    static void ThemeChecks()
+    {
+        var res = Application.Current.Resources;
+        System.Windows.Media.Color Bg() => ((System.Windows.Media.SolidColorBrush)res["Bg"]).Color;
+        foreach (var p in ThemeManager.Palettes)
+        {
+            ThemeManager.Apply(p.Key);
+            Check(ThemeManager.Current == p.Key && ((System.Windows.Media.SolidColorBrush)res["Accent"]).Color == p.Accent
+                  && res["AppLogo"] is System.Windows.Media.ImageSource && ThemeManager.LogoFor(p) != null, "Theme accent and icons: " + p.Key);
+        }
+        foreach (var b in ThemeManager.Backdrops)
+        {
+            ThemeManager.ApplyBackdrop(b.Key);
+            Check(Bg() == b.Bg && ((System.Windows.Media.SolidColorBrush)res["Panel"]).Color == b.Panel && ThemeManager.CurrentBg == b.Bg, "Background applies: " + b.Key);
+        }
+        Check(ThemeManager.Backdrops.Single(x => x.Key == "black").Bg == System.Windows.Media.Colors.Black, "Black background is pure black for OLED");
+        ThemeManager.Apply("lime", "nonsense");
+        Check(ThemeManager.CurrentBackdrop == "standard" && Bg() == ThemeManager.Backdrops[0].Bg, "Unknown background falls back to standard");
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -29,6 +50,7 @@ class Program
             typeof(App).GetProperty("Host")!.SetValue(null, host);
             host.Settings.Current.Gsi.Enabled = false;
             MapPolishChecks.Run(args);
+            ThemeChecks();
             var main = new MainWindow(); app.MainWindow = main;
             foreach (var h in host.Database.Heroes)
             {

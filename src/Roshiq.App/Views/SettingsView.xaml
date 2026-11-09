@@ -44,6 +44,8 @@
                         <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_appearance, Upper=True}" /></TextBlock>
                         <TextBlock Text="{app:T set_theme}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
                         <WrapPanel x:Name="ThemePanel" Margin="0,0,0,12" />
+                        <TextBlock Text="{app:T set_backdrop}" Style="{StaticResource FieldLabel}" Margin="0,0,0,6" />
+                        <WrapPanel x:Name="BackdropPanel" Margin="0,0,0,12" />
                         <CheckBox x:Name="ReduceMotionBox" Content="{app:T set_reduce_motion}" ToolTip="{app:T set_reduce_motion_hint}" Checked="Motion_Changed" Unchecked="Motion_Changed" Margin="0,0,0,8" />
                         <CheckBox x:Name="CursorGlowBox" Content="{app:T set_cursor_glow}" ToolTip="{app:T set_cursor_glow_hint}" Checked="Glow_Changed" Unchecked="Glow_Changed" Margin="0,0,0,12" />
                         <TextBlock Text="{app:T set_ui_scale}" Style="{StaticResource FieldLabel}" />

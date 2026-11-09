@@ -28,7 +28,7 @@ public partial class SafeModeWindow : Window
     private void Reset_Click(object sender, RoutedEventArgs e)
     {
         var backup = App.Host.Settings.ResetToDefaults();
-        ThemeManager.Apply(App.Host.Settings.Current.Theme);
+        ThemeManager.Apply(App.Host.Settings.Current.Theme, App.Host.Settings.Current.Background);
         Status.Text = backup != null ? Loc.Instance.Format("safe_reset_done", backup) : Loc.T("safe_reset_done_nobackup");
     }
 

@@ -154,6 +154,7 @@ internal static class Strings
         ["set_tab_data"] = ("Данные", "Data"),
         ["set_appearance"] = ("Оформление", "Appearance"),
         ["set_theme"] = ("Акцент темы", "Theme accent"),
+        ["set_backdrop"] = ("Фон", "Background"),
         ["set_ui_scale"] = ("Размер элементов", "Element size"),
 
         // общее

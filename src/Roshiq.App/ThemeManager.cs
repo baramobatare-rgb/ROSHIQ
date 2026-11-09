@@ -13,14 +13,31 @@ public static class ThemeManager
 {
     public sealed record Palette(string Key, string NameRu, string NameEn, Color Accent, Color Hover, Color Soft, Color OnAccent, string Brand);
 
+    /// <summary>Фон интерфейса: насколько тёмные фон, панели и линии. Акцент выбирается отдельно.</summary>
+    public sealed record Backdrop(string Key, string NameRu, string NameEn, Color Bg, Color Panel, Color Panel2, Color Panel3, Color Line, Color LineStrong);
+
+    public static readonly IReadOnlyList<Backdrop> Backdrops = new[]
+    {
+        new Backdrop("standard", "Стандартный", "Standard", Hex("#090B0A"), Hex("#121614"), Hex("#191E1B"), Hex("#222823"), Hex("#232925"), Hex("#303830")),
+        new Backdrop("deep", "Глубокий", "Deep", Hex("#050606"), Hex("#0C0E0D"), Hex("#121513"), Hex("#1A1E1B"), Hex("#1B1F1C"), Hex("#272D28")),
+        new Backdrop("black", "Чёрный (OLED)", "Black (OLED)", Hex("#000000"), Hex("#070808"), Hex("#0D0F0E"), Hex("#151816"), Hex("#161917"), Hex("#232724")),
+    };
+
     public static readonly IReadOnlyList<Palette> Palettes = new[]
     {
         new Palette("lime", "Lime — неоновый зелёный", "Lime — neon green", Hex("#B5FF4D"), Hex("#C7FF7A"), Hex("#1C2612"), Hex("#0A0D07"), "green"),
         new Palette("crimson", "Crimson — красный", "Crimson — red", Hex("#FF4D5E"), Hex("#FF7381"), Hex("#2A1216"), Hex("#FFFFFF"), "red"),
         new Palette("violet", "Violet — фиолетовый", "Violet — purple", Hex("#A78BFF"), Hex("#BCA6FF"), Hex("#1D1830"), Hex("#0B0A12"), "violet"),
+        new Palette("azure", "Azure — синий", "Azure — blue", Hex("#4DB8FF"), Hex("#7ACBFF"), Hex("#10202C"), Hex("#06101A"), "blue"),
+        new Palette("teal", "Teal — бирюзовый", "Teal — turquoise", Hex("#3DF5D0"), Hex("#74F8DE"), Hex("#0F2622"), Hex("#04110E"), "teal"),
+        new Palette("gold", "Gold — золотой", "Gold — golden", Hex("#FFC93D"), Hex("#FFD76E"), Hex("#2A2410"), Hex("#120E02"), "gold"),
+        new Palette("orange", "Orange — оранжевый", "Orange — orange", Hex("#FF8A3D"), Hex("#FFA56B"), Hex("#2B1A0E"), Hex("#140A03"), "orange"),
     };
 
     public static string Current { get; private set; } = "lime";
+    public static string CurrentBackdrop { get; private set; } = "standard";
+    /// <summary>Цвет фона текущей темы — для заголовка окна Windows.</summary>
+    public static Color CurrentBg { get; private set; } = Hex("#090B0A");
     /// <summary>Набор иконок текущей темы: green / red / violet.</summary>
     public static string CurrentBrand { get; private set; } = "green";
     /// <summary>Тема применена (для обновления значка в трее).</summary>
@@ -39,8 +56,32 @@ public static class ThemeManager
         res["OnAccent"] = Brush(p.OnAccent);
         // «Хорошо» всегда зелёное, а не цвет темы: в Crimson красный «успех» путается с ошибкой
         res["Success"] = Brush(p.Key == "lime" ? p.Accent : Hex("#7EE08A"));
+        // В золотой теме «внимание» уходит в оранжевый, чтобы не сливаться с акцентом
+        res["Warning"] = Brush(p.Key == "gold" ? Hex("#FF9E4D") : Hex("#FFC24D"));
         CurrentBrand = p.Brand;
         ApplyBrand(p.Brand);
+        Applied?.Invoke(null, EventArgs.Empty);
+    }
+
+    /// <summary>Тема целиком: акцент и фон.</summary>
+    public static void Apply(string key, string? backdrop)
+    {
+        ApplyBackdrop(backdrop);
+        Apply(key);
+    }
+
+    public static void ApplyBackdrop(string? key)
+    {
+        var b = Backdrops.FirstOrDefault(x => x.Key == key) ?? Backdrops[0];
+        CurrentBackdrop = b.Key;
+        CurrentBg = b.Bg;
+        var res = Application.Current.Resources;
+        res["Bg"] = Brush(b.Bg);
+        res["Panel"] = Brush(b.Panel);
+        res["Panel2"] = Brush(b.Panel2);
+        res["Panel3"] = Brush(b.Panel3);
+        res["Line"] = Brush(b.Line);
+        res["LineStrong"] = Brush(b.LineStrong);
         Applied?.Invoke(null, EventArgs.Empty);
     }
 

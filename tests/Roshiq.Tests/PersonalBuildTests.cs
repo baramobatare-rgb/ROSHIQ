@@ -47,6 +47,16 @@ public class PersonalBuildTests
         var settings = System.Text.Json.JsonSerializer.Deserialize<AppSettings>("{\"Theme\":\"violet\",\"UiScale\":1.2}")!.Normalize();
         Assert.Empty(settings.FavoriteHeroKeys); Assert.Empty(settings.PersonalBuilds); Assert.Empty(settings.ActivePersonalBuilds);
         Assert.Equal("violet", settings.Theme); Assert.Equal(1.2, settings.UiScale);
+        Assert.Equal("standard", settings.Background);
+    }
+
+    [Fact]
+    public void Normalize_KeepsNewThemesAndBackgrounds_FixesUnknown()
+    {
+        var ok = System.Text.Json.JsonSerializer.Deserialize<AppSettings>("{\"Theme\":\"gold\",\"Background\":\"black\"}")!.Normalize();
+        Assert.Equal("gold", ok.Theme); Assert.Equal("black", ok.Background);
+        var bad = System.Text.Json.JsonSerializer.Deserialize<AppSettings>("{\"Theme\":\"pink\",\"Background\":null}")!.Normalize();
+        Assert.Equal("lime", bad.Theme); Assert.Equal("standard", bad.Background);
     }
 
     [Fact]

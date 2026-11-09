@@ -33,6 +33,7 @@ public partial class SettingsView : UserControl, IRefreshable
         _ready = false;
         var s = App.Host.Settings.Current;
         BuildThemePanel(s.Theme);
+        BuildBackdropPanel(s.Background);
         ReduceMotionBox.IsChecked = s.ReduceMotion;
         CursorGlowBox.IsChecked = s.CursorGlow;
         UiScaleSlider.Value = s.UiScale;
@@ -124,6 +125,40 @@ public partial class SettingsView : UserControl, IRefreshable
                 App.Host.Settings.Update(x => x.Theme = p.Key);
             };
             ThemePanel.Children.Add(rb);
+        }
+    }
+
+    private void BuildBackdropPanel(string current)
+    {
+        BackdropPanel.Children.Clear();
+        foreach (var b in ThemeManager.Backdrops)
+        {
+            // превью фона — квадрат его цвета с рамкой панели
+            var swatch = new Border
+            {
+                Width = 16, Height = 16, CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center,
+                Background = new System.Windows.Media.SolidColorBrush(b.Bg),
+                BorderBrush = new System.Windows.Media.SolidColorBrush(b.LineStrong), BorderThickness = new Thickness(1)
+            };
+            var content = new StackPanel { Orientation = Orientation.Horizontal };
+            content.Children.Add(swatch);
+            content.Children.Add(new TextBlock { Text = Loc.Instance.Language == Lang.Russian ? b.NameRu : b.NameEn, VerticalAlignment = VerticalAlignment.Center });
+            var rb = new RadioButton
+            {
+                Style = (Style)FindResource("Segment"),
+                GroupName = "Backdrop",
+                Content = content,
+                Tag = b.Key,
+                Margin = new Thickness(0, 0, 8, 8),
+                IsChecked = b.Key == (ThemeManager.Backdrops.Any(x => x.Key == current) ? current : ThemeManager.Backdrops[0].Key)
+            };
+            rb.Checked += (_, _) =>
+            {
+                if (!_ready) return;
+                ThemeManager.ApplyBackdrop(b.Key);
+                App.Host.Settings.Update(x => x.Background = b.Key);
+            };
+            BackdropPanel.Children.Add(rb);
         }
     }
 

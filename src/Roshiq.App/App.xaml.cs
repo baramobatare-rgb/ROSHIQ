@@ -73,7 +73,7 @@ public partial class App : Application
         var gsi = Host.Settings.Current.Gsi;
         GsiConfigWriter.MigrateLegacy(SteamLocator.FindDotaRoot(), gsi.Port, gsi.Token);
 
-        ThemeManager.Apply(Host.Settings.Current.Theme);
+        ThemeManager.Apply(Host.Settings.Current.Theme, Host.Settings.Current.Background);
         var window = new MainWindow();
         MainWindow = window;
         bool minimized = e.Args.Any(a => a.Equals("--minimized", StringComparison.OrdinalIgnoreCase));
