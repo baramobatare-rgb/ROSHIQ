@@ -73,7 +73,7 @@ public partial class OverlayPanelWindow : Window
     /// <summary>Масштаб содержимого (0.8–1.5).</summary>
     public void SetContentScale(double scale)
     {
-        scale = Math.Clamp(scale, 0.8, 1.5);
+        scale = Math.Clamp(scale, 0.6, 3.0);
         ContentScale.ScaleX = scale;
         ContentScale.ScaleY = scale;
     }

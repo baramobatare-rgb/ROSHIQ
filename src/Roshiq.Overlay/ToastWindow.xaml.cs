@@ -38,7 +38,7 @@ public partial class ToastWindow : Window
 
     /// <param name="warning">Предупреждение (нет TP, байбэк, отстаёте от темпа): жёлтая точка и рамка значка.</param>
     /// <param name="animate">Плавно «въехать» справа (выключается настройкой «Уменьшить анимацию»).</param>
-    public void ShowToast(string header, string text, PixelRect bounds, TimeSpan duration, double opacity, bool warning = false, bool animate = true)
+    public void ShowToast(string header, string text, PixelRect bounds, TimeSpan duration, double opacity, bool warning = false, bool animate = true, double scale = 1.0)
     {
         HeaderText.Text = header;
         Message.Text = text;
@@ -58,8 +58,11 @@ public partial class ToastWindow : Window
         var dpi = VisualTreeHelper.GetDpi(this);
         Left = bounds.X / dpi.DpiScaleX;
         Top = bounds.Y / dpi.DpiScaleY;
-        Width = Math.Max(240, bounds.Width / dpi.DpiScaleX);
-        Height = Math.Max(60, bounds.Height / dpi.DpiScaleY);
+        // масштаб под экран: увеличиваем саму карточку, окно — не меньше её размера
+        scale = double.IsFinite(scale) ? Math.Clamp(scale, 0.6, 3.0) : 1.0;
+        Root.LayoutTransform = Math.Abs(scale - 1.0) < 0.01 ? Transform.Identity : new ScaleTransform(scale, scale);
+        Width = Math.Max(240 * scale, bounds.Width / dpi.DpiScaleX);
+        Height = Math.Max(68 * scale, bounds.Height / dpi.DpiScaleY);
         if (!IsVisible)
         {
             Root.Opacity = 0;

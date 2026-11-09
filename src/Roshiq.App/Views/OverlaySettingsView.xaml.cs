@@ -41,6 +41,7 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         BuildProfiles();
         HideUnfocused.IsChecked = o.HideWhenGameNotFocused;
         SnapBox.IsChecked = o.SnapToEdges;
+        AutoScaleBox.IsChecked = o.AutoScale;
         UpdateLayoutsText();
         ProcessName.Text = o.TargetProcess;
         UpdateTexts();
@@ -57,6 +58,27 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         HText.Text = HSlider.Value.ToString("P0");
         ScaleText.Text = ScaleSlider.Value.ToString("P0");
         OpacityText.Text = OpacitySlider.Value.ToString("P0");
+        UpdateAutoScaleText();
+    }
+
+    /// <summary>«Сейчас: игра 3440×1440 → текст и значки ×135%».</summary>
+    private void UpdateAutoScaleText()
+    {
+        var ov = App.Host.Overlay;
+        var o = App.Host.Settings.Current.Overlay;
+        var g = ov.Game;
+        AutoScaleText.Text = !g.Found || g.ClientArea.IsEmpty
+            ? Loc.T("ov_autoscale_nogame")
+            : Loc.Instance.Format("ov_autoscale_now", g.ClientArea.Width, g.ClientArea.Height,
+                (o.AutoScale ? ov.AutoScale : 1.0).ToString("P0"), ov.EffectiveScale.ToString("P0"));
+    }
+
+    private void AutoScale_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        App.Host.Settings.Update(s => s.Overlay.AutoScale = AutoScaleBox.IsChecked == true);
+        App.Host.Overlay.Update();
+        UpdateAutoScaleText();
     }
 
     private void UpdateButtons()

@@ -16,7 +16,7 @@ public sealed class AppSettings
     public string Theme { get; set; } = "lime";
     /// <summary>Фон интерфейса: standard, deep, black.</summary>
     public string Background { get; set; } = "standard";
-    /// <summary>Масштаб главного окна (0.85–1.3).</summary>
+    /// <summary>Масштаб главного окна (0.85–1.6).</summary>
     public double UiScale { get; set; } = 1.0;
     public bool ReduceMotion { get; set; }
     /// <summary>Мягкое свечение за курсором в цвете темы (главное окно).</summary>
@@ -62,7 +62,7 @@ public sealed class AppSettings
         if (!Enum.IsDefined(UsageContext)) UsageContext = UsageContext.Reference;
         if (Theme is not ("lime" or "crimson" or "violet" or "azure" or "teal" or "gold" or "orange")) Theme = "lime";
         if (Background is not ("standard" or "deep" or "black")) Background = "standard";
-        UiScale = Math.Clamp(double.IsFinite(UiScale) ? UiScale : 1.0, 0.85, 1.3);
+        UiScale = Math.Clamp(double.IsFinite(UiScale) ? UiScale : 1.0, 0.85, 1.6);
         FavoriteHeroKeys = (FavoriteHeroKeys ?? new()).Where(x => !string.IsNullOrWhiteSpace(x)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         PersonalBuilds = (PersonalBuilds ?? new()).Where(x => x != null && !string.IsNullOrWhiteSpace(x.Id)
             && !string.IsNullOrWhiteSpace(x.HeroKey) && Enum.IsDefined(x.Position)).DistinctBy(x => x.Id).ToList();
@@ -113,8 +113,10 @@ public sealed class OverlaySettings
     public string EditHotkey { get; set; } = "Ctrl+Shift+F8";
     /// <summary>Переключение Minimal ↔ Expanded без мыши (оверлей не перехватывает клики).</summary>
     public string DetailsHotkey { get; set; } = "Ctrl+F8";
-    /// <summary>Масштаб оверлея (0.8–1.5).</summary>
+    /// <summary>Масштаб оверлея (0.8–2.0) — поверх автомасштаба под экран.</summary>
     public double Scale { get; set; } = 1.0;
+    /// <summary>Подстраивать размер текста и значков под разрешение игры (1440p, ultrawide, 4K).</summary>
+    public bool AutoScale { get; set; } = true;
     /// <summary>Отметить убийство Рошана (запускает таймер возрождения и Аегиса).</summary>
     public string RoshanHotkey { get; set; } = "Ctrl+Shift+K";
     public string TargetProcess { get; set; } = "dota2";
@@ -134,7 +136,7 @@ public sealed class OverlaySettings
         if (string.IsNullOrWhiteSpace(EditHotkey)) EditHotkey = "Ctrl+Shift+F8";
         if (string.IsNullOrWhiteSpace(DetailsHotkey)) DetailsHotkey = "Ctrl+F8";
         if (string.IsNullOrWhiteSpace(RoshanHotkey)) RoshanHotkey = "Ctrl+Shift+K";
-        Scale = Math.Clamp(double.IsFinite(Scale) ? Scale : 1.0, 0.8, 1.5);
+        Scale = Math.Clamp(double.IsFinite(Scale) ? Scale : 1.0, 0.8, 2.0);
         if (string.IsNullOrWhiteSpace(TargetProcess)) TargetProcess = "dota2";
         if (!Enum.IsDefined(Mode)) Mode = OverlayMode.Minimal;
     }
@@ -312,7 +314,7 @@ public sealed class OverlayProfile
         if (string.IsNullOrWhiteSpace(Name)) Name = Id;
         if (!Enum.IsDefined(Mode)) Mode = OverlayMode.Minimal;
         Panel = SafeZone.Clamp(Panel ?? new RelRect(0.78, 0.22, 0.19, 0.30));
-        Scale = Math.Clamp(double.IsFinite(Scale) ? Scale : 1.0, 0.8, 1.5);
+        Scale = Math.Clamp(double.IsFinite(Scale) ? Scale : 1.0, 0.8, 2.0);
         Opacity = Math.Clamp(double.IsFinite(Opacity) ? Opacity : 0.88, 0.2, 1.0);
     }
 

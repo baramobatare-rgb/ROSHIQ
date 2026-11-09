@@ -67,7 +67,7 @@
                             <Slider x:Name="HSlider" Grid.Row="3" Grid.Column="1" Minimum="0.05" Maximum="0.7" ValueChanged="Geometry_Changed" Margin="0,4" />
                             <TextBlock x:Name="HText" Grid.Row="3" Grid.Column="2" Style="{StaticResource ValueLabel}" />
                             <TextBlock Grid.Row="4" Text="{app:T ov_scale}" Style="{StaticResource FieldLabel}" />
-                            <Slider x:Name="ScaleSlider" Grid.Row="4" Grid.Column="1" Minimum="0.8" Maximum="1.5" TickFrequency="0.05" IsSnapToTickEnabled="True" ValueChanged="Geometry_Changed" Margin="0,4" />
+                            <Slider x:Name="ScaleSlider" Grid.Row="4" Grid.Column="1" Minimum="0.8" Maximum="2" TickFrequency="0.05" IsSnapToTickEnabled="True" ValueChanged="Geometry_Changed" Margin="0,4" />
                             <TextBlock x:Name="ScaleText" Grid.Row="4" Grid.Column="2" Style="{StaticResource ValueLabel}" />
                             <TextBlock Grid.Row="5" Text="{app:T ov_opacity}" Style="{StaticResource FieldLabel}" />
                             <Slider x:Name="OpacitySlider" Grid.Row="5" Grid.Column="1" Minimum="0.2" Maximum="1" ValueChanged="Geometry_Changed" Margin="0,4" />
@@ -78,6 +78,8 @@
                             <Button x:Name="TestButton" Click="Test_Click" />
                             <Button Style="{StaticResource GhostButton}" Content="{app:T ov_reset}" Click="Reset_Click" />
                         </WrapPanel>
+                        <CheckBox x:Name="AutoScaleBox" Content="{app:T ov_autoscale}" ToolTip="{app:T ov_autoscale_hint}" Checked="AutoScale_Changed" Unchecked="AutoScale_Changed" Margin="0,10,0,0" />
+                        <TextBlock x:Name="AutoScaleText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="24,2,0,0" />
                         <CheckBox x:Name="SnapBox" Content="{app:T ov_snap}" Checked="Snap_Changed" Unchecked="Snap_Changed" Margin="0,10,0,0" />
                         <DockPanel Margin="0,8,0,0">
                             <Button x:Name="ResetLayoutsButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T ov_layouts_reset}" Click="ResetLayouts_Click" />

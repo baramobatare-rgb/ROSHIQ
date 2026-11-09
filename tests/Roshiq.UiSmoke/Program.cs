@@ -35,6 +35,21 @@ class Program
         Check(ThemeManager.CurrentBackdrop == "standard" && Bg() == ThemeManager.Backdrops[0].Bg, "Unknown background falls back to standard");
     }
 
+    /// <summary>0.18.3: уведомление на большом экране увеличивается вместе с карточкой и не обрезается.</summary>
+    static void ToastScaleCheck()
+    {
+        var toast = new Roshiq.Overlay.ToastWindow { Left = -20000, Top = -20000 };
+        var dpi = System.Windows.Media.VisualTreeHelper.GetDpi(toast);
+        var bounds = new Roshiq.Core.Layout.PixelRect(-20000, -20000, 300, 60);
+        toast.ShowToast("ROSHIQ", "Нет телепорта — купи ТП", bounds, TimeSpan.FromSeconds(5), 0.9, animate: false, scale: 1.35);
+        Check(toast.Width >= 240 * 1.35 - 0.5 && toast.Height >= 68 * 1.35 - 0.5
+              && toast.FindName("Root") is FrameworkElement root && root.LayoutTransform is System.Windows.Media.ScaleTransform st && Math.Abs(st.ScaleX - 1.35) < 0.001,
+            "Toast grows with the screen scale");
+        toast.ShowToast("ROSHIQ", "x", new Roshiq.Core.Layout.PixelRect(-20000, -20000, (int)(400 * dpi.DpiScaleX), (int)(80 * dpi.DpiScaleY)), TimeSpan.FromSeconds(5), 0.9, animate: false);
+        Check(((FrameworkElement)toast.FindName("Root")).LayoutTransform == System.Windows.Media.Transform.Identity && Math.Abs(toast.Width - 400) < 1, "Toast at 1080p keeps its old size");
+        toast.Close();
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -51,6 +66,7 @@ class Program
             host.Settings.Current.Gsi.Enabled = false;
             MapPolishChecks.Run(args);
             ThemeChecks();
+            ToastScaleCheck();
             var main = new MainWindow(); app.MainWindow = main;
             foreach (var h in host.Database.Heroes)
             {

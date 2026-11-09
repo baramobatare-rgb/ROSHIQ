@@ -38,6 +38,10 @@ public sealed class OverlayController : IDisposable
     public OverlayViewModel ViewModel { get; }
     public GameWindowState Game => _lastGame;
     public bool IsVisible => _lastDecision?.Visible == true;
+    /// <summary>Автомасштаб под экран, посчитанный при последнем обновлении (1 — игра не найдена или выключен).</summary>
+    public double AutoScale { get; private set; } = 1.0;
+    /// <summary>Итоговый масштаб содержимого оверлея и уведомлений: автомасштаб × масштаб из настроек.</summary>
+    public double EffectiveScale => _settings.Current.Overlay.Scale * (_settings.Current.Overlay.AutoScale ? AutoScale : 1.0);
     public string StatusKey => _lastDecision?.ReasonKey ?? "overlay_game_not_found";
     public bool EditMode => _panel?.EditMode == true;
     public bool TestMode
@@ -139,7 +143,7 @@ public sealed class OverlayController : IDisposable
         if (host == null) return false;
         var n = _settings.Current.Notifications;
         _toast.ShowToast(header, text, SafeZone.ToastArea.ToPixels(host.Value), TimeSpan.FromSeconds(n.DisplaySec), _settings.Current.Overlay.Opacity,
-            warning, !_settings.Current.ReduceMotion);
+            warning, !_settings.Current.ReduceMotion, EffectiveScale);
         return true;
     }
 
@@ -155,9 +159,11 @@ public sealed class OverlayController : IDisposable
             _tracker.ProcessName = o.TargetProcess;
             _lastGame = _tracker.Poll();
             if (!EditMode) ApplyLayoutForResolution();
+            if (HostRect() is { } screen)
+                AutoScale = ScreenScale.Auto(screen.Height, System.Windows.Media.VisualTreeHelper.GetDpi(_panel).DpiScaleY);
             ViewModel.Expanded = o.Mode == OverlayMode.Expanded || EditMode || ViewModel.DraftMode;
 
-            var panel = ViewModel.DraftMode ? o.Panel with { W = Math.Max(o.Panel.W, .24), H = Math.Max(o.Panel.H, Math.Min(.65, 420.0 / Math.Max(1, _lastGame.ClientArea.Height))) } : o.Panel;
+            var panel = ViewModel.DraftMode ? o.Panel with { W = Math.Max(o.Panel.W, .24), H = Math.Max(o.Panel.H, Math.Min(.65, 420.0 * (o.AutoScale ? AutoScale : 1.0) / Math.Max(1, _lastGame.ClientArea.Height))) } : o.Panel;
             var mode = ViewModel.DraftMode && o.Mode != OverlayMode.Hidden ? OverlayMode.Expanded : o.Mode;
             var decision = OverlayVisibility.Decide(_lastGame, mode, panel, _userHidden,
                 o.HideWhenGameNotFocused || ViewModel.DraftMode, _testMode || EditMode && !_lastGame.Found, GameWindowTracker.PrimaryScreen());
@@ -171,7 +177,7 @@ public sealed class OverlayController : IDisposable
                 w = Math.Min(w, host.X + host.Width - b.X);
                 h = Math.Min(h, host.Y + host.Height - b.Y);
                 if (!EditMode) _panel.SetBoundsPixels(b with { Width = Math.Max(1, w), Height = Math.Max(1, h) });
-                _panel.SetContentScale(o.Scale);
+                _panel.SetContentScale(EffectiveScale);
                 _panel.SetPanelOpacity(o.Opacity);
                 if (!_panel.IsShownOrShowing) _panel.FadeIn();
             }

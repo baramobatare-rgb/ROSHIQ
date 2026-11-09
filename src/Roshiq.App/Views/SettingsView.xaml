@@ -52,7 +52,7 @@
                         <DockPanel>
                             <TextBlock x:Name="UiScaleText" DockPanel.Dock="Right" Width="52" TextAlignment="Right" FontFamily="{StaticResource MonoFont}"
                                        Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
-                            <Slider x:Name="UiScaleSlider" Minimum="0.85" Maximum="1.3" TickFrequency="0.05" IsSnapToTickEnabled="True"
+                            <Slider x:Name="UiScaleSlider" Minimum="0.85" Maximum="1.6" TickFrequency="0.05" IsSnapToTickEnabled="True"
                                     ValueChanged="UiScale_Changed" />
                         </DockPanel>
                     </StackPanel>

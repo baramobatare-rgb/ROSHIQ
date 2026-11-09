@@ -83,6 +83,24 @@ public static class SafeZone
     private static double Finite(double v, double fallback) => double.IsFinite(v) ? v : fallback;
 }
 
+/// <summary>
+/// Автомасштаб оверлея под экран: текст и значки занимают ту же долю высоты, что на 1080p.
+/// Считается по высоте окна игры в логических пикселях, поэтому масштаб Windows (125%, 150%) учитывается и не удваивается:
+/// 3440×1440 при 100% → ×1,35; 2560×1440 при 125% → ×1,05; 3840×2160 при 150% → ×1,35. Меньше 1080 не уменьшаем.
+/// </summary>
+public static class ScreenScale
+{
+    public const double BaseHeight = 1080;
+    public const double Max = 2.0;
+
+    public static double Auto(int heightPx, double dpiScale)
+    {
+        if (heightPx <= 0 || !(dpiScale > 0) || !double.IsFinite(dpiScale)) return 1.0;
+        var v = Math.Clamp(heightPx / dpiScale / BaseHeight, 1.0, Max);
+        return Math.Round(v * 20) / 20;
+    }
+}
+
 /// <summary>Состояние окна игры, получаемое от трекера окна.</summary>
 public sealed record GameWindowState(bool Found, bool Minimized, bool Foreground, PixelRect ClientArea)
 {
