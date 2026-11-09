@@ -2,6 +2,19 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
+<!-- Yandex.Metrika counter -->
+<script type="text/javascript">
+(function(m,e,t,r,i,k,a){
+m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+m[i].l=1*new Date();
+for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)
+})(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=114137127', 'ym');
+
+ym(114137127, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+</script>
+<noscript><div><img src="https://mc.yandex.ru/watch/114137127" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+<!-- /Yandex.Metrika counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ROSHIQ — бесплатный помощник для Dota 2: подсказки в игре и разбор матча</title>
 <meta name="description" content="ROSHIQ — бесплатная программа для Dota 2 с открытым кодом. Напоминает про ТП, тайник и выкуп во время игры, подсказывает в драфте и честно разбирает матч после. Только официальный Game State Integration, без чтения памяти игры.">
@@ -155,7 +168,7 @@ footer nav a:hover{color:var(--lime)}
       <h1 data-i18n="h1">Меньше глупых смертей. Больше выигранных линий.</h1>
       <p data-i18n="p1">Бесплатный помощник для Dota 2: подсказки во время игры и честный разбор после. Только официальный Game State Integration — никаких читов.</p>
       <div class="cta">
-        <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-i18n="dl">Скачать для Windows</a>
+        <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
         <small data-i18n="dls">Windows 10 и 11, 78 МБ.<br>Права администратора не нужны.</small>
       </div>
     </div>
@@ -223,7 +236,7 @@ footer nav a:hover{color:var(--lime)}
       <li><span class="v">0.18.0</span><div><b data-i18n="v2">Журнал подсказок</b><span data-i18n="v2d">Видно, что программа подсказывала в каждом матче и что с этим стало. Хранится только у тебя.</span></div></li>
       <li><span class="v">0.17.8</span><div><b data-i18n="v3">Советы честнее</b><span data-i18n="v3d">Итог матча сравнивает только с играми на твоей роли, а после лага подсказки не выскакивают зря.</span></div></li>
     </ul>
-    <a class="all" href="https://github.com/baramobatare-rgb/ROSHIQ/blob/main/CHANGELOG.md" data-i18n="all">Вся история изменений</a>
+    <a class="all" href="https://github.com/baramobatare-rgb/ROSHIQ/blob/main/CHANGELOG.md" data-goal="github" data-i18n="all">Вся история изменений</a>
   </div>
 </section>
 
@@ -244,15 +257,15 @@ footer nav a:hover{color:var(--lime)}
   <div class="ghost" aria-hidden="true">ROSHIQ</div>
   <div class="w">
     <h2 data-i18n="h2f">Следующий матч — уже с ним.</h2>
-    <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-i18n="dl">Скачать для Windows</a>
+    <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
   </div>
 </section>
 </main>
 
 <footer>
   <div class="w">
-    <nav><a href="https://vk.ru/roshiq" data-i18n="vk">ВКонтакте</a><a href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ">YouTube</a><a href="https://www.tiktok.com/@baramobatare">TikTok</a><a href="https://github.com/baramobatare-rgb/ROSHIQ">GitHub</a></nav>
-    <span data-i18n="legal">ROSHIQ не связан с Valve. Dota 2 — товарный знак Valve Corporation.</span>
+    <nav><a href="https://vk.ru/roshiq" data-goal="vk" data-i18n="vk">ВКонтакте</a><a href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ" data-goal="youtube">YouTube</a><a href="https://www.tiktok.com/@baramobatare" data-goal="tiktok">TikTok</a><a href="https://github.com/baramobatare-rgb/ROSHIQ" data-goal="github">GitHub</a></nav>
+    <span data-i18n="legal">ROSHIQ не связан с Valve. Dota 2 — товарный знак Valve Corporation.<br>Посещения сайта считает Яндекс Метрика (cookie).</span>
   </div>
 </footer>
 
@@ -284,7 +297,7 @@ q2:"I can’t see the panel over the game",a2:"Switch Dota 2 to “Borderless wi
 q3:"Windows says it protected my PC",a3:"Click “More info” → “Run anyway”. The app doesn’t have a paid code signature yet. You can check the file with SHA256SUMS.txt on the release page.",
 q4:"How much is it?",a4:"Nothing. No subscriptions, ads or paid features. The code is open — anyone can see what’s inside.",
 q5:"Found a bug or have an idea",a5:"Comment under the videos, write in the VK community or open an issue on GitHub.",
-h2f:"Your next match — with it.",vk:"VK",legal:"ROSHIQ isn’t affiliated with Valve. Dota 2 is a trademark of Valve Corporation."};
+h2f:"Your next match — with it.",vk:"VK",legal:"ROSHIQ isn’t affiliated with Valve. Dota 2 is a trademark of Valve Corporation.<br>Visits are counted with Yandex Metrica (cookies)."};
 const RU={};document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
 let lang='ru';
 function setLang(l){lang=l;const d=l==='en'?EN:RU;
@@ -293,6 +306,17 @@ function setLang(l){lang=l;const d=l==='en'?EN:RU;
   try{localStorage.setItem('roshiq-site-lang',l)}catch(e){}}
 document.getElementById('lang').addEventListener('click',()=>setLang(lang==='ru'?'en':'ru'));
 try{if(localStorage.getItem('roshiq-site-lang')==='en')setLang('en')}catch(e){}
+// Метрика: клики по «Скачать», GitHub и соцсетям — цели download, github, vk, youtube, tiktok.
+document.addEventListener('click',e=>{const a=e.target.closest('a[data-goal]');if(a&&window.ym)try{ym(114137127,'reachGoal',a.dataset.goal)}catch(_){}});
+// «Скачать» сразу отдаёт установщик последней версии. Если GitHub не ответил — кнопка ведёт на страницу релиза.
+fetch('https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest').then(r=>r.ok?r.json():null).then(j=>{
+  const a=j&&(j.assets||[]).find(x=>/^Roshiq-Setup-.*\.exe$/i.test(x.name));if(!a)return;
+  document.querySelectorAll('a[data-goal="download"]').forEach(l=>{l.href=a.browser_download_url;l.setAttribute('download','');});
+  const mb=Math.round(a.size/1048576),v=(j.tag_name||'').replace(/^v/i,'');
+  RU.dls=`Windows 10 и 11, ${mb} МБ, версия ${v}.<br>Права администратора не нужны.`;
+  EN.dls=`Windows 10 and 11, ${mb} MB, version ${v}.<br>No admin rights needed.`;
+  document.querySelectorAll('[data-i18n="dls"]').forEach(e=>e.innerHTML=(lang==='en'?EN:RU).dls);
+}).catch(()=>{});
 </script>
 </body>
 </html>
