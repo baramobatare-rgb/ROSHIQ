@@ -44,7 +44,11 @@ a{color:inherit}
 @media (max-width:640px){.w{padding:0 20px}}
 
 /* первый экран */
-.hero{position:relative;overflow:hidden}
+.hero{position:relative;overflow:hidden;isolation:isolate}
+.hero::before,.final::before{content:"";position:absolute;inset:-20%;pointer-events:none;background:radial-gradient(ellipse at 24% 38%,color-mix(in srgb,var(--lime) 15%,transparent),transparent 47%),radial-gradient(ellipse at 58% 72%,color-mix(in srgb,var(--lime) 7%,transparent),transparent 40%);opacity:.85;transform:translate3d(-3%,-2%,0);animation:ambientGlow 18s ease-in-out infinite alternate}
+.final::before{animation-delay:-9s;opacity:.6}
+@keyframes ambientGlow{0%{transform:translate3d(-3%,-2%,0) scale(1);opacity:.65}50%{opacity:1}100%{transform:translate3d(5%,4%,0) scale(1.12);opacity:.8}}
+@media(prefers-reduced-motion:reduce){.hero::before,.final::before{animation:none;transform:none}}
 .stripe{position:absolute;top:0;bottom:0;right:-16vw;width:50vw;background:var(--lime);transform:skewX(-14deg);transform-origin:top}
 .ghost{position:absolute;left:-2vw;bottom:-6vw;font-weight:900;font-size:30vw;letter-spacing:-.06em;line-height:.8;color:color-mix(in srgb,var(--lime) 6%,transparent);pointer-events:none;user-select:none}
 .nav{position:relative;z-index:3;display:flex;align-items:center;gap:14px;padding:26px 32px}
@@ -192,9 +196,10 @@ details p{color:var(--soft);padding:0 0 26px;max-width:44em}
 .final .btn:hover{box-shadow:5px 5px 0 #fff}
 footer{border-top:1px solid var(--line);padding:30px 0 44px;color:var(--grey);font-size:15px}
 footer .w{display:flex;flex-wrap:wrap;gap:14px 30px;justify-content:space-between}
-footer nav{display:flex;flex-wrap:wrap;gap:22px;font-weight:700;color:#fff}
-footer nav a{text-decoration:none}
-footer nav a:hover{color:var(--lime)}
+footer nav{display:flex;flex-wrap:wrap;gap:10px;font-weight:700;color:#fff}
+footer nav a{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:11px 15px;border:1px solid #354338;border-radius:6px;text-decoration:none;font-size:14px;transition:background .15s,color .15s,border-color .15s}
+footer nav a svg{width:23px;height:23px;flex:none;fill:currentColor}
+footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--lime)}
 
 /* матч на ползунке */
 .sub{margin-top:22px;color:var(--soft);font-size:20px;max-width:34em}
@@ -440,7 +445,12 @@ footer nav a:hover{color:var(--lime)}
 
 <footer>
   <div class="w">
-    <nav><a href="https://vk.ru/roshiq" data-goal="vk" data-i18n="vk">ВКонтакте</a><a href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ" data-goal="youtube">YouTube</a><a href="https://www.tiktok.com/@baramobatare" data-goal="tiktok">TikTok</a><a href="https://github.com/baramobatare-rgb/ROSHIQ" data-goal="github">GitHub</a></nav>
+    <nav aria-label="Социальные сети">
+      <a href="https://vk.ru/roshiq" data-goal="vk" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.785 17.241C6.658 17.241 3.163 13.044 3.017 6.054h3.07c.101 5.13 2.364 7.303 4.157 7.751V6.054h2.89v4.425c1.77-.19 3.63-2.207 4.258-4.425h2.89c-.482 2.733-2.499 4.75-3.933 5.58 1.434.672 3.73 2.431 4.604 5.607H17.77c-.683-2.128-2.386-3.775-4.637-3.999v3.999z"/></svg><span data-i18n="vk">ВКонтакте</span></a>
+      <a href="https://github.com/baramobatare-rgb/ROSHIQ" data-goal="github" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .75a11.25 11.25 0 0 0-3.558 21.924c.563.103.768-.244.768-.542 0-.267-.01-.975-.015-1.914-3.13.68-3.79-1.508-3.79-1.508-.512-1.3-1.25-1.646-1.25-1.646-1.022-.7.078-.686.078-.686 1.13.08 1.725 1.16 1.725 1.16 1.004 1.721 2.634 1.224 3.276.936.102-.728.393-1.224.714-1.506-2.499-.284-5.126-1.25-5.126-5.565 0-1.23.44-2.235 1.16-3.022-.116-.285-.503-1.43.111-2.98 0 0 .945-.303 3.094 1.155A10.8 10.8 0 0 1 12 6.177c.956.005 1.919.129 2.82.379 2.148-1.458 3.09-1.155 3.09-1.155.616 1.55.229 2.695.113 2.98.722.787 1.158 1.792 1.158 3.022 0 4.326-2.632 5.278-5.139 5.557.404.35.764 1.044.764 2.105 0 1.52-.014 2.746-.014 3.118 0 .301.203.651.774.54A11.25 11.25 0 0 0 12 .75z"/></svg><span>GitHub</span></a>
+      <a href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ" data-goal="youtube" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill-rule="evenodd" d="M21.6 6.2c-.23-.86-.9-1.53-1.76-1.76C18.28 4.02 12 4.02 12 4.02s-6.28 0-7.84.42A2.5 2.5 0 0 0 2.4 6.2 26 26 0 0 0 2 12a26 26 0 0 0 .4 5.8c.23.86.9 1.53 1.76 1.76 1.56.42 7.84.42 7.84.42s6.28 0 7.84-.42a2.5 2.5 0 0 0 1.76-1.76A26 26 0 0 0 22 12a26 26 0 0 0-.4-5.8ZM10 15.5v-7l6 3.5-6 3.5Z"/></svg><span>YouTube</span></a>
+      <a href="https://www.tiktok.com/@baramobatare" data-goal="tiktok" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M16.6 2c.3 2.7 1.8 4.3 4.4 4.5v3.1a9 9 0 0 1-4.4-1.3v7.1a6.4 6.4 0 1 1-5.5-6.3v3.2a3.2 3.2 0 1 0 2.3 3.1V2h3.2Z"/></svg><span>TikTok</span></a>
+    </nav>
     <div class="dlc" id="dlc" hidden title=""><b id="dlcN">0</b><span data-i18n="dlc">скачиваний с GitHub — включая обновления</span></div>
     <span data-i18n="legal">ROSHIQ не связан с Valve. Dota 2 — товарный знак Valve Corporation.<br>Посещения сайта считает Яндекс Метрика (cookie).</span>
   </div>
