@@ -36,7 +36,7 @@ ym(114137127, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLa
 <style>
 :root{--ink:#0A0F0B;--lime:#B5FF4D;--fine:rgba(10,15,11,.72);--grey:#A9B6AA;--soft:#C4CEC5;--line:#1F2A21;--warn:#FFB547;--bad:#FF6B57}
 *{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
 body{background:var(--ink);color:#fff;font:400 18px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 a{color:inherit}
 :focus-visible{outline:3px solid var(--lime);outline-offset:3px}
@@ -51,21 +51,39 @@ a{color:inherit}
 .nav img{width:36px;height:36px;border-radius:9px}
 .nav .logo{font-weight:900;font-size:20px;text-decoration:none}
 .nav .sp{flex:1}
-.nav nav{display:flex;gap:26px;font-weight:700;font-size:15px;color:var(--ink)}
+.nav nav{display:flex;gap:20px;font-weight:700;font-size:14px;color:#fff;background:var(--ink);padding:10px 16px;border-radius:4px}
 .nav nav a{text-decoration:none}
 .nav nav a:hover{text-decoration:underline}
 .nav .lang{background:var(--ink);color:#fff;border:0;border-radius:4px;font:700 13px Inter,sans-serif;padding:8px 12px;cursor:pointer}
 .hero .main{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:40px;align-items:center;min-height:calc(100vh - 88px);max-height:900px;padding-bottom:60px}
-h1{font-weight:900;font-size:clamp(46px,5.7vw,84px);line-height:.92;letter-spacing:-.045em}
+h1{font-weight:900;font-size:clamp(42px,4.5vw,64px);line-height:1.02;letter-spacing:-.035em;word-spacing:.04em;max-width:11em;text-wrap:balance}
 .hero p{margin-top:28px;font-size:20px;color:var(--soft);max-width:28em}
 .cta{display:flex;flex-wrap:wrap;gap:18px;align-items:center;margin-top:36px}
 .btn{display:inline-block;background:#fff;color:var(--ink);font-weight:900;font-size:19px;text-decoration:none;padding:20px 32px;border-radius:4px;transition:transform .12s,box-shadow .12s}
 .btn:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 var(--lime)}
 .cta small{color:var(--grey);font-size:15px;line-height:1.4}
+.eyebrow{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:800;letter-spacing:.12em;color:var(--grey);margin-bottom:22px}
+.eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--lime)}
+.btn-secondary{display:inline-flex;align-items:center;gap:10px;font-size:16px;font-weight:800;text-decoration:none;padding:18px 0;border-bottom:1px solid var(--grey)}
+.btn-secondary::before{content:"↗";color:var(--lime);font-size:22px}
+.btn-secondary:hover{color:var(--lime)}
+.download-meta{display:block;margin-top:16px;color:var(--grey);font-size:14px;line-height:1.5}
+.proof{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:25px;color:var(--soft);font-size:13px;font-weight:600}
+.proof span::before{content:"✓";color:var(--lime);margin-right:7px}
+.menu-toggle{display:none;background:var(--ink);color:#fff;border:1px solid var(--line);border-radius:4px;padding:7px 10px;font:700 13px Inter,sans-serif;cursor:pointer}
+.mobile-share{display:none;margin-top:14px}
+.copy-link{background:transparent;color:var(--soft);border:0;border-bottom:1px solid var(--line);font:600 14px Inter,sans-serif;padding:8px 0;cursor:pointer}
+.copy-status{display:block;font-size:13px;color:var(--grey);margin-top:5px;overflow-wrap:anywhere}
+@media(max-width:960px){
+  .nav{flex-wrap:wrap;padding:20px;gap:10px}.nav .logo{font-size:18px}
+  .nav .menu-toggle{display:block}.nav nav{order:10;flex-basis:100%;display:none;padding:18px 0 4px;color:#fff;gap:16px 24px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:8px}
+  .nav nav.is-open{display:flex}.hero h1{max-width:13em}.mobile-share{display:block}
+}
+@media(max-width:420px){.nav img{width:28px;height:28px}.nav{gap:7px}.nav .logo{font-size:16px}.tp>button{padding:7px 8px}.nav .lang{padding:8px}.cta{gap:10px 20px}.btn{font-size:17px;padding:18px 24px}}
 /* счётчик скачиваний — живые цифры GitHub, без подставных значений */
-.dlc{display:flex;align-items:baseline;gap:12px;margin-top:30px;padding-top:18px;border-top:1px solid var(--line);max-width:30em}
+.dlc{display:flex;align-items:baseline;gap:10px;margin-top:8px;max-width:30em}
 .dlc[hidden]{display:none}
-.dlc b{font-weight:900;font-size:44px;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;color:#fff;box-shadow:inset 0 -8px 0 var(--lime)}
+.dlc b{font-weight:800;font-size:20px;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;color:#fff}
 .dlc span{color:var(--soft);font-size:15px;line-height:1.35}
 .dlc i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lime);margin-right:7px;vertical-align:1px}
 @media (prefers-reduced-motion:no-preference){.dlc.bump b{animation:bump .6s ease-out}@keyframes bump{30%{color:var(--lime)}}}
@@ -99,6 +117,7 @@ h1{font-weight:900;font-size:clamp(46px,5.7vw,84px);line-height:.92;letter-spaci
   .s2,.s4{justify-self:end}
   .stamp{display:none}
 }
+@media(max-width:360px){.nav img{display:none}.nav{padding:18px 16px}.nav .logo{font-size:15px}.hero h1{font-size:34px}.eyebrow{font-size:10px}}
 
 
 /* темы — те же акценты и фоны, что в программе */
@@ -206,8 +225,27 @@ footer nav a:hover{color:var(--lime)}
 .hist li em{font-style:normal;font-weight:800;color:#fff;min-width:44px;font-variant-numeric:tabular-nums}
 .empty{color:var(--grey);margin-top:26px}
 .note{margin-top:18px;color:var(--grey);font-size:14px}
+.demo-label{display:inline-block;color:var(--lime);border:1px solid var(--line);border-radius:30px;padding:6px 12px;font-size:12px;font-weight:700;margin-bottom:24px}
+.moments{display:flex;flex-wrap:wrap;gap:8px;margin-top:26px}
+.moment{display:flex;gap:8px;align-items:center;background:transparent;border:1px solid #354338;border-radius:5px;color:var(--soft);font:700 13px Inter,sans-serif;padding:11px 13px;cursor:pointer;min-height:44px}
+.moment small{font:600 11px ui-monospace,monospace;color:var(--grey)}
+.moment:hover{border-color:var(--lime);color:#fff}.moment[aria-pressed=true]{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+.moment[aria-pressed=true] small{color:var(--ink)}
+.ovl-foot{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:24px;border-top:1px solid var(--line);padding-top:16px;color:var(--grey);font-size:12px}
+.ovl-foot kbd{font-size:10px;background:#27332a;color:#fff;padding:3px 6px;margin-right:5px}
+.demo-context{font-size:12px;color:var(--grey);letter-spacing:.04em;text-transform:uppercase;margin-top:18px}
+.ban-links{display:flex;flex-wrap:wrap;gap:14px 26px;margin-top:24px;font-size:15px;font-weight:800}
+.ban-links a{text-underline-offset:5px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
 @media (prefers-reduced-motion:reduce){.tip.now{animation:none}}
-@media (max-width:900px){.mt{grid-template-columns:1fr;gap:36px}.ovl{min-height:0}}
+@media (max-width:900px){
+  #match{padding:70px 0}#match h2{font-size:clamp(34px,6vw,54px)}
+  .mt{display:flex;flex-direction:column;gap:22px;margin-top:34px}
+  .mt>div:first-child{display:contents}.mt .clock{order:0;font-size:76px}
+  .mt .moments{order:1;margin-top:0}.mt .ovl{order:2;width:100%;min-height:0;box-shadow:7px 7px 0 color-mix(in srgb,var(--lime) 22%,transparent);padding:18px}
+  .mt .track{order:3;width:100%;margin-top:8px}.mt .play{order:4;margin-top:0}.mt .note{order:5;margin-top:0}
+  .mt .hist li:nth-child(n+3){display:none}
+}
 
 /* ролики */
 .vids{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;margin-top:50px}
@@ -236,20 +274,24 @@ footer nav a:hover{color:var(--lime)}
   <div class="nav">
     <img id="logo" src="site/logo-green.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
     <span class="sp"></span>
-    <nav aria-label="Разделы"><a href="#match" data-i18n="n0">Как работает</a><a href="#what" data-i18n="n1">Что внутри</a><a href="#ban" data-i18n="n2">Про бан</a><a href="#help" data-i18n="n3">Помощь</a></nav>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="siteNav" data-i18n="menu">Меню</button>
+    <nav id="siteNav" aria-label="Разделы"><a href="#match" data-i18n="n0">Как работает</a><a href="#what" data-i18n="n1">Что внутри</a><a href="#ban" data-i18n="n2">Данные и безопасность</a><a href="#help" data-i18n="n3">Помощь</a></nav>
     <div class="tp"><button type="button" id="tpBtn" aria-expanded="false" aria-controls="tpp"><i></i><span data-i18n="tp">Тема</span></button>
       <div class="tpp" id="tpp" hidden><b data-i18n="tpa">Цвет</b><div id="tpAcc"></div><b data-i18n="tpb">Фон</b><div id="tpBg"></div></div></div>
     <button class="lang" type="button" id="lang">EN</button>
   </div>
   <div class="w main">
     <div>
+      <div class="eyebrow">DOTA 2 · WINDOWS · OPEN SOURCE</div>
       <h1 data-i18n="h1">Меньше глупых смертей. Больше выигранных линий.</h1>
-      <p data-i18n="p1">Бесплатный помощник для Dota 2: подсказки во время игры и честный разбор после. Только официальный Game State Integration — никаких читов.</p>
+      <p data-i18n="p1">Подсказки в нужный момент. Одна главная ошибка после матча. И понятная цель на следующую игру.</p>
       <div class="cta">
         <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
-        <small data-i18n="dls">Windows 10 и 11, 78 МБ.<br>Права администратора не нужны.</small>
+        <a class="btn-secondary" href="#match" data-i18n="see">Попробовать демо</a>
       </div>
-      <div class="dlc" id="dlc" hidden title=""><b id="dlcN">0</b><span><i aria-hidden="true"></i><span data-i18n="dlc">скачиваний с GitHub — счётчик обновляется сам</span></span></div>
+      <small class="download-meta" data-i18n="dls">Windows 10 и 11.<br>Права администратора не нужны.</small>
+      <div class="proof"><span data-i18n="free">Бесплатно, без подписки</span><span data-i18n="local">История хранится на ПК</span></div>
+      <div class="mobile-share"><button type="button" class="copy-link" id="copyLink" data-i18n="copy">Скопировать ссылку для ПК</button><span class="copy-status" id="copyStatus" role="status"></span></div>
     </div>
     <div class="stickers" aria-label="Примеры подсказок ROSHIQ">
       <div class="stamp" aria-hidden="true" data-i18n="stamp">БЕСПЛАТНО<br>И ОТКРЫТО</div>
@@ -265,22 +307,33 @@ footer nav a:hover{color:var(--lime)}
 
 <section class="block" id="match">
   <div class="w">
-    <h2 data-i18n="h2m">Прокрути матч</h2>
-    <p class="sub" data-i18n="mp">Двигай ползунок — и увидишь, что и когда ROSHIQ подсказывает за игру. Это пример: керри, цифры условные.</p>
+    <span class="demo-label" data-i18n="demoLabel">Интерактивный пример · без установки</span>
+    <h2 data-i18n="h2m">Одна подсказка.<br>В нужный момент.</h2>
+    <p class="sub" data-i18n="mp">Выбери ситуацию или прокрути матч. Посмотри, о чём ROSHIQ напомнит и чем это поможет.</p>
     <div class="mt">
       <div>
-        <div class="clock" id="mClock" aria-hidden="true">0:00</div>
+        <div class="clock" id="mClock" aria-hidden="true">4:12</div>
+        <div class="moments" role="group" aria-label="Ситуации матча" id="mMoments">
+          <button class="moment" type="button" data-time="252" aria-pressed="true"><small>04:12</small><span data-i18n="momentTP">Телепорт</span></button>
+          <button class="moment" type="button" data-time="600" aria-pressed="false"><small>10:00</small><span data-i18n="momentFarm">Фарм</span></button>
+          <button class="moment" type="button" data-time="1445" aria-pressed="false"><small>24:05</small><span data-i18n="momentRosh">Рошан</span></button>
+          <button class="moment" type="button" data-time="1900" aria-pressed="false"><small>31:40</small><span data-i18n="momentBuy">Выкуп</span></button>
+          <button class="moment" type="button" data-time="2700" aria-pressed="false"><small>45:00</small><span data-i18n="momentAfter">После матча</span></button>
+        </div>
         <div class="track">
           <div class="ticks" id="mTicks"></div>
-          <input type="range" id="mRange" min="0" max="2700" step="5" value="0" data-i18n-aria="mra" aria-label="Время матча">
+          <input type="range" id="mRange" min="0" max="2700" step="1" value="252" aria-label="Время матча">
           <div class="scale" aria-hidden="true"><span>0:00</span><span>15:00</span><span>30:00</span><span>45:00</span></div>
         </div>
         <button class="play" type="button" id="mPlay" data-i18n="mpl">Запустить матч</button>
+        <p class="note" data-i18n="demoNote">Это демонстрация подсказок, не запись игры. Ситуации и цифры условные; внешний вид панели в программе может отличаться.</p>
       </div>
       <div class="ovl" aria-live="polite">
-        <div class="ovl-h"><i></i>ROSHIQ<span data-i18n="mov">панель в игре · F8</span></div>
+        <div class="ovl-h"><i></i>ROSHIQ<span data-i18n="mov">пример подсказок</span></div>
+        <div class="demo-context" id="mContext"></div>
         <div id="mNow"></div>
         <ul class="hist" id="mHist"></ul>
+        <div class="ovl-foot"><span><kbd>F8</kbd><span data-i18n="hideHint">показать / скрыть</span></span><span><kbd>Ctrl + F8</kbd><span data-i18n="detailHint">подробнее в игре</span></span></div>
       </div>
     </div>
   </div>
@@ -301,8 +354,8 @@ footer nav a:hover{color:var(--lime)}
 
 <section class="ban" id="ban">
   <div class="w">
-    <h2 data-i18n="h2b">Не чит. И не будет.</h2>
-    <p class="lead" data-i18n="bl">Dota 2 сама отправляет программам время матча, героя, золото и инвентарь — это Game State Integration, его сделала Valve для стримерских оверлеев. ROSHIQ работает только с этими данными.</p>
+    <h2 data-i18n="h2b">Твои данные.<br>Понятные правила.</h2>
+    <p class="lead" data-i18n="bl">Время матча, героя, золото и инвентарь ROSHIQ получает через Game State Integration — интерфейс самой Dota 2. Автодрафт распознаёт видимые портреты героев на экране выбора. Публичная статистика OpenDota подключается по желанию.</p>
     <div class="two">
       <div class="yes"><h3 data-i18n="yh">Делает</h3><ul>
         <li data-i18n="y1">получает данные, которые игра отправляет сама</li>
@@ -315,7 +368,8 @@ footer nav a:hover{color:var(--lime)}
         <li data-i18n="x3">не показывает то, что скрыто от тебя в игре</li>
         <li data-i18n="x4">не просит пароль от Steam</li></ul></div>
     </div>
-    <p class="fine" data-i18n="bf">ROSHIQ — неофициальный проект: Valve его не проверяла и не одобряла. Но он не делает ничего сверх того, что делают обычные оверлеи для стримов.</p>
+    <p class="fine" data-i18n="bf">ROSHIQ — независимый проект с открытым кодом. Valve его не проверяла и не одобряла. Устройство программы можно проверить в исходниках.</p>
+    <div class="ban-links"><a href="https://github.com/baramobatare-rgb/ROSHIQ/tree/main/src" data-goal="github" data-i18n="source">Посмотреть исходный код ↗</a><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="github" data-i18n="releaseFiles">Файлы релиза и контрольные суммы ↗</a></div>
   </div>
 </section>
 
@@ -387,16 +441,21 @@ footer nav a:hover{color:var(--lime)}
 <footer>
   <div class="w">
     <nav><a href="https://vk.ru/roshiq" data-goal="vk" data-i18n="vk">ВКонтакте</a><a href="https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ" data-goal="youtube">YouTube</a><a href="https://www.tiktok.com/@baramobatare" data-goal="tiktok">TikTok</a><a href="https://github.com/baramobatare-rgb/ROSHIQ" data-goal="github">GitHub</a></nav>
+    <div class="dlc" id="dlc" hidden title=""><b id="dlcN">0</b><span data-i18n="dlc">скачиваний с GitHub — включая обновления</span></div>
     <span data-i18n="legal">ROSHIQ не связан с Valve. Dota 2 — товарный знак Valve Corporation.<br>Посещения сайта считает Яндекс Метрика (cookie).</span>
   </div>
 </footer>
 
 <script>
 // Русский всегда по умолчанию; английский — только по кнопке EN.
-const EN={tp:"Theme",tpa:"Colour",tpb:"Background",n0:"How it works",n1:"What’s inside",n2:"Bans",n3:"Help",
+const EN={tp:"Theme",tpa:"Colour",tpb:"Background",n0:"How it works",n1:"What’s inside",n2:"Data & safety",n3:"Help",
+menu:"Menu",see:"Try the demo",free:"Free, no subscription",local:"History stays on your PC",copy:"Copy the link for your PC",
+demoLabel:"Interactive example · no installation",demoNote:"This illustrates the tips; it is not a game recording. Situations and numbers are examples; the panel in the app may look different.",
+momentTP:"Teleport",momentFarm:"Farm",momentRosh:"Roshan",momentBuy:"Buyback",momentAfter:"After the game",hideHint:"show / hide",detailHint:"details in game",
+source:"Explore the source code ↗",releaseFiles:"Release files & checksums ↗",
 h2m:"Scroll through a match",mp:"Move the slider to see what ROSHIQ tells you during a game, and when. This is an example: a carry, numbers are made up.",mpl:"Play the match",mov:"in-game panel · F8",h2v:"Videos",vall:"All videos on YouTube",h2h:"If something’s wrong",h1q:"Windows says it protected your PC",h1a:"Click <b>“More info”</b> → <b>“Run anyway”</b>. The app doesn’t have a paid code signature yet, so Windows doesn’t recognise it. You can check the file against <code>SHA256SUMS.txt</code> on the release page.",h2q:"No tips in the game",h2a2:"Open <b>Settings → Diagnostics</b>. It checks the game connection, the port and the <code>-gamestateintegration</code> launch option, with a “Fix” button next to any problem. Then restart Dota 2: the connection only starts when the game launches.",h3q:"The panel isn’t visible over the game",h3a:"Switch Dota 2 to <b>“Borderless window”</b> (Settings → Video). Transparent windows can’t be drawn over exclusive fullscreen. <kbd>F8</kbd> shows or hides the panel.",h4q:"How to link Steam",h4a:"Usually you don’t need to: after your first match the account is linked from the game. Or <b>Settings → Steam</b>: “Find Steam on this PC” or “Sign in with Steam” — you sign in on Steam’s own site, ROSHIQ never sees your password.",h5q:"Matches and stats don’t load",h5a:"OpenDota can’t see a hidden history. In Dota 2: <b>Settings → Options → Social</b> → turn on “Expose public match data”, play a match and refresh the profile in ROSHIQ.",h6q:"Nothing helped",h6a:"<b>Settings → Diagnostics → “Create report”</b> — one zip with logs, without your Steam ID or keys. Send it to the <a href=\"https://vk.ru/roshiq\" data-goal=\"vk\">VK community</a> messages and describe what happened.",
 h1:"Fewer silly deaths. More lanes won.",
-p1:"A free Dota 2 helper: tips during the game and an honest review after. Only Valve’s official Game State Integration — no cheats.",
+p1:"Tips at the right moment. One main mistake after the match. And a clear goal for your next game.",
 dl:"Download for Windows",dlc:"downloads from GitHub — the counter updates itself",dls:"Windows 10 and 11, 78 MB.<br>No admin rights needed.",stamp:"FREE<br>AND OPEN",
 k1:"No TP on you",k1s:"a reminder before you walk to lane",k2:"8 last hits behind",k2s:"your own games on this role — not pro players",
 k3:"420 short of buyback",k3s:"a warning while there’s still time to farm",k4e:"after the game",k4:"One main mistake",k4s:"and a goal for the next match instead of a wall of tips",
@@ -406,10 +465,10 @@ r3:"Match review",r3p:"What went well and one main mistake. Carries vs carries, 
 r4:"Builds and timings",r4p:"Items by game phase, what people build right now, and your own key item timings.",
 r5:"Goals",r5p:"One concrete goal for your next game — and a history that shows whether you keep it.",
 r6:"No fuss",r6p:"Hides when Dota starts, detects your role and updates with one button, no reinstall.",
-h2b:"Not a cheat. Never will be.",bl:"Dota 2 itself sends programs the match time, hero, gold and inventory — that’s Game State Integration, made by Valve for stream overlays. ROSHIQ only works with that data.",
+h2b:"Your data.<br>Clear rules.",bl:"ROSHIQ receives match time, hero, gold and inventory through Game State Integration, Dota 2’s own interface. Auto-draft recognises visible hero portraits on the pick screen. Public OpenDota statistics are optional.",
 yh:"Does",y1:"receives data the game sends on its own",y2:"shows tips over the game and in its window",y3:"optionally uses public OpenDota stats",y4:"keeps everything on your PC",
 nh:"Doesn’t",x1:"no memory reading, no code injection",x2:"no key presses, no hero control",x3:"shows nothing the game hides from you",x4:"never asks for your Steam password",
-bf:"ROSHIQ is an unofficial project: Valve hasn’t reviewed or approved it. But it does nothing beyond what ordinary stream overlays do.",
+bf:"ROSHIQ is an independent open-source project. Valve hasn’t reviewed or approved it. You can inspect how the app works in the source code.",
 h2c:"Three minutes and you’re in",s1:"Download",s1p:"the installer and run it. No separate .NET install needed.",s2:"Set up",s2p:"language, role and game connection — the connection is one button.",
 s3:"Play",s3p:"restart Dota 2. <kbd>F8</kbd> toggles the panel.",
 h2d:"What’s new",v1:"Search finds every item",v1d:"Crystalys, Kaya, Yasha, Sange, blinks and 80 more components — add them to your own build.",
@@ -421,14 +480,31 @@ q3:"Windows says it protected my PC",a3:"Click “More info” → “Run anyway
 q4:"How much is it?",a4:"Nothing. No subscriptions, ads or paid features. The code is open — anyone can see what’s inside.",
 q5:"Found a bug or have an idea",a5:"Comment under the videos, write in the VK community or open an issue on GitHub.",
 h2f:"Your next match — with it.",vk:"VK",legal:"ROSHIQ isn’t affiliated with Valve. Dota 2 is a trademark of Valve Corporation.<br>Visits are counted with Yandex Metrica (cookies)."};
+EN.h2m="One tip.<br>At the right moment.";
+EN.mp="Pick a situation or move through the match. See what ROSHIQ reminds you about, and why it helps.";
+EN.mov="example tips";
 const RU={};document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
 let lang='ru';
 function setLang(l){lang=l;const d=l==='en'?EN:RU;
   document.querySelectorAll('[data-i18n]').forEach(e=>{const v=d[e.dataset.i18n];if(v!=null)e.innerHTML=v;});
   document.documentElement.lang=l;document.getElementById('lang').textContent=l==='en'?'RU':'EN';
+  document.getElementById('siteNav').setAttribute('aria-label',l==='en'?'Sections':'Разделы');
+  document.getElementById('mMoments').setAttribute('aria-label',l==='en'?'Match situations':'Ситуации матча');
   try{localStorage.setItem('roshiq-site-lang',l)}catch(e){}}
 document.getElementById('lang').addEventListener('click',()=>{setLang(lang==='ru'?'en':'ru');paintThemes()});
 try{if(localStorage.getItem('roshiq-site-lang')==='en')setLang('en')}catch(e){}
+const menuToggle=document.getElementById('menuToggle'),siteNav=document.getElementById('siteNav');
+function menuOpen(open){siteNav.classList.toggle('is-open',open);menuToggle.setAttribute('aria-expanded',String(open))}
+menuToggle.addEventListener('click',()=>menuOpen(menuToggle.getAttribute('aria-expanded')!=='true'));
+siteNav.addEventListener('click',e=>{if(e.target.closest('a'))menuOpen(false)});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menuToggle.getAttribute('aria-expanded')==='true'){menuOpen(false);menuToggle.focus()}});
+const copyLink=document.getElementById('copyLink'),copyStatus=document.getElementById('copyStatus');
+copyLink.addEventListener('click',async()=>{
+  const url='https://baramobatare-rgb.github.io/ROSHIQ/';
+  try{await navigator.clipboard.writeText(url);copyStatus.textContent=lang==='en'?'Link copied. Send it to your PC.':'Ссылка скопирована. Отправь её себе на ПК.'}
+  catch(_){copyStatus.textContent=(lang==='en'?'Copy this link: ':'Скопируй эту ссылку: ')+url}
+});
+document.getElementById('lang').addEventListener('click',()=>{copyStatus.textContent='';siteNav.setAttribute('aria-label',lang==='en'?'Sections':'Разделы');document.getElementById('mMoments').setAttribute('aria-label',lang==='en'?'Match situations':'Ситуации матча')});
 
 // Темы сайта: те же семь акцентов и три фона, что в программе (Настройки → Оформление).
 const ACC=[["lime","#B5FF4D","green","Лайм","Lime"],["crimson","#FF4D5E","red","Красный","Crimson"],["violet","#A78BFF","violet","Фиолетовый","Violet"],
@@ -474,7 +550,7 @@ function dlShow(n){
   dlc.title=lang==='en'?'Sum of installer and portable downloads across all versions, as counted by GitHub. Includes in-app updates.'
     :'Сумма скачиваний установщика и портативной версии по всем версиям — по данным GitHub. Обновления из программы тоже считаются.';
   const m10=n%10,m100=n%100,w=m10===1&&m100!==11?'скачивание':m10>=2&&m10<=4&&(m100<12||m100>14)?'скачивания':'скачиваний';
-  RU.dlc=w+' с GitHub — счётчик обновляется сам';EN.dlc=(n===1?'download':'downloads')+' from GitHub — the counter updates itself';
+  RU.dlc=w+' с GitHub — включая обновления';EN.dlc=(n===1?'download':'downloads')+' from GitHub — including updates';
   document.querySelectorAll('[data-i18n="dlc"]').forEach(e=>e.textContent=(lang==='en'?EN:RU).dlc);
   const from=dlShown,to=n;dlShown=n;
   if(!from||from===to||matchMedia('(prefers-reduced-motion: reduce)').matches){dlcN.textContent=dlFmt(to);return}
@@ -520,6 +596,10 @@ let mLast=-2,mAnim=0;
 function mRender(force){
   const t=+mR.value,en=lang==='en';mClock.textContent=fmt(t);
   mR.setAttribute('aria-valuetext',fmt(t));mR.setAttribute('aria-label',en?'Match time':'Время матча');
+  const moments=[...document.querySelectorAll('.moment')];
+  const selected=moments.filter(b=>+b.dataset.time<=t).at(-1);
+  moments.forEach(b=>b.setAttribute('aria-pressed',String(b===selected)));
+  document.getElementById('mContext').textContent=t>=2700?(en?'After the match · app window':'После матча · окно программы'):(en?'Example match · carry':'Пример матча · керри');
   let idx=-1;MEV.forEach((e,i)=>{if(e[0]<=t)idx=i});
   [...mTicks.children].forEach((b,i)=>b.classList.toggle('on',i<=idx));
   if(idx===mLast&&!force)return;const changed=idx!==mLast;mLast=idx;
@@ -531,6 +611,8 @@ function mRender(force){
 MEV.forEach(e=>{const b=document.createElement('button');b.type='button';b.style.left=(e[0]/2700*100)+'%';b.style.setProperty('--c',MCOL[e[1]]);
   b.tabIndex=-1;b.setAttribute('aria-hidden','true');b.onclick=()=>{mStop();mR.value=e[0];mRender()};mTicks.appendChild(b)});
 function mStop(){if(mAnim){cancelAnimationFrame(mAnim);mAnim=0}mPlay.textContent=(lang==='en'?EN:RU).mpl}
+document.querySelectorAll('.moment').forEach(b=>b.addEventListener('click',()=>{mStop();mR.value=b.dataset.time;mRender()}));
+document.addEventListener('visibilitychange',()=>{if(document.hidden)mStop()});
 mR.addEventListener('input',()=>{mStop();mRender()});
 mPlay.onclick=()=>{
   if(mAnim){mStop();return}
@@ -554,7 +636,7 @@ function vRender(){const en=lang==='en';vids.innerHTML='';
       try{window.ym&&ym(114137127,'reachGoal','video')}catch(_){}};
     vids.appendChild(d)})}
 vRender();
-document.getElementById('lang').addEventListener('click',()=>{mRender(true);if(!mAnim)mStop();if(!vids.querySelector('iframe'))vRender()});
+document.getElementById('lang').addEventListener('click',()=>{mRender(true);if(mAnim)mPlay.textContent=lang==='en'?'Pause':'Пауза';else mStop();if(!vids.querySelector('iframe'))vRender()});
 </script>
 </body>
 </html>
