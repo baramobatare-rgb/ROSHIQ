@@ -216,11 +216,23 @@ public partial class SettingsView : UserControl, IRefreshable
 
     // ------------------------------------------------------------------ Steam
 
+    /// <summary>Пункты OpenDota в «Работе с игрой»: без привязанного Steam — предупреждение и кнопка к разделу Steam.</summary>
+    private void UpdateOpenDotaNote(bool steamLinked)
+    {
+        OpenDotaNote.Text = Loc.T(steamLinked ? "set_opendota_need" : "set_opendota_missing");
+        if (steamLinked) OpenDotaNote.SetResourceReference(TextBlock.ForegroundProperty, "Muted");
+        else OpenDotaNote.SetResourceReference(TextBlock.ForegroundProperty, "Warning");
+        OpenDotaLinkButton.Visibility = steamLinked ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private void OpenDotaLink_Click(object sender, RoutedEventArgs e) => SteamCard.BringIntoView();
+
     private void RefreshSteam()
     {
         var L = Loc.Instance;
         var d = App.Host.Settings.Current.Data;
         long? account = App.Host.SteamAccount;
+        UpdateOpenDotaNote(account != null);
         var linked = account != null ? Visibility.Visible : Visibility.Collapsed;
         SteamUnlinkButton.Visibility = linked;
         SteamRefreshButton.Visibility = linked;

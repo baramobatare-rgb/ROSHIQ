@@ -11,6 +11,27 @@
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
+        <!-- Строка настройки: короткое название и серое пояснение под ним -->
+        <Style x:Key="OptTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Text}" />
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="OptDesc" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Muted}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="LineHeight" Value="17" />
+            <Setter Property="Margin" Value="0,1,0,0" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+        <Style x:Key="GroupHead" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Faint}" />
+            <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,14,0,2" />
+        </Style>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,6,20">
@@ -156,20 +177,52 @@
             <Border Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T set_automation, Upper=True}" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_automation}" /></InlineUIContainer></TextBlock>
-                    <CheckBox x:Name="AutoWatchBox" Content="{app:T set_auto_watch}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="AutoHideBox" Content="{app:T set_auto_hide}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,6" />
-                    <CheckBox x:Name="AutoShowBox" Content="{app:T set_auto_show}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,12" />
-                    <CheckBox x:Name="AutoRoleBox" Content="{app:T set_auto_role}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="AutoModesBox" Content="{app:T set_auto_modes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="AutoImportBox" Content="{app:T set_auto_import}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,2" />
-                    <TextBlock Text="{app:T set_auto_import_hint}" Style="{StaticResource MutedText}" Margin="28,0,0,6" />
-                    <CheckBox x:Name="AutoReviewBox" Content="{app:T set_auto_review}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="LaneTipsBox" Content="{app:T set_lane_tips}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="PowerSpikesBox" Content="{app:T set_power_spikes}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="ShowBuildBox" Content="{app:T set_show_build}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,2" />
-                    <TextBlock Text="{app:T set_show_build_hint}" Style="{StaticResource MutedText}" Margin="28,0,0,6" TextWrapping="Wrap" />
-                    <CheckBox x:Name="DraftToastsBox" Content="{app:T set_draft_toasts}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,6" />
-                    <CheckBox x:Name="PostMatchBox" Content="{app:T set_post_match}" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,12" />
+                    <!-- Порядок — как идёт игра: запуск → драфт → матч → после матча. Названия короткие, пояснение — серой строкой. -->
+                    <TextBlock Text="{app:T set_grp_launch}" Style="{StaticResource GroupHead}" Margin="0,2,0,2" />
+                    <CheckBox x:Name="AutoWatchBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_watch}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_watch_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="AutoHideBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_hide}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_hide_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="AutoShowBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="28,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_show}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_show_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <TextBlock Text="{app:T set_grp_draft}" Style="{StaticResource GroupHead}" />
+                    <CheckBox x:Name="DraftToastsBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_draft_toasts}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_draft_toasts_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <TextBlock Text="{app:T set_grp_game}" Style="{StaticResource GroupHead}" />
+                    <CheckBox x:Name="AutoRoleBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_role}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_role_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="AutoModesBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_modes}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_modes_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="LaneTipsBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_lane_tips}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_lane_tips_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="PowerSpikesBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_power_spikes}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_power_spikes_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="ShowBuildBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_show_build}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_show_build_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <TextBlock Text="{app:T set_grp_after}" Style="{StaticResource GroupHead}" />
+                    <CheckBox x:Name="PostMatchBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_post_match}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_post_match_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="AutoImportBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_import}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_import_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="AutoReviewBox" Checked="Automation_Changed" Unchecked="Automation_Changed" Margin="0,0,0,4">
+                        <StackPanel><TextBlock Text="{app:T set_auto_review}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T set_auto_review_d}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <DockPanel Margin="52,2,0,14">
+                        <Button x:Name="OpenDotaLinkButton" DockPanel.Dock="Right" Style="{StaticResource GhostButton}" Content="{app:T set_opendota_link}"
+                                Click="OpenDotaLink_Click" VerticalAlignment="Top" Margin="12,0,0,0" />
+                        <TextBlock x:Name="OpenDotaNote" Text="{app:T set_opendota_need}" Style="{StaticResource OptDesc}" />
+                    </DockPanel>
                     <DockPanel>
                         <ov:Icon DockPanel.Dock="Left" Glyph="{StaticResource I.Shield}" Size="16" Brush="{DynamicResource Accent}" Margin="0,1,10,0" VerticalAlignment="Top" />
                         <TextBlock Text="{app:T set_auto_note}" Style="{StaticResource MutedText}" />
@@ -210,7 +263,7 @@
             </Border>
 
             <!-- Steam -->
-            <Border Style="{StaticResource Card}" Margin="0,0,0,16">
+            <Border x:Name="SteamCard" Style="{StaticResource Card}" Margin="0,0,0,16">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}"><Run Text="STEAM" /><InlineUIContainer BaselineAlignment="Center"><v:HelpTip Text="{app:T help_steam}" /></InlineUIContainer></TextBlock>
                     <DockPanel Margin="0,2,0,12">

@@ -50,6 +50,31 @@ class Program
         toast.Close();
     }
 
+    /// <summary>0.18.4: «Работа с игрой» разбита на группы, у каждой настройки название и пояснение, переключатели по-прежнему сохраняют свои значения.</summary>
+    static void SettingsAutomationCheck(AppHost host)
+    {
+        var view = new SettingsView();
+        view.Refresh();
+        view.Measure(new Size(1000, 4000)); view.Arrange(new Rect(0, 0, 1000, 4000)); view.UpdateLayout();
+        var names = new[] { "AutoWatchBox", "AutoHideBox", "AutoShowBox", "DraftToastsBox", "AutoRoleBox", "AutoModesBox", "LaneTipsBox", "PowerSpikesBox", "ShowBuildBox", "PostMatchBox", "AutoImportBox", "AutoReviewBox" };
+        var boxes = names.Select(n => Control<CheckBox>(view, n)).ToList();
+        Check(boxes.All(b => b.Content is StackPanel { Children.Count: 2 } sp && sp.Children.OfType<TextBlock>().All(t => t.Text.Length > 0)),
+            "Every game automation option has a title and a description");
+        var ys = boxes.Select(b => b.TransformToAncestor(view).Transform(new Point()).Y).ToList();
+        Check(ys.Zip(ys.Skip(1)).All(p => p.First < p.Second), "Automation options follow the game order: launch, draft, game, after");
+        var a = host.Settings.Current.Automation;
+        bool before = a.LaneTips;
+        Control<CheckBox>(view, "LaneTipsBox").IsChecked = !before;
+        Check(host.Settings.Current.Automation.LaneTips == !before, "Regrouped toggle still saves its setting");
+        Control<CheckBox>(view, "LaneTipsBox").IsChecked = before;
+        Control<CheckBox>(view, "AutoWatchBox").IsChecked = false;
+        Check(!Control<CheckBox>(view, "AutoHideBox").IsEnabled && !Control<CheckBox>(view, "AutoShowBox").IsEnabled, "Tray options are disabled without game watching");
+        Control<CheckBox>(view, "AutoWatchBox").IsChecked = true;
+        Check(Control<Button>(view, "OpenDotaLinkButton").Visibility == Visibility.Visible
+              && Control<TextBlock>(view, "OpenDotaNote").Text == Roshiq.Core.Localization.Loc.T("set_opendota_missing"),
+            "Without Steam the OpenDota options say why they do not work");
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -77,6 +102,7 @@ class Program
             Check(lich.PixelWidth >= 256, "Large Lich portrait retains native pixels");
             var blink = (System.Windows.Media.Imaging.BitmapSource)Roshiq.App.Services.HeroArt.ItemIcon("item_blink")!;
             Check(blink.PixelWidth >= 88, "Item icons retain native pixels");
+            SettingsAutomationCheck(host);
             var history = new HistoryView(); history.Refresh();
             var historyList = Control<ListBox>(history, "MatchList");
             var report = Control<StackPanel>(history, "ReviewPanel");

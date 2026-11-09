@@ -32,8 +32,9 @@ ym(114137127, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLa
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&display=swap" rel="stylesheet">
+<script>try{var a=localStorage.getItem('roshiq-site-acc'),g=localStorage.getItem('roshiq-site-bg');if(a)document.documentElement.dataset.acc=a;if(g)document.documentElement.dataset.bg=g}catch(e){}</script>
 <style>
-:root{--ink:#0A0F0B;--lime:#B5FF4D;--grey:#A9B6AA;--soft:#C4CEC5;--line:#1F2A21;--warn:#FFB547;--bad:#FF6B57}
+:root{--ink:#0A0F0B;--lime:#B5FF4D;--fine:rgba(10,15,11,.72);--grey:#A9B6AA;--soft:#C4CEC5;--line:#1F2A21;--warn:#FFB547;--bad:#FF6B57}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{background:var(--ink);color:#fff;font:400 18px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -45,7 +46,7 @@ a{color:inherit}
 /* первый экран */
 .hero{position:relative;overflow:hidden}
 .stripe{position:absolute;top:0;bottom:0;right:-16vw;width:50vw;background:var(--lime);transform:skewX(-14deg);transform-origin:top}
-.ghost{position:absolute;left:-2vw;bottom:-6vw;font-weight:900;font-size:30vw;letter-spacing:-.06em;line-height:.8;color:rgba(181,255,77,.05);pointer-events:none;user-select:none}
+.ghost{position:absolute;left:-2vw;bottom:-6vw;font-weight:900;font-size:30vw;letter-spacing:-.06em;line-height:.8;color:color-mix(in srgb,var(--lime) 6%,transparent);pointer-events:none;user-select:none}
 .nav{position:relative;z-index:3;display:flex;align-items:center;gap:14px;padding:26px 32px}
 .nav img{width:36px;height:36px;border-radius:9px}
 .nav .logo{font-weight:900;font-size:20px;text-decoration:none}
@@ -92,6 +93,24 @@ h1{font-weight:900;font-size:clamp(46px,5.7vw,84px);line-height:.92;letter-spaci
   .stamp{display:none}
 }
 
+
+/* темы — те же акценты и фоны, что в программе */
+html[data-acc=crimson]{--lime:#FF4D5E} html[data-acc=violet]{--lime:#A78BFF} html[data-acc=azure]{--lime:#4DB8FF}
+html[data-acc=teal]{--lime:#3DF5D0} html[data-acc=gold]{--lime:#FFC93D} html[data-acc=orange]{--lime:#FF8A3D}
+html[data-bg=deep]{--ink:#050606;--line:#1A1E1B} html[data-bg=black]{--ink:#000;--line:#161917}
+.tp{position:relative}
+.tp>button{display:flex;align-items:center;gap:8px;background:var(--ink);color:#fff;border:0;border-radius:4px;font:700 13px Inter,sans-serif;padding:7px 11px;cursor:pointer}
+.tp>button i{width:12px;height:12px;border-radius:50%;background:var(--lime);display:block}
+.tpp{position:absolute;right:0;top:calc(100% + 8px);z-index:10;width:272px;background:var(--ink);border:1px solid #2A352C;border-radius:6px;padding:14px;box-shadow:10px 10px 0 rgba(0,0,0,.35)}
+.tpp[hidden]{display:none}
+.tpp b{display:block;font-size:12px;font-weight:700;color:var(--grey);margin:0 0 8px}
+.tpp b+div{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.tpp div:last-child{margin-bottom:0}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid var(--ink);background:var(--c);cursor:pointer;padding:0;box-shadow:0 0 0 1px #3A463C}
+.sw[aria-pressed=true]{box-shadow:0 0 0 2px #fff}
+.bgo{flex:1;background:#1A211B;color:#fff;border:1px solid #2A352C;border-radius:4px;font:600 12.5px Inter,sans-serif;padding:7px 4px;cursor:pointer}
+.bgo[aria-pressed=true]{background:#fff;color:#0A0F0B}
+
 /* разделы */
 .block{padding:110px 0}
 .block.tight{padding-top:20px}
@@ -110,7 +129,7 @@ h2{font-weight:900;font-size:clamp(38px,5.4vw,72px);line-height:.95;letter-spaci
 .two li{font-size:18px;font-weight:600;padding-left:32px;position:relative}
 .yes li::before{content:"✓";position:absolute;left:0;font-weight:900}
 .no li::before{content:"✕";position:absolute;left:0;font-weight:900}
-.ban .fine{margin-top:44px;font-size:16px;max-width:42em;color:#33421F}
+.ban .fine{margin-top:44px;font-size:16px;max-width:42em;color:var(--fine)}
 @media (max-width:760px){.two{grid-template-columns:1fr;gap:30px}}
 
 .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:56px;counter-reset:s}
@@ -158,9 +177,11 @@ footer nav a:hover{color:var(--lime)}
   <div class="stripe" aria-hidden="true"></div>
   <div class="ghost" aria-hidden="true">ROSHIQ</div>
   <div class="nav">
-    <img src="site/logo.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
+    <img id="logo" src="site/logo-green.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
     <span class="sp"></span>
     <nav aria-label="Разделы"><a href="#what" data-i18n="n1">Что внутри</a><a href="#ban" data-i18n="n2">Про бан</a><a href="#faq" data-i18n="n3">Вопросы</a></nav>
+    <div class="tp"><button type="button" id="tpBtn" aria-expanded="false" aria-controls="tpp"><i></i><span data-i18n="tp">Тема</span></button>
+      <div class="tpp" id="tpp" hidden><b data-i18n="tpa">Цвет</b><div id="tpAcc"></div><b data-i18n="tpb">Фон</b><div id="tpBg"></div></div></div>
     <button class="lang" type="button" id="lang">EN</button>
   </div>
   <div class="w main">
@@ -271,7 +292,7 @@ footer nav a:hover{color:var(--lime)}
 
 <script>
 // Русский всегда по умолчанию; английский — только по кнопке EN.
-const EN={n1:"What’s inside",n2:"Bans",n3:"FAQ",
+const EN={tp:"Theme",tpa:"Colour",tpb:"Background",n1:"What’s inside",n2:"Bans",n3:"FAQ",
 h1:"Fewer silly deaths. More lanes won.",
 p1:"A free Dota 2 helper: tips during the game and an honest review after. Only Valve’s official Game State Integration — no cheats.",
 dl:"Download for Windows",dls:"Windows 10 and 11, 78 MB.<br>No admin rights needed.",stamp:"FREE<br>AND OPEN",
@@ -304,8 +325,33 @@ function setLang(l){lang=l;const d=l==='en'?EN:RU;
   document.querySelectorAll('[data-i18n]').forEach(e=>{const v=d[e.dataset.i18n];if(v!=null)e.innerHTML=v;});
   document.documentElement.lang=l;document.getElementById('lang').textContent=l==='en'?'RU':'EN';
   try{localStorage.setItem('roshiq-site-lang',l)}catch(e){}}
-document.getElementById('lang').addEventListener('click',()=>setLang(lang==='ru'?'en':'ru'));
+document.getElementById('lang').addEventListener('click',()=>{setLang(lang==='ru'?'en':'ru');paintThemes()});
 try{if(localStorage.getItem('roshiq-site-lang')==='en')setLang('en')}catch(e){}
+
+// Темы сайта: те же семь акцентов и три фона, что в программе (Настройки → Оформление).
+const ACC=[["lime","#B5FF4D","green","Лайм","Lime"],["crimson","#FF4D5E","red","Красный","Crimson"],["violet","#A78BFF","violet","Фиолетовый","Violet"],
+  ["azure","#4DB8FF","blue","Синий","Azure"],["teal","#3DF5D0","teal","Бирюзовый","Teal"],["gold","#FFC93D","gold","Золотой","Gold"],["orange","#FF8A3D","orange","Оранжевый","Orange"]];
+const BGS=[["standard","Фон: обычный","Background: standard"],["deep","Фон: глубокий","Background: deep"],["black","Фон: чёрный","Background: black"]];
+const root=document.documentElement;
+function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function paintThemes(){
+  const acc=root.dataset.acc||'lime', bg=root.dataset.bg||'standard', en=lang==='en';
+  const A=document.getElementById('tpAcc'), B=document.getElementById('tpBg'); A.innerHTML=''; B.innerHTML='';
+  ACC.forEach(([k,c,brand,ru,eng])=>{const b=document.createElement('button');b.type='button';b.className='sw';b.style.setProperty('--c',c);
+    b.title=en?eng:ru;b.setAttribute('aria-label',b.title);b.setAttribute('aria-pressed',k===acc);
+    b.onclick=()=>{if(k==='lime')delete root.dataset.acc;else root.dataset.acc=k;store('roshiq-site-acc',k);paintThemes()};A.appendChild(b)});
+  BGS.forEach(([k,ru,eng],i)=>{const b=document.createElement('button');b.type='button';b.className='bgo';
+    b.textContent=(en?['Standard','Deep','Black']:['Обычный','Глубокий','Чёрный'])[i];b.title=en?eng:ru;b.setAttribute('aria-pressed',k===bg);
+    b.onclick=()=>{if(k==='standard')delete root.dataset.bg;else root.dataset.bg=k;store('roshiq-site-bg',k);paintThemes()};B.appendChild(b)});
+  document.getElementById('logo').src='site/logo-'+(ACC.find(x=>x[0]===acc)||ACC[0])[2]+'.png';
+}
+paintThemes();
+const tpBtn=document.getElementById('tpBtn'), tpp=document.getElementById('tpp');
+function tpOpen(o){tpp.hidden=!o;tpBtn.setAttribute('aria-expanded',o)}
+tpBtn.onclick=e=>{e.stopPropagation();tpOpen(tpp.hidden)};
+tpp.onclick=e=>e.stopPropagation();
+document.addEventListener('click',()=>tpOpen(false));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')tpOpen(false)});
 // Метрика: клики по «Скачать», GitHub и соцсетям — цели download, github, vk, youtube, tiktok.
 document.addEventListener('click',e=>{const a=e.target.closest('a[data-goal]');if(a&&window.ym)try{ym(114137127,'reachGoal',a.dataset.goal)}catch(_){}});
 // «Скачать» сразу отдаёт установщик последней версии. Если GitHub не ответил — кнопка ведёт на страницу релиза.
