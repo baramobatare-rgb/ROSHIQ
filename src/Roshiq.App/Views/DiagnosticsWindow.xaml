@@ -25,6 +25,7 @@
                 <Button x:Name="RunButton" Style="{StaticResource GhostButton}" Content="{app:T diag_rerun}" Click="Run_Click" />
                 <Button Style="{StaticResource GhostButton}" Content="{app:T diag_copy}" Click="Copy_Click" />
                 <Button Style="{StaticResource GhostButton}" Content="{app:T diag_logs}" Click="Logs_Click" />
+                <Button x:Name="ReportButton" Style="{StaticResource GhostButton}" Content="{app:T diag_report}" ToolTip="{app:T diag_report_hint}" Click="Report_Click" />
             </WrapPanel>
         </DockPanel>
     </Grid>

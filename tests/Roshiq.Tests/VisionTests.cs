@@ -117,6 +117,54 @@ public class VisionTests
         }
     }
 
+    /// <summary>
+    /// 0.18.6: слоты экрана выбора героев, измеренные на настоящем кадре 2560×1440 (цветные полосы игроков под слотами).
+    /// Старая разметка искала маленькие иконки у часов и промахивалась мимо всех слотов.
+    /// </summary>
+    [Fact]
+    public void Layout_MatchesRealPickScreen_2560x1440()
+    {
+        var radiant = new[] { (293, 433), (458, 598), (623, 763), (788, 928), (953, 1093) };
+        var slots = DraftLayout.Compute(new DraftLayoutSettings(), 2560, 1440);
+        foreach (var (s, i) in slots.Where(x => x.Side == Side.Radiant).Select((x, i) => (x, i)))
+        {
+            Assert.InRange(s.X, radiant[i].Item1 - 6, radiant[i].Item1 + 6);
+            Assert.InRange(s.X + s.Width, radiant[i].Item2 - 8, radiant[i].Item2 + 8);
+        }
+        // Свет и Тьма симметричны относительно центра (часы)
+        foreach (var (r, d) in slots.Where(x => x.Side == Side.Radiant).Zip(slots.Where(x => x.Side == Side.Dire).Reverse()))
+            Assert.InRange(r.X + d.X + d.Width, 2560 - 10, 2560 + 10);
+        Assert.InRange(slots[0].Height, 80, 95);
+    }
+
+    [Fact]
+    public void Layout_Ultrawide_CentersThe16x9Area_And_StripUsesFullScreenHeight()
+    {
+        var s = new DraftLayoutSettings();
+        var wide = DraftLayout.Compute(s, 3440, 1440);
+        var std = DraftLayout.Compute(s, 2560, 1440);
+        Assert.All(wide.Zip(std), p => { Assert.Equal(p.Second.X + 440, p.First.X); Assert.Equal(p.Second.Width, p.First.Width); });
+        // кадр — только верхняя полоса 187 px, а размер слота считается от всего экрана
+        Assert.Equal(DraftLayout.Compute(s, 2560, 1440).Select(x => (x.X, x.Width, x.Height)),
+                     DraftLayout.Compute(s, 2560, 187, 1440).Select(x => (x.X, x.Width, x.Height)));
+        // 16:10 — область по ширине, без сдвига
+        var tall = DraftLayout.Compute(s, 1920, 1200);
+        Assert.Equal(DraftLayout.Compute(s, 1920, 1080).Select(x => (x.X, x.Width, x.Height)), tall.Select(x => (x.X, x.Width, x.Height)));
+    }
+
+    [Fact]
+    public void Settings_OldDefaultLayoutIsReplaced_CustomCalibrationKept()
+    {
+        var old = System.Text.Json.JsonSerializer.Deserialize<VisionSettings>(
+            "{\"Layout\":{\"RadiantStartX\":0.2875,\"DireStartX\":0.555,\"Top\":0,\"SlotWidth\":0.0323,\"SlotHeight\":0.033,\"SlotStep\":0.0323}}")!;
+        old.Normalize();
+        Assert.Equal(new DraftLayoutSettings().RadiantStartX, old.Layout.RadiantStartX);
+        var mine = System.Text.Json.JsonSerializer.Deserialize<VisionSettings>(
+            "{\"Layout\":{\"RadiantStartX\":0.3,\"DireStartX\":0.555,\"Top\":0,\"SlotWidth\":0.0323,\"SlotHeight\":0.033,\"SlotStep\":0.0323}}")!;
+        mine.Normalize();
+        Assert.Equal(0.3, mine.Layout.RadiantStartX);
+    }
+
     [Fact]
     public void Recognizer_FindsPortraitsInFrame_AndSidesAreCorrect()
     {

@@ -2,7 +2,7 @@
 #define AppName "ROSHIQ"
 ; Версию передаёт build.ps1 (/DAppVersion=…) из Directory.Build.props; значение ниже — для ручной сборки
 #ifndef AppVersion
-  #define AppVersion "0.18.5"
+  #define AppVersion "0.18.6"
 #endif
 #define AppExe "Roshiq.exe"
 

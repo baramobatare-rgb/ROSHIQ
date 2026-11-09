@@ -202,18 +202,31 @@ public sealed class VisionSettings
         MatchThreshold = Math.Clamp(MatchThreshold, 0.5, 0.99);
         AmbiguityMargin = Math.Clamp(AmbiguityMargin, 0.0, 0.2);
         Layout ??= new();
+        // 0.18.6: старая разметка по умолчанию была от маленьких иконок у часов в самой игре, а на экране выбора
+        // героев слоты крупные и левее. Нетронутую старую разметку заменяем новой; свою калибровку пользователя не трогаем.
+        if (Layout.IsLegacyDefault) Layout = new();
     }
 }
 
-/// <summary>Геометрия портретов верхней панели в долях кадра (для 16:9). Калибруется пользователем.</summary>
+/// <summary>
+/// Геометрия слотов героев на экране выбора, в долях области 16:9 по центру кадра (на ultrawide и 16:10 Dota
+/// держит верхнюю панель в такой области). Значения по умолчанию сняты с настоящего кадра 2560×1440. Калибруется пользователем.
+/// </summary>
 public sealed class DraftLayoutSettings
 {
-    public double RadiantStartX { get; set; } = 0.2875;
-    public double DireStartX { get; set; } = 0.5550;
+    public double RadiantStartX { get; set; } = 0.1145;
+    public double DireStartX { get; set; } = 0.5727;
     public double Top { get; set; } = 0.0;
-    public double SlotWidth { get; set; } = 0.0323;
-    public double SlotHeight { get; set; } = 0.033;
-    public double SlotStep { get; set; } = 0.0323;
+    public double SlotWidth { get; set; } = 0.0551;
+    public double SlotHeight { get; set; } = 0.06;
+    public double SlotStep { get; set; } = 0.0645;
+
+    /// <summary>Разметка по умолчанию до 0.18.6 (иконки у часов в игре, а не слоты выбора героев).</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsLegacyDefault =>
+        Near(RadiantStartX, 0.2875) && Near(DireStartX, 0.5550) && Near(Top, 0) && Near(SlotWidth, 0.0323) && Near(SlotHeight, 0.033) && Near(SlotStep, 0.0323);
+
+    private static bool Near(double a, double b) => Math.Abs(a - b) < 1e-6;
 }
 
 public sealed class DataSettings

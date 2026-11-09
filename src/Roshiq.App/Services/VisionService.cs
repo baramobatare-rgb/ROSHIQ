@@ -108,17 +108,8 @@ public sealed class VisionService
                     SaveDebugFrame(img, sessionId, "black");
                     return;
                 }
-                // Пересчитываем относительную разметку под полосу (Top/SlotHeight заданы от полного кадра)
-                var scaled = new DraftLayoutSettings
-                {
-                    RadiantStartX = layout.RadiantStartX,
-                    DireStartX = layout.DireStartX,
-                    SlotWidth = layout.SlotWidth,
-                    SlotStep = layout.SlotStep,
-                    Top = layout.Top * area.Height / strip.Height,
-                    SlotHeight = layout.SlotHeight * area.Height / strip.Height
-                };
-                var result = Recognizer.Recognize(img, scaled) with { SessionId = sessionId, IsManual = manualRequest };
+                // В кадре только верхняя полоса — разметка считается от высоты всего окна игры
+                var result = Recognizer.Recognize(img, layout, area.Height) with { SessionId = sessionId, IsManual = manualRequest };
                 LogResult(result, img, sessionId);
                 LastResult = result;
                 LastRunUtc = DateTime.UtcNow;
@@ -184,7 +175,8 @@ public sealed class VisionService
         if (!changed) return;
         Log.Info($"Vision: кадр {img.Width}×{img.Height}, интерфейс драфта {(r.DraftUiVisible ? "виден" : "не найден")}, {summary}, " +
                  $"лучшее совпадение {best:0.00}" + (heroes.Length > 0 ? $" ({heroes})" : ""));
-        if (!r.DraftUiVisible || unsure > 0) SaveDebugFrame(img, sessionId, r.DraftUiVisible ? "unsure" : "noui");
+        // Кадр сохраняем при каждом изменении итога: так видно и пустые слоты, и момент, когда появились выбранные герои
+        SaveDebugFrame(img, sessionId, !r.DraftUiVisible ? "noui" : unsure > 0 ? "unsure" : "ok");
     }
 
     private static bool IsBlack(RgbImage img)
@@ -198,14 +190,14 @@ public sealed class VisionService
 
     /// <summary>
     /// Сохраняет полосу с портретами (только верх экрана драфта) в logs\vision — по ней видно, совпадает ли разметка слотов.
-    /// Не больше трёх кадров за сеанс и шести файлов всего.
+    /// Не больше восьми кадров за сеанс и двадцати четырёх файлов всего (около 1 МБ на кадр 2560 px).
     /// </summary>
     private void SaveDebugFrame(RgbImage img, long sessionId, string tag)
     {
         lock (_diagSync)
         {
             ResetDiagIfNewSession(sessionId);
-            if (_framesSaved >= 3) return;
+            if (_framesSaved >= 8) return;
             _framesSaved++;
         }
         try
@@ -218,7 +210,7 @@ public sealed class VisionService
             enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
             var file = Path.Combine(dir, $"draft-{DateTime.Now:yyyyMMdd-HHmmss}-{tag}.png");
             using (var fs = File.Create(file)) enc.Save(fs);
-            foreach (var old in new DirectoryInfo(dir).GetFiles("draft-*.png").OrderByDescending(f => f.CreationTimeUtc).Skip(6))
+            foreach (var old in new DirectoryInfo(dir).GetFiles("draft-*.png").OrderByDescending(f => f.CreationTimeUtc).Skip(24))
                 try { old.Delete(); } catch { }
         }
         catch (Exception ex) { Log.Warn("Vision: кадр не сохранён: " + ex.Message); }
