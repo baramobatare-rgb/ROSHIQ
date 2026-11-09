@@ -50,6 +50,9 @@ a{color:inherit}
 @keyframes ambientGlow{0%{transform:translate3d(-3%,-2%,0) scale(1);opacity:.65}50%{opacity:1}100%{transform:translate3d(5%,4%,0) scale(1.12);opacity:.8}}
 @media(prefers-reduced-motion:reduce){.hero::before,.final::before{animation:none;transform:none}}
 .stripe{position:absolute;top:0;bottom:0;right:-16vw;width:50vw;background:var(--lime);transform:skewX(-14deg);transform-origin:top}
+.hero.scroll-cut .stripe{translate:calc(var(--cut,0)*180px) 0}
+.hero.scroll-cut .main>div:first-child{translate:calc(var(--cut,0)*-54px) 0}
+.hero.scroll-cut .stickers{translate:calc(var(--cut,0)*72px) 0}
 .ghost{position:absolute;left:-2vw;bottom:-6vw;font-weight:900;font-size:30vw;letter-spacing:-.06em;line-height:.8;color:color-mix(in srgb,var(--lime) 6%,transparent);pointer-events:none;user-select:none}
 .nav{position:relative;z-index:3;display:flex;align-items:center;gap:14px;padding:26px 32px}
 .nav img{width:36px;height:36px;border-radius:9px}
@@ -167,6 +170,10 @@ h2{font-weight:900;font-size:clamp(38px,5.4vw,72px);line-height:.95;letter-spaci
 @media(prefers-reduced-motion:reduce){.feature-stack .row{position:relative;top:auto}}
 
 .ban{background:var(--lime);color:var(--ink);padding:150px 0;clip-path:polygon(0 5vw,100% 0,100% calc(100% - 5vw),0 100%)}
+.ban.roll-ready{position:relative;overflow:hidden;clip-path:polygon(0 min(5vw,calc(var(--roll,1)*100%)),100% 0,100% max(0px,calc(var(--roll,1)*100% - 5vw)),0 calc(var(--roll,1)*100%))}
+.roll-edge{display:none;pointer-events:none}
+.roll-ready .roll-edge{display:block;position:absolute;z-index:2;left:-5%;width:110%;height:72px;top:calc(var(--roll,1)*100% - 2.5vw);transform:translateY(-50%) rotate(-2.86deg);background:linear-gradient(to bottom,transparent,color-mix(in srgb,var(--lime) 78%,#fff) 30%,var(--lime) 52%,color-mix(in srgb,var(--lime) 62%,#000) 84%,color-mix(in srgb,var(--lime) 28%,#000));box-shadow:0 -12px 28px rgba(0,0,0,.12);opacity:clamp(0,calc((1 - var(--roll,1))*12),1)}
+@media(max-width:960px){.hero.scroll-cut .stripe{translate:calc(var(--cut,0)*80px) 0}.hero.scroll-cut .main>div:first-child{translate:calc(var(--cut,0)*-18px) 0}.hero.scroll-cut .stickers{translate:calc(var(--cut,0)*24px) 0}.roll-ready .roll-edge{height:48px}}
 .ban .lead{margin-top:26px;font-size:21px;line-height:1.5;max-width:36em;font-weight:500}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:50px}
 .two h3{font-weight:900;font-size:26px;margin-bottom:16px}
@@ -378,6 +385,7 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
 </section>
 
 <section class="ban" id="ban">
+  <div class="roll-edge" aria-hidden="true"></div>
   <div class="w">
     <h2 data-i18n="h2b">Твои данные.<br>Понятные правила.</h2>
     <p class="lead" data-i18n="bl">Время матча, героя, золото и инвентарь ROSHIQ получает через Game State Integration — интерфейс самой Dota 2. Автодрафт распознаёт видимые портреты героев на экране выбора. Публичная статистика OpenDota подключается по желанию.</p>
@@ -669,6 +677,27 @@ function vRender(){const en=lang==='en';vids.innerHTML='';
     vids.appendChild(d)})}
 vRender();
 document.getElementById('lang').addEventListener('click',()=>{mRender(true);if(mAnim)mPlay.textContent=lang==='en'?'Pause':'Пауза';else mStop();if(!vids.querySelector('iframe'))vRender()});
+
+// Прокрутка управляет разрезом и разворачиванием цветной секции. Без JS всё видно сразу.
+const cutHero=document.querySelector('.hero'),rollSection=document.getElementById('ban');
+const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');
+let scrollFrame=0;
+const clamp01=n=>Math.max(0,Math.min(1,n));
+function paintScrollEffects(){
+  scrollFrame=0;
+  if(motionPreference.matches){cutHero.classList.remove('scroll-cut');rollSection.classList.remove('roll-ready');return}
+  const heroRect=cutHero.getBoundingClientRect(),rollRect=rollSection.getBoundingClientRect(),vh=window.innerHeight;
+  cutHero.style.setProperty('--cut',clamp01(-heroRect.top/(heroRect.height*.8)).toFixed(4));
+  rollSection.style.setProperty('--roll',clamp01((vh*.9-rollRect.top)/(rollRect.height+vh*.08)).toFixed(4));
+  cutHero.classList.add('scroll-cut');rollSection.classList.add('roll-ready');
+}
+function scheduleScrollEffects(){if(!scrollFrame)scrollFrame=requestAnimationFrame(paintScrollEffects)}
+window.addEventListener('scroll',scheduleScrollEffects,{passive:true});
+window.addEventListener('resize',scheduleScrollEffects,{passive:true});
+window.addEventListener('load',scheduleScrollEffects);
+motionPreference.addEventListener('change',scheduleScrollEffects);
+new ResizeObserver(scheduleScrollEffects).observe(document.querySelector('main'));
+paintScrollEffects();
 </script>
 </body>
 </html>
