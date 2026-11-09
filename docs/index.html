@@ -62,6 +62,13 @@ h1{font-weight:900;font-size:clamp(46px,5.7vw,84px);line-height:.92;letter-spaci
 .btn{display:inline-block;background:#fff;color:var(--ink);font-weight:900;font-size:19px;text-decoration:none;padding:20px 32px;border-radius:4px;transition:transform .12s,box-shadow .12s}
 .btn:hover{transform:translate(-3px,-3px);box-shadow:5px 5px 0 var(--lime)}
 .cta small{color:var(--grey);font-size:15px;line-height:1.4}
+/* счётчик скачиваний — живые цифры GitHub, без подставных значений */
+.dlc{display:flex;align-items:baseline;gap:12px;margin-top:30px;padding-top:18px;border-top:1px solid var(--line);max-width:30em}
+.dlc[hidden]{display:none}
+.dlc b{font-weight:900;font-size:44px;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums;color:#fff;box-shadow:inset 0 -8px 0 var(--lime)}
+.dlc span{color:var(--soft);font-size:15px;line-height:1.35}
+.dlc i{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--lime);margin-right:7px;vertical-align:1px}
+@media (prefers-reduced-motion:no-preference){.dlc.bump b{animation:bump .6s ease-out}@keyframes bump{30%{color:var(--lime)}}}
 
 /* стикеры-подсказки на салатовой полосе */
 .stickers{position:relative;height:610px}
@@ -192,6 +199,7 @@ footer nav a:hover{color:var(--lime)}
         <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
         <small data-i18n="dls">Windows 10 и 11, 78 МБ.<br>Права администратора не нужны.</small>
       </div>
+      <div class="dlc" id="dlc" hidden title=""><b id="dlcN">0</b><span><i aria-hidden="true"></i><span data-i18n="dlc">скачиваний с GitHub — счётчик обновляется сам</span></span></div>
     </div>
     <div class="stickers" aria-label="Примеры подсказок ROSHIQ">
       <div class="stamp" aria-hidden="true" data-i18n="stamp">БЕСПЛАТНО<br>И ОТКРЫТО</div>
@@ -295,7 +303,7 @@ footer nav a:hover{color:var(--lime)}
 const EN={tp:"Theme",tpa:"Colour",tpb:"Background",n1:"What’s inside",n2:"Bans",n3:"FAQ",
 h1:"Fewer silly deaths. More lanes won.",
 p1:"A free Dota 2 helper: tips during the game and an honest review after. Only Valve’s official Game State Integration — no cheats.",
-dl:"Download for Windows",dls:"Windows 10 and 11, 78 MB.<br>No admin rights needed.",stamp:"FREE<br>AND OPEN",
+dl:"Download for Windows",dlc:"downloads from GitHub — the counter updates itself",dls:"Windows 10 and 11, 78 MB.<br>No admin rights needed.",stamp:"FREE<br>AND OPEN",
 k1:"No TP on you",k1s:"a reminder before you walk to lane",k2:"8 last hits behind",k2s:"your own games on this role — not pro players",
 k3:"420 short of buyback",k3s:"a warning while there’s still time to farm",k4e:"after the game",k4:"One main mistake",k4s:"and a goal for the next match instead of a wall of tips",
 h2a:"What’s inside",r1:"Draft",r1p:"Counters and partners for your role, with a short “why”. Knows which heroes you play most.",
@@ -363,6 +371,41 @@ fetch('https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest').th
   EN.dls=`Windows 10 and 11, ${mb} MB, version ${v}.<br>No admin rights needed.`;
   document.querySelectorAll('[data-i18n="dls"]').forEach(e=>e.innerHTML=(lang==='en'?EN:RU).dls);
 }).catch(()=>{});
+// Счётчик скачиваний: сумма загрузок установщика и портативной версии по всем релизам (GitHub считает сам,
+// сюда входят и обновления из программы). Обновляется раз в 5 минут, пока страница открыта; без ответа GitHub плашка скрыта.
+const dlc=document.getElementById('dlc'),dlcN=document.getElementById('dlcN');let dlShown=0;
+function dlFmt(n){return n.toLocaleString(lang==='en'?'en-US':'ru-RU')}
+function dlShow(n){
+  if(!(n>0))return;dlc.hidden=false;
+  dlc.title=lang==='en'?'Sum of installer and portable downloads across all versions, as counted by GitHub. Includes in-app updates.'
+    :'Сумма скачиваний установщика и портативной версии по всем версиям — по данным GitHub. Обновления из программы тоже считаются.';
+  const m10=n%10,m100=n%100,w=m10===1&&m100!==11?'скачивание':m10>=2&&m10<=4&&(m100<12||m100>14)?'скачивания':'скачиваний';
+  RU.dlc=w+' с GitHub — счётчик обновляется сам';EN.dlc=(n===1?'download':'downloads')+' from GitHub — the counter updates itself';
+  document.querySelectorAll('[data-i18n="dlc"]').forEach(e=>e.textContent=(lang==='en'?EN:RU).dlc);
+  const from=dlShown,to=n;dlShown=n;
+  if(!from||from===to||matchMedia('(prefers-reduced-motion: reduce)').matches){dlcN.textContent=dlFmt(to);return}
+  dlc.classList.remove('bump');void dlc.offsetWidth;dlc.classList.add('bump');
+  const t0=performance.now();(function f(t){const p=Math.min(1,(t-t0)/900);dlcN.textContent=dlFmt(Math.round(from+(to-from)*(1-Math.pow(1-p,3))));if(p<1)requestAnimationFrame(f)})(t0);
+}
+async function dlCount(){
+  let total=0;
+  for(let page=1;page<=5;page++){
+    const r=await fetch(`https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases?per_page=100&page=${page}`);if(!r.ok)throw 0;
+    const list=await r.json();
+    list.forEach(rel=>(rel.assets||[]).forEach(a=>{if(/^Roshiq-(Setup|Portable)-.*\.(exe|zip)$/i.test(a.name))total+=a.download_count||0}));
+    if(list.length<100)break;
+  }
+  return total;
+}
+function dlTick(force){
+  let c=null;try{c=JSON.parse(localStorage.getItem('roshiq-site-dl')||'null')}catch(e){}
+  if(c&&c.n>0)dlShow(Math.max(c.n,dlShown));
+  if(!force&&c&&Date.now()-c.t<5*60e3)return;
+  dlCount().then(n=>{if(n>0){store('roshiq-site-dl',JSON.stringify({n,t:Date.now()}));dlShow(n)}}).catch(()=>{});
+}
+dlTick(false);
+setInterval(()=>{if(!document.hidden)dlTick(true)},5*60e3);
+document.getElementById('lang').addEventListener('click',()=>{if(dlShown)dlShow(dlShown)});
 </script>
 </body>
 </html>
