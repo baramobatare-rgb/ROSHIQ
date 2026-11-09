@@ -151,6 +151,15 @@ h2{font-weight:900;font-size:clamp(38px,5.4vw,72px);line-height:.95;letter-spaci
 .row p{color:var(--soft);max-width:34em}
 @media (max-width:760px){.row{grid-template-columns:1fr;gap:10px}}
 
+/* Карточки возможностей: следующая накрывает предыдущую при прокрутке. */
+.feature-stack{counter-reset:feature;display:grid;gap:24px;border-top:0;padding-bottom:20px;isolation:isolate}
+.feature-stack .row{counter-increment:feature;position:sticky;top:calc(24px + var(--card-index)*12px);z-index:var(--card-index);min-height:280px;padding:60px 44px 42px;border:1px solid #354338;border-radius:16px;background:linear-gradient(115deg,color-mix(in srgb,var(--lime) 7%,transparent),transparent 70%),var(--ink);box-shadow:0 -12px 32px rgba(0,0,0,.18);align-content:center;align-items:center}
+.feature-stack .row::before{content:counter(feature,decimal-leading-zero) " / 06";position:absolute;top:22px;left:44px;color:var(--lime);font:800 12px/1 Inter,sans-serif;letter-spacing:.1em}
+.feature-stack .row h3{font-size:clamp(30px,3.6vw,46px);line-height:1.06;max-width:9em}
+.feature-stack .row p{font-size:20px;line-height:1.55}
+@media(max-width:760px){.feature-stack{gap:18px}.feature-stack .row{min-height:300px;padding:55px 24px 30px;top:calc(16px + var(--card-index)*8px);gap:16px;border-radius:12px}.feature-stack .row::before{left:24px;top:23px}.feature-stack .row p{font-size:17px}.feature-stack .row h3{max-width:none}}
+@media(prefers-reduced-motion:reduce){.feature-stack .row{position:relative;top:auto}}
+
 .ban{background:var(--lime);color:var(--ink);padding:150px 0;clip-path:polygon(0 5vw,100% 0,100% calc(100% - 5vw),0 100%)}
 .ban .lead{margin-top:26px;font-size:21px;line-height:1.5;max-width:36em;font-weight:500}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:50px}
@@ -346,7 +355,8 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
 <section class="block" id="what">
   <div class="w">
     <h2 data-i18n="h2a">Что внутри</h2>
-    <div class="rows">
+    <p class="sub" data-i18n="stackIntro">От первого пика до следующего матча — помощь на каждом этапе.</p>
+    <div class="rows feature-stack">
       <div class="row"><h3 data-i18n="r1">Драфт</h3><p data-i18n="r1p">Контрпики и героев в связку под твою роль, с коротким «почему». Учитывает, на ком ты играешь чаще всего.</p></div>
       <div class="row"><h3 data-i18n="r2">Панель в игре</h3><p data-i18n="r2p">Прозрачная панель поверх Dota: руны, Рошан, ТП, тайник, выкуп. Мышь проходит сквозь неё — в игре не мешает.</p></div>
       <div class="row"><h3 data-i18n="r3">Разбор матча</h3><p data-i18n="r3p">Что получилось и одна главная ошибка. Керри сравнивается с керри, саппорт — с саппортом, и только по твоим играм.</p></div>
@@ -493,6 +503,8 @@ h2f:"Your next match — with it.",vk:"VK",legal:"ROSHIQ isn’t affiliated with
 EN.h2m="One tip.<br>At the right moment.";
 EN.mp="Pick a situation or move through the match. See what ROSHIQ reminds you about, and why it helps.";
 EN.mov="example tips";
+EN.stackIntro="From the first pick to your next match — help at every stage.";
+document.querySelectorAll('.feature-stack .row').forEach((card,index)=>card.style.setProperty('--card-index',index));
 const RU={};document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
 let lang='ru';
 function setLang(l){lang=l;const d=l==='en'?EN:RU;
