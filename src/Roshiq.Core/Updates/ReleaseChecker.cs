@@ -8,8 +8,10 @@ namespace Roshiq.Core.Updates;
 public enum ReleaseSource { Api, ReleasesPage }
 
 /// <summary>Свежий релиз на GitHub.</summary>
+/// <param name="InstallerDigest">SHA-256 установщика, который посчитал сам GitHub (поле digest в API, «sha256:…»);
+/// запасной источник, если SHA256SUMS.txt не скачался.</param>
 public sealed record ReleaseInfo(Version Version, string Tag, string PageUrl, string? InstallerUrl, string? InstallerName,
-    long InstallerSize, string? ChecksumsUrl, ReleaseSource Source);
+    long InstallerSize, string? ChecksumsUrl, ReleaseSource Source, string? InstallerDigest = null);
 
 /// <summary>Чем закончилась проверка. Разные причины отказа различаются — интерфейс пишет честную причину.</summary>
 public enum UpdateCheckStatus
@@ -124,7 +126,7 @@ public sealed class ReleaseChecker
             if (version == null) return new UpdateCheckResult(UpdateCheckStatus.Invalid, null, _now(), Message: "нет тега релиза");
             if (version <= current) return new UpdateCheckResult(UpdateCheckStatus.UpToDate, null, _now());
 
-            string? installer = null, name = null, sums = null;
+            string? installer = null, name = null, sums = null, digest = null;
             long size = 0;
             if (root.TryGetProperty("assets", out var assets) && assets.ValueKind == JsonValueKind.Array)
             {
@@ -138,11 +140,12 @@ public sealed class ReleaseChecker
                     installer = Str(a, "browser_download_url");
                     name = n;
                     size = a.TryGetProperty("size", out var sz) && sz.ValueKind == JsonValueKind.Number && sz.TryGetInt64(out var l) ? l : 0;
+                    digest = InstallerChecksum.ParseDigest(Str(a, "digest"));
                 }
             }
             var page = Str(root, "html_url") ?? $"https://github.com/{repo}/releases/tag/{tag}";
             return new UpdateCheckResult(UpdateCheckStatus.Available,
-                new ReleaseInfo(version, tag!, page, installer, name, size, sums, ReleaseSource.Api), _now());
+                new ReleaseInfo(version, tag!, page, installer, name, size, sums, ReleaseSource.Api, digest), _now());
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (JsonException ex)

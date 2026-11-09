@@ -8,6 +8,8 @@ namespace Roshiq.Tests;
 /// <summary>0.17.4: проверка обновлений — один запрос на всех, кэш, пауза после лимита, резервный источник.</summary>
 public class UpdateCoordinatorTests
 {
+    public UpdateCoordinatorTests() { InstallerChecksum.Delay = (_, _) => Task.CompletedTask; }   // повторы без реальных пауз
+
     private const string Repo = "baramobatare-rgb/ROSHIQ";
     private const string ApiUrl = "https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest";
     private const string PageUrl = "https://github.com/baramobatare-rgb/ROSHIQ/releases/latest";
@@ -263,5 +265,73 @@ public class UpdateCoordinatorTests
                 InstallerChecksum.VerifyAsync(Info(url), path, new HttpClient(bad), CancellationToken.None));
         }
         finally { File.Delete(path); }
+    }
+
+    // ---------- 0.18.5: SHA256SUMS.txt не отдался (504 через VPN) — повтор и сверка с хэшем GitHub
+
+    private static ReleaseInfo InfoWithDigest(string? sumsUrl, string? digest) => Info(sumsUrl) with { InstallerDigest = digest };
+
+    [Fact]
+    public async Task Checksum_GatewayTimeout_RetriesAndPasses()
+    {
+        InstallerChecksum.Delay = (_, _) => Task.CompletedTask;
+        var (path, hash) = await TempFile("installer");
+        const string url = "https://github.com/x/y/releases/download/v0.17.4/SHA256SUMS.txt";
+        try
+        {
+            int n = 0;
+            var h = new FakeHandler();
+            h.Routes[url] = () => ++n < 3
+                ? new HttpResponseMessage(HttpStatusCode.GatewayTimeout)
+                : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent($"{hash}  Roshiq-Setup-0.17.4.exe\n") };
+            await InstallerChecksum.VerifyAsync(Info(url), path, new HttpClient(h), CancellationToken.None);
+            Assert.Equal(3, h.CallsTo(url));
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task Checksum_SumsDown_FallsBackToGitHubDigest_AndStillRejectsMismatch()
+    {
+        InstallerChecksum.Delay = (_, _) => Task.CompletedTask;
+        var (path, hash) = await TempFile("installer");
+        const string url = "https://github.com/x/y/releases/download/v0.17.4/SHA256SUMS.txt";
+        try
+        {
+            var down = new FakeHandler();
+            down.Routes[url] = () => new HttpResponseMessage(HttpStatusCode.GatewayTimeout);
+            await InstallerChecksum.VerifyAsync(InfoWithDigest(url, hash.ToLowerInvariant()), path, new HttpClient(down), CancellationToken.None);
+            Assert.Equal(3, down.CallsTo(url));
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                InstallerChecksum.VerifyAsync(InfoWithDigest(url, new string('0', 64)), path, new HttpClient(down), CancellationToken.None));
+            var ex = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                InstallerChecksum.VerifyAsync(InfoWithDigest(url, null), path, new HttpClient(down), CancellationToken.None));
+            Assert.Contains("SHA256SUMS", ex.Message);
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
+    public async Task Api_ReadsGitHubDigestOfInstaller()
+    {
+        Assert.Equal(new string('a', 64), InstallerChecksum.ParseDigest("sha256:" + new string('a', 64)));
+        Assert.Null(InstallerChecksum.ParseDigest("md5:abc"));
+        Assert.Null(InstallerChecksum.ParseDigest("sha256:zz"));
+        Assert.Null(InstallerChecksum.ParseDigest(null));
+
+        var fake = new FakeHandler();
+        var d = new string('b', 64);
+        fake.Routes[ApiUrl] = () => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent($$"""
+                {"tag_name":"v0.17.4","html_url":"https://github.com/{{Repo}}/releases/tag/v0.17.4",
+                 "assets":[{"name":"Roshiq-Setup-0.17.4.exe","browser_download_url":"https://github.com/{{Repo}}/releases/download/v0.17.4/Roshiq-Setup-0.17.4.exe","size":123,"digest":"sha256:{{d}}"},
+                           {"name":"SHA256SUMS.txt","browser_download_url":"https://github.com/{{Repo}}/releases/download/v0.17.4/SHA256SUMS.txt","size":10,"digest":"sha256:{{new string('c', 64)}}"}]}
+                """, Encoding.UTF8, "application/json")
+        };
+        var http = new HttpClient(fake);
+        var r = await new ReleaseChecker(http, http).CheckApiAsync(Repo, new Version(0, 17, 3), CancellationToken.None);
+        Assert.Equal(d, r.Release?.InstallerDigest);
     }
 }
