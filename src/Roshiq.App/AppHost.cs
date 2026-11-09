@@ -779,7 +779,7 @@ public sealed class AppHost : IDisposable
             var phases = new Dictionary<BuildPhase, IReadOnlyDictionary<int, int>>();
             foreach (var (k, v) in raw)
                 if (MetaBuildCache.PhaseOf(k) is BuildPhase p) phases[p] = v;
-            var build = MetaBuildBuilder.Build(hero.Id, phases, _itemIdMap, key => Database.FindItem(key) != null);
+            var build = MetaBuildBuilder.Build(hero.Id, phases, _itemIdMap, key => Database.FindItem(key) is { CatalogOnly: false });
             if (build.TotalItems == 0) return (MetaBuilds.Get(hero.Id), Loc.T("meta_empty"));
             MetaBuilds.Set(build);
             return (build, null);

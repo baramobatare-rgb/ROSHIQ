@@ -54,6 +54,9 @@ public sealed class Item
     public required string PurposeRu { get; init; }
     public required string PurposeEn { get; init; }
 
+    /// <summary>Компонент или редкий предмет из каталога: есть в поиске и своих сборках, но движок его не советует.</summary>
+    public bool CatalogOnly => Group == "catalog";
+
     public string DisplayName(Language lang) => Name;
     public string Purpose(Language lang) => lang == Language.Russian ? PurposeRu : PurposeEn;
 

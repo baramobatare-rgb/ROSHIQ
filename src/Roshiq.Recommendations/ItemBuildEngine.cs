@@ -118,7 +118,7 @@ public sealed class ItemBuildEngine
         if (unique.Count == 0) return Array.Empty<ItemAdaptation>();
         var core = new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late }
             .SelectMany(p => baseline[p]).Select(p => p.Item).ToList();
-        return _db.Items.Where(i => i.Counters.Count > 0 && i.SuitsPosition(position) && i.SuitsHero(hero))
+        return _db.Items.Where(i => !i.CatalogOnly && i.Counters.Count > 0 && i.SuitsPosition(position) && i.SuitsHero(hero))
             .Select(i =>
             {
                 var hits = unique.Where(e => i.Counters.Any(e.Has)).ToList();
@@ -172,7 +172,7 @@ public sealed class ItemBuildEngine
         HashSet<string> used, HashSet<string> usedGroups)
     {
         return _db.Items
-            .Where(i => i.Phase == phase && i.SuitsPosition(position) && i.SuitsHero(hero) && !used.Contains(i.Key))
+            .Where(i => !i.CatalogOnly && i.Phase == phase && i.SuitsPosition(position) && i.SuitsHero(hero) && !used.Contains(i.Key))
             .Where(i => i.Group == null || !usedGroups.Contains(i.Group))
             .Select(i => { var (s, r) = Score(i, hero, position); return new ItemPick(i, s, r, false); })
             .Where(p => p.Score >= 1.0)
@@ -185,7 +185,7 @@ public sealed class ItemBuildEngine
     private IReadOnlyList<ItemPick> Situational(Hero hero, Position position, IReadOnlyList<Hero> enemies, HashSet<string> used)
     {
         var pool = _db.Items
-            .Where(i => i.Counters.Count > 0 && i.SuitsPosition(position) && i.SuitsHero(hero) && !used.Contains(i.Key)
+            .Where(i => !i.CatalogOnly && i.Counters.Count > 0 && i.SuitsPosition(position) && i.SuitsHero(hero) && !used.Contains(i.Key)
                         && (i.Phase is BuildPhase.Mid or BuildPhase.Late or BuildPhase.Early))
             .ToList();
 
@@ -234,7 +234,7 @@ public sealed class ItemBuildEngine
     private IReadOnlyList<ItemPick> Alternative(Hero hero, Position position, HashSet<string> used)
     {
         return _db.Items
-            .Where(i => (i.Phase is BuildPhase.Mid or BuildPhase.Late) && i.SuitsPosition(position) && i.SuitsHero(hero) && !used.Contains(i.Key))
+            .Where(i => !i.CatalogOnly && (i.Phase is BuildPhase.Mid or BuildPhase.Late) && i.SuitsPosition(position) && i.SuitsHero(hero) && !used.Contains(i.Key))
             .Select(i => { var (s, r) = Score(i, hero, position); return new ItemPick(i, s, r, false); })
             .Where(p => p.Score >= 1.0)
             .OrderByDescending(p => p.Score)
