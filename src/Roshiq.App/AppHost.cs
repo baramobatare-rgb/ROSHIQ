@@ -199,6 +199,8 @@ public sealed class AppHost : IDisposable
             return ConnectionHealth.Silence(ConnectionState, fresh ? g!.GameState : null, fresh && g!.Paused == true, Overlay.HiddenByUser);
         }
     }
+    /// <summary>Лента подсказок текущего матча для «Обзора»: что показано, что сохранено, что помогло.</summary>
+    public TipFeed Feed { get; } = new();
     /// <summary>Советы, отложенные до разбора, пока запись матча ещё не началась (совет по линии приходит на 0:00).</summary>
     private readonly List<DeferredMatchTip> _deferredEarly = new();
     /// <summary>Журнал подсказок по матчам (logs\tips, только на этом компьютере).</summary>
@@ -331,6 +333,7 @@ public sealed class AppHost : IDisposable
             Reminders.Reset();
             Alerts.Reset();
             Tips.Clear(t => t.InGameOnly);          // советы прошлого матча не переносим
+            Feed.Clear();
             _deferredEarly.Clear();
             _alertActive = Array.Empty<string>();
             _timerAnnouncer.Reset();
@@ -1323,6 +1326,7 @@ public sealed class AppHost : IDisposable
             g.BuybackCost, g.BuybackCooldown, NextBuildItemCost(g));
         int tpCost = Costs.Cost("item_tpscroll") ?? 100;
         _alertActive = MatchAlerts.Conditions(state, Settings.Current.Alerts, tpCost);
+        Feed.Sync(Alerts.Followed, Alerts.Ignored);
         var key = Alerts.Tick(state, Settings.Current.Alerts, tpCost);
         if (key == null) return;
         var L = Loc.Instance;
@@ -1465,6 +1469,9 @@ public sealed class AppHost : IDisposable
         }
         // журнал подсказок: всё, что помощник хотел сказать, и что с этим стало — привязано к матчу и времени игры
         var g = LastGsi;
+        // лента на «Обзоре»: показанное и сохранённое; таймеры туда не идут — они и так на панели
+        if (tip.InGameOnly && tip.Kind != "timer" && outcome is TipOutcome.Shown or TipOutcome.Deferred && g is { IsInProgress: true })
+            Feed.Add(g.ClockTime ?? 0, tip.Kind, tip.Text, outcome == TipOutcome.Shown ? TipFeedStatus.Shown : TipFeedStatus.Saved, tip.Tag as string);
         string? matchId = g is { IsInProgress: true } ? g.MatchId : null;
         TipLog.Add(matchId, matchId != null ? g!.ClockTime : null, tip, outcome, DateTime.Now);
         if (outcome != TipOutcome.Shown) Log.Info($"Совет «{tip.Kind}»: {outcome switch {

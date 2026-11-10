@@ -38,6 +38,7 @@
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
             <RowDefinition Height="68" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -134,9 +135,41 @@
             </Grid>
         </Border>
 
+        <!-- ===== Строка матча: видна, пока идёт драфт или матч. Время, герой, счёт, добивания — одной строкой на всех разделах ===== -->
+        <Border x:Name="MatchStrip" Grid.Row="1" Visibility="Collapsed" BorderBrush="{DynamicResource Line}" BorderThickness="0,0,0,1" Padding="32,0">
+            <DockPanel Height="40" LastChildFill="True">
+                <Border DockPanel.Dock="Left" Background="{DynamicResource Accent}" Padding="14,0">
+                    <TextBlock x:Name="StripPhase" FontFamily="{StaticResource DisplayFont}" FontSize="12.5" FontWeight="ExtraBold"
+                               Foreground="{DynamicResource OnAccent}" VerticalAlignment="Center" />
+                </Border>
+                <Border x:Name="StripClockCell" DockPanel.Dock="Left" Style="{StaticResource StripCell}">
+                    <TextBlock x:Name="StripClock" Style="{StaticResource Num}" FontSize="19" FontWeight="ExtraBold" />
+                </Border>
+                <Border x:Name="StripHeroCell" DockPanel.Dock="Left" Style="{StaticResource StripCell}">
+                    <TextBlock x:Name="StripHero" FontFamily="{StaticResource DisplayFont}" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" />
+                </Border>
+                <Border x:Name="StripKdaCell" DockPanel.Dock="Left" Style="{StaticResource StripCell}" ToolTip="{app:T strip_kda_tip}">
+                    <TextBlock x:Name="StripKda" Style="{StaticResource Num}" />
+                </Border>
+                <Border x:Name="StripLhCell" DockPanel.Dock="Left" Style="{StaticResource StripCell}">
+                    <TextBlock x:Name="StripLh" Style="{StaticResource Num}" />
+                </Border>
+                <Border x:Name="StripGpmCell" DockPanel.Dock="Left" Style="{StaticResource StripCell}">
+                    <TextBlock x:Name="StripGpm" Style="{StaticResource Num}" />
+                </Border>
+                <TextBlock x:Name="StripRosh" DockPanel.Dock="Left" Margin="16,0,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="12.5" FontWeight="SemiBold"
+                           Foreground="{DynamicResource Muted}" VerticalAlignment="Center" />
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Rectangle x:Name="StripNoteMark" Width="8" Height="8" Fill="{DynamicResource Accent}" VerticalAlignment="Center" />
+                    <TextBlock x:Name="StripNote" Margin="8,0,0,0" FontFamily="{StaticResource DisplayFont}" FontSize="12.5" FontWeight="Bold"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
         <!-- ===== Заголовок раздела и содержимое ===== -->
         <!-- Контент не шире 1600 px: на широких мониторах он по центру, без пустых полос внутри карточек -->
-        <Grid Grid.Row="1" Margin="32,22,32,0" MaxWidth="1600">
+        <Grid Grid.Row="2" Margin="32,22,32,0" MaxWidth="1600">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
@@ -163,7 +196,7 @@
         </Grid>
 
         <!-- ===== Нижняя строка ===== -->
-        <Border Grid.Row="2" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="32,10">
+        <Border Grid.Row="3" BorderBrush="{DynamicResource Line}" BorderThickness="0,1,0,0" Padding="32,10">
             <DockPanel>
                 <Border DockPanel.Dock="Right" CornerRadius="4" Padding="10,4" BorderThickness="1" BorderBrush="{DynamicResource Line}">
                     <StackPanel Orientation="Horizontal">

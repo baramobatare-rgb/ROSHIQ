@@ -13,6 +13,7 @@ using Roshiq.Core.Diagnostics;
 using Roshiq.Core.Settings;
 using Roshiq.Core.Localization;
 using Roshiq.Core.Models;
+using Roshiq.Recommendations;
 
 namespace Roshiq.App;
 
@@ -217,7 +218,7 @@ public partial class MainWindow : Window
         if (w <= 0) return;
         bool compact = w < 1560, tight = w < 1280;
         bool updateAvailable = App.Host.AvailableUpdate != null;
-        MatchPill.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
+        MatchPill.Visibility = compact || MatchStrip.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         StatusText.Visibility = compact ? Visibility.Collapsed : Visibility.Visible;
         StatusPill.Padding = compact ? new Thickness(9, 6, 9, 6) : new Thickness(11, 6, 11, 6);
         UpdateText.Visibility = compact && !updateAvailable && !_updateBusy && !(_updateNoteTimer?.IsEnabled ?? false)
@@ -573,6 +574,56 @@ public partial class MainWindow : Window
         }
         else if (gsiFresh && gsi!.IsPostGame) MatchText.Text = L.Get("top_match_post").ToUpperInvariant();
         else MatchText.Text = L.Get("top_match_none").ToUpperInvariant();
+        UpdateMatchStrip(gsiFresh ? gsi : null);
+    }
+
+    /// <summary>Строка матча под меню: фаза, игровое время, герой и роль, счёт, добивания, золото в минуту, Рошан и почему молчат подсказки.</summary>
+    private void UpdateMatchStrip(Roshiq.GSI.GameStateSnapshot? g)
+    {
+        bool show = g != null && (g.IsHeroSelection || g.IsInProgress || g.IsPostGame);
+        MatchStrip.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        // время уже есть в строке — подпись в шапке не дублируем
+        if (show) MatchPill.Visibility = Visibility.Collapsed;
+        if (!show) return;
+        var L = Loc.Instance;
+        var h = App.Host;
+        bool live = g!.IsInProgress;
+        StripPhase.Text = L.Get(live ? "strip_live" : g.IsHeroSelection ? "strip_draft" : "strip_post");
+
+        static void Cell(Border cell, TextBlock text, string? value)
+        {
+            cell.Visibility = value == null ? Visibility.Collapsed : Visibility.Visible;
+            if (value != null) text.Text = value;
+        }
+        Cell(StripClockCell, StripClock, live && g.ClockTime is int c ? (c < 0 ? "-" : "") + GameTimers.Clock(Math.Abs(c)) : null);
+        var hero = h.CurrentHero;
+        Cell(StripHeroCell, StripHero, hero == null ? null : hero.DisplayName(L.Language) + " · " + L.PositionName(h.CurrentPosition));
+        bool stats = live || g.IsPostGame;
+        Cell(StripKdaCell, StripKda, stats && g.Kills is int k ? $"{k} / {g.Deaths ?? 0} / {g.Assists ?? 0}" : null);
+        Cell(StripLhCell, StripLh, stats && g.LastHits is int lh ? L.Format("strip_lh", lh) : null);
+        Cell(StripGpmCell, StripGpm, stats && g.Gpm is int gpm ? L.Format("strip_gpm", gpm) : null);
+
+        string rosh = "";
+        if (live && g.ClockTime is int clock)
+        {
+            var r = h.Roshan.State(clock);
+            rosh = r.Phase switch
+            {
+                RoshanPhase.Dead when r.AegisLeftSec > 0 => L.Get("rosh_short") + ": " + L.Format("rosh_state_aegis", GameTimers.Clock(r.AegisLeftSec)),
+                RoshanPhase.Dead => L.Get("rosh_short") + ": " + L.Format("rosh_state_dead", GameTimers.Clock(r.RespawnMinAt), GameTimers.Clock(r.RespawnMaxAt)),
+                RoshanPhase.MaybeAlive => L.Get("rosh_short") + ": " + L.Format("rosh_state_maybe", GameTimers.Clock(r.RespawnMaxAt)),
+                _ => ""
+            };
+        }
+        StripRosh.Text = rosh;
+
+        var silence = h.TipSilence;
+        // связь оценивается по окну игры и серверу; в строке матча достаточно того, что пакеты идут
+        if (silence == Roshiq.Core.Diagnostics.TipSilence.NoConnection)
+            silence = Roshiq.Core.Diagnostics.ConnectionHealth.Silence(Roshiq.Core.Diagnostics.ConnectionState.Connected, g.GameState, g.Paused == true, h.Overlay.HiddenByUser);
+        StripNote.Text = L.Get("strip_note_" + silence.ToString().ToLowerInvariant());
+        StripNoteMark.Fill = (Brush)FindResource(silence == Roshiq.Core.Diagnostics.TipSilence.None ? "Accent"
+            : silence is Roshiq.Core.Diagnostics.TipSilence.Paused or Roshiq.Core.Diagnostics.TipSilence.OverlayHidden ? "Warning" : "Faint");
     }
 
     private void Settings_Click(object sender, RoutedEventArgs e) => Select("settings");

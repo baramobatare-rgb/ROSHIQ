@@ -156,6 +156,68 @@ class Program
         plain.Close();
     }
 
+    /// <summary>
+    /// 0.19.1: строка матча под меню и лента подсказок на «Обзоре». Подаём один пакет «идёт матч, 14:20» так же, как его
+    /// подаёт игра, и проверяем, что строка и лента показывают именно эти данные. Состояние остаётся для снимков (--shots).
+    /// </summary>
+    static void MatchStripChecks(MainWindow main, AppHost host)
+    {
+        var L = Roshiq.Core.Localization.Loc.Instance;
+        var strip = Control<Border>(main, "MatchStrip");
+        var update = typeof(MainWindow).GetMethod("UpdateStatus", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        // после матча (пакет «матч закончен») строка остаётся, но без игрового времени
+        var over = new Roshiq.GSI.GameStateSnapshot { AuthValid = true, MatchId = "smoke-strip-0", GameState = "DOTA_GAMERULES_STATE_POST_GAME", Kills = 2, Deaths = 5, Assists = 1 };
+        typeof(MainWindow).GetMethod("UpdateMatchStrip", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(main, new object?[] { null });
+        Check(strip.Visibility == Visibility.Collapsed, "Match strip is hidden outside a match");
+        typeof(MainWindow).GetMethod("UpdateMatchStrip", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(main, new object?[] { over });
+        Check(strip.Visibility == Visibility.Visible && Control<FrameworkElement>(main, "StripClockCell").Visibility == Visibility.Collapsed
+              && Control<TextBlock>(main, "StripPhase").Text == L.Get("strip_post"), "After the match the strip shows the result line without a clock");
+
+        var snap = new Roshiq.GSI.GameStateSnapshot
+        {
+            AuthValid = true, MatchId = "smoke-strip-1", GameState = "DOTA_GAMERULES_STATE_GAME_IN_PROGRESS", ClockTime = 860, GameTime = 950,
+            TeamName = "radiant", HeroId = 8, HeroName = "npc_dota_hero_juggernaut", HeroLevel = 11, HeroAlive = true,
+            Kills = 4, Deaths = 1, Assists = 3, LastHits = 96, Denies = 7, Gpm = 512, Xpm = 560, Gold = 1200
+        };
+        typeof(AppHost).GetMethod("OnGsi", BindingFlags.NonPublic | BindingFlags.Instance)!.Invoke(host, new object[] { snap });
+        update.Invoke(main, null);
+        Check(strip.Visibility == Visibility.Visible && Control<TextBlock>(main, "StripClock").Text == "14:20"
+              && Control<TextBlock>(main, "StripPhase").Text == L.Get("strip_live"), "Match strip shows the phase and the game clock");
+        Check(Control<TextBlock>(main, "StripKda").Text == "4 / 1 / 3" && Control<TextBlock>(main, "StripLh").Text == L.Format("strip_lh", 96)
+              && Control<TextBlock>(main, "StripGpm").Text == L.Format("strip_gpm", 512), "Match strip shows score, last hits and gold per minute");
+        Check(Control<TextBlock>(main, "StripHero").Text.Contains("Juggernaut"), "Match strip names the hero and role");
+        Check(Control<FrameworkElement>(main, "MatchPill").Visibility == Visibility.Collapsed, "Top bar does not repeat the clock while the strip is shown");
+        Check(Control<TextBlock>(main, "StripNote").Text == L.Get("strip_note_none"), "Match strip says tips are on screen");
+
+        var feed = host.Feed;
+        feed.Clear();
+        var dash = new DashboardView(); dash.Refresh();
+        Check(Control<Panel>(dash, "TipFeedPanel").Children.Count == 0 && Control<TextBlock>(dash, "TipFeedEmpty").Visibility == Visibility.Visible,
+            "Empty tip feed explains what will appear");
+        feed.Add(252, Roshiq.Recommendations.MatchAlerts.NoTeleport, L.Get("alert_no_tp"), Roshiq.Recommendations.TipFeedStatus.Shown, Roshiq.Recommendations.MatchAlerts.NoTeleport);
+        feed.Add(450, Roshiq.Recommendations.MatchAlerts.ItemsInStash, L.Get("alert_stash"), Roshiq.Recommendations.TipFeedStatus.Shown, Roshiq.Recommendations.MatchAlerts.ItemsInStash);
+        feed.Add(600, "pace_lh", L.Language == Roshiq.Core.Models.Language.Russian ? "К 10:00 — 52 добивания, обычно 60" : "At 10:00: 52 last hits, usually 60", Roshiq.Recommendations.TipFeedStatus.Saved);
+        feed.Add(760, Roshiq.Recommendations.MatchAlerts.UnspentGold, L.Format("alert_gold", 2140), Roshiq.Recommendations.TipFeedStatus.Shown, Roshiq.Recommendations.MatchAlerts.UnspentGold);
+        feed.Sync(new Dictionary<string, int> { [Roshiq.Recommendations.MatchAlerts.NoTeleport] = 1, [Roshiq.Recommendations.MatchAlerts.ItemsInStash] = 1 },
+            new Dictionary<string, int> { [Roshiq.Recommendations.MatchAlerts.UnspentGold] = 1 });
+        dash.Refresh();
+        var rows = Control<Panel>(dash, "TipFeedPanel").Children;
+        Check(rows.Count == 4 && Control<TextBlock>(dash, "TipFeedEmpty").Visibility == Visibility.Collapsed
+              && Control<TextBlock>(dash, "TipFeedCounts").Text == L.Format("feed_counts", 3, 1), "Tip feed lists match tips with shown and saved counts");
+        string Badge(int i) => ((TextBlock)((Border)((Grid)((Border)rows[i]).Child).Children[2]).Child).Text;
+        Check(Badge(0) == L.Get("feed_helped") && Badge(2) == L.Get("feed_saved") && Badge(3) == L.Get("feed_missed"),
+            "Tip feed marks what helped, what was saved and what was missed");
+        foreach (var size in new[] { new Size(1216, 640), new Size(876, 420) })
+        {
+            dash.Measure(size); dash.Arrange(new Rect(new Point(), size)); dash.UpdateLayout();
+            var title = Control<TextBlock>(dash, "ConnectionTitle");
+            Check(dash.IsArrangeValid && title.ActualWidth > 60 && Control<TextBlock>(dash, "Headline").ActualWidth > 200,
+                "Recomposed dashboard lays out at " + size.Width);
+        }
+        // главное окно без показа не обновляет «Обзор» по таймеру — переключаем раздел, чтобы снимок был с лентой и матчем
+        main.Select("draft"); main.Select("dashboard");
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -334,6 +396,7 @@ class Program
             Check(Application.Current.Resources["PrimaryButton"] is Style && Application.Current.Resources["Segment"] is Style
                   && ((Style)Application.Current.Resources["Card"]).Setters.OfType<Setter>().Any(s => s.Property == Border.CornerRadiusProperty && s.Value is CornerRadius cr && cr.TopLeft == 8),
                 "Refreshed card and button styles are loaded");
+            MatchStripChecks(main, host);
             int shotsIndex = Array.IndexOf(args, "--shots");
             if (shotsIndex >= 0 && shotsIndex + 1 < args.Length) RenderShots(main, host, args[shotsIndex + 1]);
             int renderIndex = Array.IndexOf(args, "--render");

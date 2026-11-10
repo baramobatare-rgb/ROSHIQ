@@ -91,6 +91,35 @@
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
+    <!-- Цифры матча: Inter с цифрами одинаковой ширины, чтобы время и счёт не «прыгали» при обновлении -->
+    <Style x:Key="Num" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!-- Ячейка строки матча под меню: значение и тонкая черта справа -->
+    <Style x:Key="StripCell" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+        <Setter Property="Padding" Value="16,0" />
+    </Style>
+    <!-- Ячейка нижнего ряда «Обзора»: без фона и рамки, соседей разделяет тонкая черта -->
+    <Style x:Key="Cell" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{DynamicResource Line}" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+        <Setter Property="Padding" Value="20,18,20,22" />
+    </Style>
+    <Style x:Key="CellTitle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource HeadlineFont}" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="FontWeight" Value="Black" />
+        <Setter Property="Foreground" Value="{DynamicResource Text}" />
+        <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+
     <!-- ===== Карточки (плавное появление при показе раздела) ===== -->
     <Style x:Key="Card" TargetType="Border">
         <Setter Property="Background" Value="{DynamicResource Panel}" />

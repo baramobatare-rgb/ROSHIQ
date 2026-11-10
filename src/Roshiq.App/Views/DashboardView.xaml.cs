@@ -191,15 +191,16 @@ public partial class DashboardView : UserControl, IRefreshable
             : L.Get(connectionKey + "_detail");
         ConnectionAction.Visibility = connection is ConnectionState.Connected or ConnectionState.Offline
             ? Visibility.Collapsed : Visibility.Visible;
-        ConnectionCard.BorderBrush = Ui.Res(connection switch
+        ConnectionMark.Background = Ui.Res(connection switch
         {
             ConnectionState.Connected => "Success",
-            ConnectionState.Offline => "Line",
-            ConnectionState.Waiting => "Accent",
-            _ => "Warning"
+            ConnectionState.Offline => "Faint",
+            ConnectionState.Waiting => "Warning",
+            _ => "Red"
         });
 
         RefreshProfile(s, L);
+        RefreshTipFeed(h, L);
         _updatingPosition = true;
         if (QuickPosition.Tag as string != L.Language.ToString())
         {
@@ -468,6 +469,54 @@ public partial class DashboardView : UserControl, IRefreshable
     private void GoHistory_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("history");
 
     private void Fix_Click(object sender, RoutedEventArgs e) => DiagnosticsWindow.Open();
+
+    /// <summary>Сколько последних подсказок показывает лента на «Обзоре».</summary>
+    public const int FeedRows = 6;
+    private int _feedRevision = -1;
+    private Language _feedLanguage;
+
+    /// <summary>Лента подсказок матча: время, текст и что стало с подсказкой. Перерисовывается только когда лента изменилась.</summary>
+    private void RefreshTipFeed(AppHost h, Loc L)
+    {
+        var feed = h.Feed;
+        if (feed.Revision == _feedRevision && L.Language == _feedLanguage) return;
+        _feedRevision = feed.Revision;
+        _feedLanguage = L.Language;
+        TipFeedPanel.Children.Clear();
+        var rows = feed.Recent(FeedRows);
+        TipFeedEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        TipFeedCounts.Text = rows.Count == 0 ? "" : L.Format("feed_counts", feed.ShownCount, feed.SavedCount);
+        foreach (var e in rows)
+        {
+            var row = new Grid();
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(52) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            var clock = new TextBlock { Text = GameTimers.Clock(e.Clock), Style = (Style)FindResource("Num"), Foreground = Ui.Res("Muted") };
+            var text = new TextBlock
+            {
+                Text = e.Text, Style = (Style)FindResource("Value"), TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis,
+                VerticalAlignment = VerticalAlignment.Center, ToolTip = e.Text, Margin = new Thickness(0, 0, 10, 0)
+            };
+            bool strong = e.Status is TipFeedStatus.Helped or TipFeedStatus.Missed;
+            var badge = new Border
+            {
+                Background = Ui.Res(e.Status switch { TipFeedStatus.Helped => "Accent", TipFeedStatus.Missed => "Warning", _ => "Panel3" }),
+                Padding = new Thickness(8, 2, 8, 3), VerticalAlignment = VerticalAlignment.Center,
+                Child = new TextBlock
+                {
+                    Text = L.Get("feed_" + e.Status.ToString().ToLowerInvariant()), FontFamily = (System.Windows.Media.FontFamily)FindResource("DisplayFont"),
+                    FontSize = 11.5, FontWeight = FontWeights.ExtraBold, Foreground = Ui.Res(strong ? "OnAccent" : "Text")
+                }
+            };
+            Grid.SetColumn(text, 1); Grid.SetColumn(badge, 2);
+            row.Children.Add(clock); row.Children.Add(text); row.Children.Add(badge);
+            TipFeedPanel.Children.Add(new Border
+            {
+                BorderBrush = Ui.Res("Line"), BorderThickness = new Thickness(0, 1, 0, 0), Padding = new Thickness(0, 8, 0, 8), Child = row
+            });
+        }
+    }
 
     /// <summary>В матче: напомнить, что часть советов по настройке уходит в разбор, а не на экран.</summary>
     private static string SavedForRecapNote(Roshiq.Core.Settings.AppSettings s, TipSilence silence, Loc L)
