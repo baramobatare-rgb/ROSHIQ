@@ -23,6 +23,8 @@
     <Resource Include="Assets\Brand\**\*.ico;Assets\Brand\**\*.png" />
     <!-- Фон карты смертей: картинка автора проекта (см. Assets\Map\SOURCES.txt), без графики Valve -->
     <Resource Include="Assets\Map\minimap.jpg" />
+    <!-- Шрифт заголовков, тот же, что на сайте: Inter Display (SIL OFL 1.1, см. Assets\Fonts\SOURCES.txt) -->
+    <Resource Include="Assets\Fonts\*.ttf" />
     <EmbeddedResource Include="Assets\Portraits.zip" />
     <!-- Портреты героев: собирает tools\fetch-hero-art.ps1 (вызывается из build.ps1) -->
     <EmbeddedResource Include="Assets\HeroArt.zip" Condition="Exists('Assets\HeroArt.zip')" />

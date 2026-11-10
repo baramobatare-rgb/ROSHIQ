@@ -90,7 +90,7 @@
                     <!-- Схема экрана 16:9: запретные зоны HUD и положение панели -->
                     <StackPanel Grid.Column="1">
                         <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T ov_preview, Upper=True}" />
-                        <Border CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Bg}"
+                        <Border CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource LineStrong}" Background="{DynamicResource Bg}"
                                 Width="320" Height="180" HorizontalAlignment="Left" ClipToBounds="True">
                             <Canvas x:Name="Preview" Width="320" Height="180" />
                         </Border>

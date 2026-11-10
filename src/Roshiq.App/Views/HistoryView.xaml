@@ -58,7 +58,7 @@
                                 <StackPanel x:Name="BreakdownPanel" Margin="0,0,0,12" />
                                 <StackPanel x:Name="OdReviewPanel" Margin="0,0,0,12" />
                                 <TextBlock Style="{StaticResource Eyebrow}" Text="{app:T hist_chart, Upper=True}" />
-                                <Border CornerRadius="10" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Panel2}"
+                                <Border CornerRadius="6" BorderThickness="1" BorderBrush="{DynamicResource Line}" Background="{DynamicResource Panel2}"
                                         Height="170" Margin="0,0,0,6" ClipToBounds="True">
                                     <Canvas x:Name="Chart" SizeChanged="Chart_SizeChanged" />
                                 </Border>

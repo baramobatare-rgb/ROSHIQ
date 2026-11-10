@@ -65,7 +65,7 @@ public sealed class HeroPicker : Window
         Content = new Border
         {
             Background = Ui.Res("Panel"), BorderBrush = Ui.Res("LineStrong"), BorderThickness = new Thickness(1),
-            CornerRadius = new CornerRadius(14), Margin = new Thickness(10), Child = root,
+            CornerRadius = new CornerRadius(8), Margin = new Thickness(10), Child = root,
             Effect = new System.Windows.Media.Effects.DropShadowEffect { BlurRadius = 24, ShadowDepth = 4, Opacity = 0.45 }
         };
 

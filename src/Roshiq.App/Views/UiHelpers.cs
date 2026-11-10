@@ -84,7 +84,7 @@ internal static class Ui
         {
             Width = width,
             Height = Math.Round(width * 9 / 16),
-            CornerRadius = new CornerRadius(width >= 100 ? 10 : 5),
+            CornerRadius = new CornerRadius(width >= 100 ? 6 : 4),
             BorderThickness = new Thickness(0, 0, 0, width >= 100 ? 3 : 2),
             BorderBrush = AttributeBrush(hero.Attribute),
             Background = img != null ? new ImageBrush(img) { Stretch = Stretch.UniformToFill } : Res("Panel3"),
@@ -209,7 +209,7 @@ internal static class Ui
     {
         return new Border
         {
-            CornerRadius = new CornerRadius(7),
+            CornerRadius = new CornerRadius(4),
             Background = Res(brushKey),
             Padding = new Thickness(9, 4, 9, 4),
             Margin = new Thickness(0, 0, 6, 6),
@@ -307,7 +307,7 @@ internal static class Ui
         {
             Width = 44,
             Height = 44,
-            CornerRadius = new CornerRadius(12),
+            CornerRadius = new CornerRadius(6),
             Background = Res("Panel2"),
             BorderBrush = Res("Line"),
             BorderThickness = new Thickness(1),

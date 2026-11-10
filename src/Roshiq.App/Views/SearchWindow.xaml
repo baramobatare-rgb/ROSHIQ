@@ -5,7 +5,7 @@
         Title="ROSHIQ" Width="620" SizeToContent="Height" MaxHeight="560" ResizeMode="NoResize" WindowStyle="None" AllowsTransparency="True"
         Background="Transparent" ShowInTaskbar="False" WindowStartupLocation="CenterOwner" Foreground="{DynamicResource Text}"
         FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
-    <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="14" Margin="12">
+    <Border Background="{DynamicResource Panel}" BorderBrush="{DynamicResource LineStrong}" BorderThickness="1" CornerRadius="8" Margin="12">
         <Border.Effect>
             <DropShadowEffect BlurRadius="24" ShadowDepth="4" Opacity="0.45" />
         </Border.Effect>

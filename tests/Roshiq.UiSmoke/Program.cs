@@ -75,6 +75,43 @@ class Program
             "Without Steam the OpenDota options say why they do not work");
     }
 
+    /// <summary>Снимки разделов главного окна в PNG — чтобы смотреть оформление без запуска программы (--shots папка).</summary>
+    static void RenderShots(MainWindow main, AppHost host, string dir)
+    {
+        Directory.CreateDirectory(dir);
+        host.Settings.Current.ReduceMotion = true;
+        var root = (FrameworkElement)main.Content;
+        var size = new Size(1280, 820);
+        foreach (var key in new[] { "dashboard", "draft", "build", "assistant", "history", "settings" })
+        {
+            try
+            {
+                main.Select(key);
+                var until = DateTime.UtcNow.AddMilliseconds(700);
+                while (DateTime.UtcNow < until)
+                {
+                    var frame = new System.Windows.Threading.DispatcherFrame();
+                    System.Windows.Threading.Dispatcher.CurrentDispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Background, new Action(() => frame.Continue = false));
+                    System.Windows.Threading.Dispatcher.PushFrame(frame);
+                    System.Threading.Thread.Sleep(20);
+                }
+                root.Measure(size); root.Arrange(new Rect(size)); root.UpdateLayout();
+                var visual = new System.Windows.Media.DrawingVisual();
+                using (var dc = visual.RenderOpen())
+                {
+                    dc.DrawRectangle((System.Windows.Media.Brush)Application.Current.Resources["Bg"], null, new Rect(size));
+                    dc.DrawRectangle(new System.Windows.Media.VisualBrush(root) { Stretch = System.Windows.Media.Stretch.None }, null, new Rect(size));
+                }
+                var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap((int)size.Width, (int)size.Height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                bmp.Render(visual);
+                var enc = new System.Windows.Media.Imaging.PngBitmapEncoder(); enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+                using var file = File.Create(Path.Combine(dir, key + ".png")); enc.Save(file);
+                Console.WriteLine("Shot " + key);
+            }
+            catch (Exception ex) { Console.WriteLine("Shot failed " + key + ": " + ex.Message); }
+        }
+    }
+
     /// <summary>Статус связи на главной, выбор «в матче или в разборе» и разбор: что помогло, что пропущено, что отложено.</summary>
     static void QuietTipsChecks(AppHost host)
     {
@@ -286,6 +323,19 @@ class Program
             recognition = recognition with { SessionId = host.AutoDraftGeneration };
             onVision.Invoke(host, new object[] { recognition }); onVision.Invoke(host, new object[] { recognition });
             HistoryUiChecks.Run(host);
+            var display = (System.Windows.Media.FontFamily)Application.Current.Resources["DisplayFont"];
+            Check(new System.Windows.Media.Typeface(display, FontStyles.Normal, FontWeights.Black, FontStretches.Normal).TryGetGlyphTypeface(out var glyphs)
+                  && glyphs.FamilyNames.Values.Any(n => n.Contains("Inter")) && glyphs.Weight == FontWeights.Black
+                  && glyphs.CharacterToGlyphMap.ContainsKey('Ж'), "Labels use the bundled Inter with Cyrillic");
+            var headline = (System.Windows.Media.FontFamily)Application.Current.Resources["HeadlineFont"];
+            Check(new System.Windows.Media.Typeface(headline, FontStyles.Normal, FontWeights.Black, FontStretches.Normal).TryGetGlyphTypeface(out var headGlyphs)
+                  && headGlyphs.FamilyNames.Values.Any(n => n.Contains("Inter Display")) && headGlyphs.CharacterToGlyphMap.ContainsKey('Ж'),
+                "Headings use the bundled Inter Display with Cyrillic");
+            Check(Application.Current.Resources["PrimaryButton"] is Style && Application.Current.Resources["Segment"] is Style
+                  && ((Style)Application.Current.Resources["Card"]).Setters.OfType<Setter>().Any(s => s.Property == Border.CornerRadiusProperty && s.Value is CornerRadius cr && cr.TopLeft == 8),
+                "Refreshed card and button styles are loaded");
+            int shotsIndex = Array.IndexOf(args, "--shots");
+            if (shotsIndex >= 0 && shotsIndex + 1 < args.Length) RenderShots(main, host, args[shotsIndex + 1]);
             int renderIndex = Array.IndexOf(args, "--render");
             if (renderIndex >= 0 && renderIndex + 1 < args.Length)
             {
