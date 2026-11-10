@@ -64,7 +64,7 @@ public partial class NotificationsView : UserControl, IRefreshable
             Status.Text = Loc.T("notif_test_no_overlay");
             return;
         }
-        ov.ShowToast((Loc.T("role_short_" + (int)App.Host.Settings.Current.Position) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(), Loc.T("rem_observer"));
+        ov.ShowToast((Loc.T("role_short_" + (int)App.Host.CurrentPosition) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(), Loc.T("rem_observer"));
         Status.Text = "";
     }
 
@@ -89,7 +89,7 @@ public partial class NotificationsView : UserControl, IRefreshable
                      (ReminderKind.Smoke, "rem_smoke"), (ReminderKind.Consumables, "rem_consumables")
                  })
             NextPanel.Children.Add(Ui.Numbered(i++, L.Get(key), "", Fmt(kind)));
-        if (!SupportReminderScheduler.AppliesTo(App.Host.Settings.Current.Position))
+        if (!SupportReminderScheduler.AppliesTo(App.Host.CurrentPosition))
             NextPanel.Children.Add(Ui.State(UiState.Empty, L.Get("state_not_support_title"), L.Get("notif_not_support")));
     }
 }

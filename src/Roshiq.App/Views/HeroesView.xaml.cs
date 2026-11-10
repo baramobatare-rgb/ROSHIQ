@@ -18,7 +18,7 @@ public partial class HeroesView : UserControl, IRefreshable
     private string? _buildContext;
     private PersonalBuild? PreviewBuild => App.Host.Settings.Current.PersonalBuilds.FirstOrDefault(x =>
         x.Id == _previewBuildId && x.HeroKey == _selected?.Key && x.Position == SelectedPosition);
-    private Position SelectedPosition => Ui.TryValue<Position>(BuildPosition, out var position) ? position : App.Host.Settings.Current.Position;
+    private Position SelectedPosition => Ui.TryValue<Position>(BuildPosition, out var position) ? position : App.Host.CurrentPosition;
 
     /// <summary>Герой, которого выбрать при следующем обновлении (переход из поиска Ctrl+K).</summary>
     public static string? PendingHeroKey { get; set; }
@@ -51,7 +51,7 @@ public partial class HeroesView : UserControl, IRefreshable
         Ui.SelectValue(AttributeFilter, attr);
         if (AttributeFilter.SelectedIndex < 0) AttributeFilter.SelectedIndex = 0;
 
-        var current = App.Host.Settings.Current.Position;
+        var current = App.Host.CurrentPosition;
         BuildPosition.Items.Clear();
         foreach (var c in Ui.Positions()) BuildPosition.Items.Add(c);
         Ui.SelectValue(BuildPosition, current);
@@ -138,7 +138,7 @@ public partial class HeroesView : UserControl, IRefreshable
         }
 
         // Сборка (справочная: без учёта противника)
-        if (!Ui.TryValue<Position>(BuildPosition, out var position)) position = App.Host.Settings.Current.Position;
+        if (!Ui.TryValue<Position>(BuildPosition, out var position)) position = App.Host.CurrentPosition;
         FillPersonalBuilds(hero, position);
         var personal = PreviewBuild;
         var build = PersonalBuildResolver.Resolve(personal, hero, position, db) ?? App.Host.Builds.Build(hero, position);
@@ -355,10 +355,10 @@ public partial class HeroesView : UserControl, IRefreshable
         var personal = PreviewBuild;
         var key = PersonalBuild.ContextKey(_selected.Key, position);
         App.Host.Settings.Update(s => {
-            s.Position = position;
             if (personal == null) s.ActivePersonalBuilds.Remove(key);
             else s.ActivePersonalBuilds[key] = personal.Id;
         });
+        App.Host.SelectPosition(position);
         App.Host.SelectHero(_selected);
         ShowDetails();
     }

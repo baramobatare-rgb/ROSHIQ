@@ -398,7 +398,7 @@ public partial class MainWindow : Window
         var presets = new[] { HintPreset.Minimal, HintPreset.Normal, HintPreset.Full }
             .Select((p, i) => new TrayIcon.MenuItem(TrayPresetBase + i, L.Get("preset_" + p.ToString().ToLowerInvariant()), Checked: s.Preset == p)).ToList();
         var roles = Enum.GetValues<Position>()
-            .Select((p, i) => new TrayIcon.MenuItem(TrayRoleBase + i, L.PositionName(p), Checked: s.Position == p)).ToList();
+            .Select((p, i) => new TrayIcon.MenuItem(TrayRoleBase + i, L.PositionName(p), Checked: App.Host.CurrentPosition == p)).ToList();
         var profiles = s.OverlayProfiles.Select((p, i) => new TrayIcon.MenuItem(TrayProfileBase + i, p.Name, Checked: p.Id == s.ActiveOverlayProfile)).ToList();
         bool overlayShown = !App.Host.SafeMode && App.Host.Overlay.IsVisible;
 
@@ -442,7 +442,7 @@ public partial class MainWindow : Window
             case >= TrayRoleBase and < TrayProfileBase:
                 var positions = Enum.GetValues<Position>();
                 int ri = id - TrayRoleBase;
-                if (ri < positions.Length) s.Update(x => x.Position = positions[ri]);
+                if (ri < positions.Length) App.Host.SelectPosition(positions[ri]);
                 break;
             case >= TrayProfileBase:
                 int pi = id - TrayProfileBase;

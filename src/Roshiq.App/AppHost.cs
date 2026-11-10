@@ -46,6 +46,9 @@ public sealed class AppHost : IDisposable
     private readonly DraftPickTracker _autoPicks = new();
     private readonly LaneRoleDetector _roleDetector = new();
     private bool _queueRoleApplied;
+    private bool _queueHasMultiple;
+    private bool _rolePromptShown;
+    private DateTime _roleSessionStartedUtc;
     private DateTime _queueRoleLastCheckUtc;
     private readonly GameLaunchWatcher _gameWatch = new();
     private readonly HashSet<string> _importPending = new(StringComparer.Ordinal);
@@ -73,6 +76,7 @@ public sealed class AppHost : IDisposable
     {
         _dispatcher = Dispatcher.CurrentDispatcher;
         Settings = new SettingsService();
+        Roles = new MatchRoleState(Settings.Current.Position);
         Loc.Instance.Language = Settings.Current.Language;
 
         Database = GameDatabase.Load(AppPaths.DataOverrides, Settings.Current.Data.AutoUpdateData ? RemoteData.UsableRemoteDir(AppPaths.DataRemote) : null);
@@ -86,7 +90,7 @@ public sealed class AppHost : IDisposable
         Vision = new VisionService(Settings);
         Sound = new SoundService(Settings);
         Monitor = new ProcessMonitor();
-        Draft = DraftState.Empty(Settings.Current.Position);
+        Draft = DraftState.Empty(CurrentPosition);
         CurrentHero = Database.FindHero(Settings.Current.LastHeroKey);
         Costs = new ItemCostCache(Path.Combine(AppPaths.Cache, "item_costs.json"));
         PlayerHeroes = new PlayerHeroStatsCache(Path.Combine(AppPaths.Cache, "player_heroes.json"));
@@ -103,7 +107,7 @@ public sealed class AppHost : IDisposable
 
         Reminders.Shown += (_, r) =>
         {
-            if (Overlay.ShowToast((Loc.T("role_short_" + (int)Settings.Current.Position) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(),
+            if (Overlay.ShowToast((Loc.T("role_short_" + (int)CurrentPosition) + " / " + Loc.T("sec_assistant")).ToUpperInvariant(),
                     Loc.T(r.TextKey), warning: false))
                 Sound.Play(SoundKind.Reminder);
         };
@@ -111,7 +115,7 @@ public sealed class AppHost : IDisposable
         Tips.Outcome += OnTipOutcome;
         Vision.Recognized += (_, r) => _dispatcher.InvokeAsync(() => OnVisionResult(r));
         Settings.Changed += (_, _) => ApplySettings();
-        Overlay.DraftRoleRequested += (_, _) => Settings.Update(s => s.Position = (Position)((int)s.Position % 5 + 1));
+        Overlay.DraftRoleRequested += (_, _) => SelectPosition((Position)((int)CurrentPosition % 5 + 1));
         Overlay.RoshanKillMarked += (_, _) => _dispatcher.InvokeAsync(ToggleRoshanMark);
 
         _tick = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
@@ -119,6 +123,9 @@ public sealed class AppHost : IDisposable
     }
 
     public SettingsService Settings { get; }
+    public MatchRoleState Roles { get; }
+    public Position CurrentPosition => Roles.CurrentPosition;
+    public bool QueueHasMultiple => _queueHasMultiple;
     public GameDatabase Database { get; private set; }
     public MatchupStatsCache Stats { get; }
     public DraftAnalyzer Analyzer { get; private set; }
@@ -236,7 +243,7 @@ public sealed class AppHost : IDisposable
                 clock = DateTime.UtcNow - _manualTimerStartUtc.Value;
                 inProgress = true;
             }
-            if (clock != null) Reminders.Tick(clock.Value, Settings.Current.Position, inProgress);
+            if (clock != null) Reminders.Tick(clock.Value, CurrentPosition, inProgress);
             if (clock != null && inProgress) TickMatchEvents((int)Math.Floor(clock.Value.TotalSeconds));
             if (gsiFresh && LastGsi!.IsInProgress && LastGsi.Paused != true && LastGsi.HasHero && LastGsi.ClockTime is int gsiClock)
             {
@@ -249,7 +256,11 @@ public sealed class AppHost : IDisposable
             TickDraftProblem();
             if (!SafeMode)
             {
-                bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration, Overlay.GameWindowHandle);
+                string? rolePlayerName = Settings.Current.Automation.AutoRole && LastGsi?.IsHeroSelection == true &&
+                    Roles.Active && Roles.Source < MatchRoleSource.Screen && GsiFresh
+                    ? LastGsi.PlayerName ?? Settings.Current.Data.SteamName : null;
+                bool started = Vision.MaybeRun(Overlay.Game, AutoDraftLive, _manualScanRequested, AutoDraftGeneration,
+                    Overlay.GameWindowHandle, rolePlayerName);
                 if (started) _manualScanRequested = false;
             }
             TickGsiWatchdog();
@@ -269,6 +280,17 @@ public sealed class AppHost : IDisposable
     private void OnGsi(GameStateSnapshot snap)
     {
         LastGsi = snap;
+        if ((snap.IsHeroSelection || snap.IsInProgress) && Roles.Enter(snap.MatchId))
+        {
+            Roshiq.App.Views.RolePromptWindow.CloseIfOpen();
+            _queueRoleApplied = false;
+            _queueHasMultiple = false;
+            _rolePromptShown = false;
+            _roleSessionStartedUtc = DateTime.UtcNow;
+            _queueRoleLastCheckUtc = DateTime.MinValue;
+            _roleDetector.Reset();
+            OnEffectiveRoleChanged();
+        }
         if (snap.GameState != _lastGameState)
         {
             _lastGameState = snap.GameState;
@@ -287,6 +309,7 @@ public sealed class AppHost : IDisposable
             }
         }
         catch (Exception ex) { Log.Error("История матча: ошибка записи", ex); }
+        if (snap.IsPostGame && Roles.Leave()) OnEffectiveRoleChanged();
         if (snap.MatchId != null && snap.MatchId != _lastMatchId)
         {
             _lastMatchId = snap.MatchId;
@@ -413,12 +436,19 @@ public sealed class AppHost : IDisposable
         if (!AutoDraftLive || !SideKnown || AutoEnemies.Count == 0)
         { AutoDraftAnalysis = null; return; }
         var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
-        AutoDraftAnalysis = Analyzer.Analyze(new DraftState(allies, AutoEnemies, Settings.Current.Position), countersOnly: true);
+        AutoDraftAnalysis = Analyzer.Analyze(new DraftState(allies, AutoEnemies, CurrentPosition), countersOnly: true);
     }
 
     private void OnVisionResult(DraftRecognitionResult result)
     {
         if (result.SessionId != AutoDraftGeneration) return;
+        if (result.AssignedPosition is Position screenRole &&
+            Roles.ApplyAutomatic(screenRole, MatchRoleSource.Screen, "подпись роли в драфте"))
+        {
+            Log.Info($"Роль с экрана драфта: {screenRole}");
+            _roleDetector.AcceptAssignedRole();
+            OnEffectiveRoleChanged();
+        }
         if (result.IsManual && !AutoDraftLive)
         {
             List<Hero> Read(Side side) => result.For(side).Where(x => x.Match.Status == SlotStatus.Recognized)
@@ -452,7 +482,7 @@ public sealed class AppHost : IDisposable
     public void SetDraft(IReadOnlyList<Hero> allies, IReadOnlyList<Hero> enemies)
     {
         _draftMatchId = LastGsi?.MatchId;
-        Draft = new DraftState(allies, enemies, Settings.Current.Position);
+        Draft = new DraftState(allies, enemies, CurrentPosition);
         LastDraftAnalysis = Analyzer.Analyze(Draft);
         RecomputeBuild();
         RaiseChanged();
@@ -500,14 +530,15 @@ public sealed class AppHost : IDisposable
     {
         CurrentBuild = CurrentHero == null
             ? null
-            : PersonalBuildResolver.Resolve(PersonalBuildResolver.Active(Settings.Current, CurrentHero, Settings.Current.Position),
-                CurrentHero, Settings.Current.Position, Database)
-              ?? Builds.Build(CurrentHero, Settings.Current.Position, EnemyAwareItems ? Draft.Enemies : null);
+            : PersonalBuildResolver.Resolve(PersonalBuildResolver.Active(Settings.Current, CurrentHero, CurrentPosition),
+                CurrentHero, CurrentPosition, Database)
+              ?? Builds.Build(CurrentHero, CurrentPosition, EnemyAwareItems ? Draft.Enemies : null);
     }
 
     private void ApplySettings()
     {
         var s = Settings.Current;
+        Roles.SetDefault(s.Position);
         Loc.Instance.Language = s.Language;
         Reminders.ApplySettings(s.Notifications);
         ApplyPool();
@@ -522,7 +553,7 @@ public sealed class AppHost : IDisposable
             _dispatcher.InvokeAsync(() => Overlay.RegisterHotkeys());
         }
         RestartGsiIfNeeded(force: false);
-        if (Draft.UserPosition != s.Position) Draft = Draft with { UserPosition = s.Position };
+        if (Draft.UserPosition != CurrentPosition) Draft = Draft with { UserPosition = CurrentPosition };
         if (Draft.Allies.Count + Draft.Enemies.Count > 0) LastDraftAnalysis = Analyzer.Analyze(Draft);
         RecomputeBuild();
         UpdateAutoDraftSession();
@@ -554,7 +585,7 @@ public sealed class AppHost : IDisposable
         var L = Loc.Instance;
         var s = Settings.Current;
         var vm = OverlayVm;
-        string role = L.Get("role_short_" + (int)s.Position);
+        string role = L.Get("role_short_" + (int)CurrentPosition);
         vm.SubHeader = LastGsi?.ClockTime is int clk && LastGsi.IsInProgress
             ? $"{(clk < 0 ? "-" : "")}{Math.Abs(clk) / 60}:{Math.Abs(clk) % 60:00}"
             : L.Get(s.UsageContext == UsageContext.Training ? "ctx_training_short" : "ctx_reference_short").ToUpperInvariant();
@@ -616,13 +647,13 @@ public sealed class AppHost : IDisposable
             {
                 // сборка выключена в настройках: только герой и советы, без предметов
                 vm.MainTitle = CurrentHero.DisplayName(L.Language);
-                vm.MainDetail = L.PositionName(s.Position);
+                vm.MainDetail = L.PositionName(CurrentPosition);
                 vm.GoldProgress = -1;
                 vm.Section1Title = "";
                 vm.Section1.Clear();
             }
-            var tips = Advisor.HeroTips(CurrentHero, s.Position).Take(2)
-                .Concat(Advisor.TipsFor(s.Position).Take(1).Select(t => new Reason(ReasonKind.Info, 0, t.Ru, t.En)))
+            var tips = Advisor.HeroTips(CurrentHero, CurrentPosition).Take(2)
+                .Concat(Advisor.TipsFor(CurrentPosition).Take(1).Select(t => new Reason(ReasonKind.Info, 0, t.Ru, t.En)))
                 .ToList();
             vm.Section2Title = L.Get("ov_tips");
             var rows = tips.Select(t => new OverlayRow("•", t.Text(L.Language))).ToList();
@@ -808,15 +839,39 @@ public sealed class AppHost : IDisposable
 
     // ------------------------------------------------------------------ автоматика: игра, роль, импорт, режимы оверлея
 
+    /// <summary>A manual choice applies to this match only; outside a match it changes the saved usual role.</summary>
+    public void SelectPosition(Position position)
+    {
+        if (!Roles.Active) { Settings.Update(s => s.Position = position); return; }
+        if (Roles.Source == MatchRoleSource.Manual && CurrentPosition == position) return;
+        Roles.SelectManual(position);
+        _roleDetector.AcceptAssignedRole();
+        OnEffectiveRoleChanged();
+    }
+
+    private void OnEffectiveRoleChanged()
+    {
+        if (!Roles.Active || Roles.Source != MatchRoleSource.Default) Roshiq.App.Views.RolePromptWindow.CloseIfOpen();
+        if (_recorder.Current != null && Roles.Active) _recorder.Current.Position = CurrentPosition;
+        if (Draft.UserPosition != CurrentPosition) Draft = Draft with { UserPosition = CurrentPosition };
+        if (Draft.Allies.Count + Draft.Enemies.Count > 0) LastDraftAnalysis = Analyzer.Analyze(Draft);
+        RecomputeBuild();
+        RecomputeAutoDraft();
+        RefreshOverlay();
+        RaiseChanged();
+    }
+
     /// <summary>One checked role in Steam's ranked queue config is known before lane play starts.</summary>
     private void TickRankedRoleSelection(GameStateSnapshot snap)
     {
         if (!snap.IsHeroSelection)
         {
             _queueRoleApplied = false;
+            _queueHasMultiple = false;
+            Roshiq.App.Views.RolePromptWindow.CloseIfOpen();
             return;
         }
-        if (!Settings.Current.Automation.AutoRole || _queueRoleApplied || DateTime.UtcNow - _queueRoleLastCheckUtc < TimeSpan.FromSeconds(5)) return;
+        if (!Settings.Current.Automation.AutoRole || _queueRoleApplied || Roles.Source == MatchRoleSource.Manual || DateTime.UtcNow - _queueRoleLastCheckUtc < TimeSpan.FromSeconds(5)) return;
         _queueRoleLastCheckUtc = DateTime.UtcNow;
         var steamRoot = SteamLink.SteamPath();
         if (steamRoot == null) return;
@@ -824,18 +879,29 @@ public sealed class AppHost : IDisposable
             ?? SteamLink.LocalUsers().FirstOrDefault(u => u.MostRecent)?.AccountId
             ?? SteamIds.ToAccountId(Settings.Current.Data.SteamAccountId);
         if (account is not long accountId) return;
-        var position = RankedRoleSelection.ReadSingle(steamRoot, accountId);
-        if (position == null) return;
+        var checkedRoles = RankedRoleSelection.ReadChecked(steamRoot, accountId);
+        if (checkedRoles.Count > 1)
+        {
+            _queueHasMultiple = true;
+            if (!_rolePromptShown && Roles.Source == MatchRoleSource.Default &&
+                DateTime.UtcNow - _roleSessionStartedUtc >= TimeSpan.FromSeconds(10))
+            {
+                _rolePromptShown = true;
+                Roshiq.App.Views.RolePromptWindow.Open();
+            }
+            return;
+        }
+        if (checkedRoles.Count != 1) return;
+        var position = checkedRoles[0];
 
         _queueRoleApplied = true;
-        _roleDetector.AcceptAssignedRole();
         Log.Info($"Роль из выбора рейтингового поиска: {position}");
-        if (_recorder.Current != null) _recorder.Current.Position = position;
-        if (Settings.Current.Position == position) return;
-        Settings.Update(s => s.Position = position.Value);
+        if (!Roles.ApplyAutomatic(position, MatchRoleSource.Queue)) return;
+        _roleDetector.AcceptAssignedRole();
+        OnEffectiveRoleChanged();
         var L = Loc.Instance;
         ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
-            L.Format("role_queue_changed", L.PositionName(position.Value)), kind: "role", ttlSec: 60);
+            L.Format("role_queue_changed", L.PositionName(position)), kind: "role", ttlSec: 60);
     }
 
     private bool GsiFresh => LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(10);
@@ -854,6 +920,7 @@ public sealed class AppHost : IDisposable
         else
         {
             Log.Info("Dota 2 закрыта");
+            if (Roles.Leave()) OnEffectiveRoleChanged();
             GameClosed?.Invoke(this, EventArgs.Empty);
         }
     }
@@ -864,14 +931,13 @@ public sealed class AppHost : IDisposable
         if (!Settings.Current.Automation.AutoRole || _roleDetector.Decided || !snap.IsInProgress || snap.ClockTime is not int clock || CurrentHero == null)
             return;
         _roleDetector.Observe(clock, snap.HeroX, snap.HeroY, snap.LastHits);
-        var guess = _roleDetector.TryDecide(clock, CurrentHero, snap.TeamName, () => History.All(), Settings.Current.Position);
+        var guess = _roleDetector.TryDecide(clock, CurrentHero, snap.TeamName, () => History.All(), CurrentPosition);
         if (guess == null) return;
         Log.Info($"Роль определена: {guess.Position} ({guess.Confidence:0.00}; {guess.ReasonRu})");
         if (guess.Confidence < LaneRoleDetector.MinConfidence) return;
-        if (_recorder.Current != null) _recorder.Current.Position = guess.Position;
-        if (guess.Position == Settings.Current.Position) return;
+        if (!Roles.ApplyAutomatic(guess.Position, MatchRoleSource.Lane, guess.ReasonRu)) return;
+        OnEffectiveRoleChanged();
         var L = Loc.Instance;
-        Settings.Update(s => s.Position = guess.Position);
         ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
             L.Format("role_auto_changed", L.PositionName(guess.Position), guess.Reason(L.Language)), kind: "role", ttlSec: 60);
     }
@@ -1211,7 +1277,7 @@ public sealed class AppHost : IDisposable
         var s = Settings.Current;
         if (!s.Timers.IsOn(key)) return false;
         var rule = Database.Timers.FirstOrDefault(t => string.Equals(t.Key, key, StringComparison.OrdinalIgnoreCase));
-        return rule == null || rule.AppliesTo(s.Position);
+        return rule == null || rule.AppliesTo(CurrentPosition);
     }
 
     private string TimerName(TimerRule rule)
@@ -1237,7 +1303,7 @@ public sealed class AppHost : IDisposable
     private void TickAlerts(int clock)
     {
         var g = LastGsi!;
-        var state = new InventoryState(clock, g.HeroAlive != false, g.Gold, g.GoldUnreliable, g.ItemSlots, Settings.Current.Position,
+        var state = new InventoryState(clock, g.HeroAlive != false, g.Gold, g.GoldUnreliable, g.ItemSlots, CurrentPosition,
             g.BuybackCost, g.BuybackCooldown, NextBuildItemCost(g));
         int tpCost = Costs.Cost("item_tpscroll") ?? 100;
         _alertActive = MatchAlerts.Conditions(state, Settings.Current.Alerts, tpCost);
@@ -1498,7 +1564,7 @@ public sealed class AppHost : IDisposable
         Hero? hero = g.HeroId is > 0 ? Database.FindHero(g.HeroId.Value) : Database.FindHero(g.HeroName);
         return new MatchTick(g.MatchId, g.GameState, g.ClockTime, g.TeamName, g.WinTeam, hero?.Id ?? g.HeroId, hero?.Key,
             g.HeroLevel, g.Kills, g.Deaths, g.Assists, g.LastHits, g.Denies, g.Gpm, g.Xpm, g.Gold, g.ItemSlots,
-            Settings.Current.Position, g.ReceivedUtc, g.GoldUnreliable, g.BuybackCost, g.BuybackCooldown, g.HeroX, g.HeroY);
+            CurrentPosition, g.ReceivedUtc, g.GoldUnreliable, g.BuybackCost, g.BuybackCooldown, g.HeroX, g.HeroY);
     }
 
     private void SaveMatch(MatchRecord record, bool attachAlerts = true)
@@ -1680,7 +1746,7 @@ public sealed class AppHost : IDisposable
         _paceMatchId = current.Id;
         _paceItemsSeen.Clear();
         var history = History.All();
-        _pace = new PaceAdvisor(history, current.HeroId, current.Position ?? Settings.Current.Position, current.Id);
+        _pace = new PaceAdvisor(history, current.HeroId, current.Position ?? CurrentPosition, current.Id);
         Alerts.CooldownMultipliers.Clear();
         foreach (var (k, v) in MatchAlerts.AdaptiveMultipliers(history)) Alerts.CooldownMultipliers[k] = v;
         if (Goals.Active is CoachGoal goal)
@@ -1743,7 +1809,7 @@ public sealed class AppHost : IDisposable
 
     /// <summary>Сводка по драфту противника (от трёх героев).</summary>
     public Briefing? CurrentBriefing =>
-        BriefingEnemies.Count >= 3 ? BriefingBuilder.Build(BriefingEnemies, Settings.Current.Position) : null;
+        BriefingEnemies.Count >= 3 ? BriefingBuilder.Build(BriefingEnemies, CurrentPosition) : null;
 
     /// <summary>Предмет, который стоит взять первым против этого драфта (только в режиме тренировки — как и остальные советы по врагам).</summary>
     public ItemPick? BriefingItem
@@ -1752,7 +1818,7 @@ public sealed class AppHost : IDisposable
         {
             if (CurrentHero == null || BriefingEnemies.Count < 3) return null;
             if (!ComplianceGate.IsAllowed(Feature.EnemyAwareItemAdvice, Settings.Current.UsageContext)) return null;
-            return Builds.Build(CurrentHero, Settings.Current.Position, BriefingEnemies)[BuildPhase.Situational].FirstOrDefault();
+            return Builds.Build(CurrentHero, CurrentPosition, BriefingEnemies)[BuildPhase.Situational].FirstOrDefault();
         }
     }
 

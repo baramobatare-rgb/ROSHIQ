@@ -188,7 +188,7 @@ public partial class DashboardView : UserControl, IRefreshable
             QuickPosition.ItemsSource = Ui.Positions().ToList();
             QuickPosition.Tag = L.Language.ToString();
         }
-        Ui.SelectValue(QuickPosition, s.Position);
+        Ui.SelectValue(QuickPosition, App.Host.CurrentPosition);
         _updatingPosition = false;
 
         // --- уведомления о патче и обновлении
@@ -269,7 +269,7 @@ public partial class DashboardView : UserControl, IRefreshable
         else
         {
             HeroName.Text = h.CurrentHero.DisplayName(L.Language);
-            HeroMeta.Text = L.PositionName(s.Position) + (gsi?.HeroLevel is int lvl ? " · " + L.Format("dash_level", lvl) : "");
+            HeroMeta.Text = L.PositionName(App.Host.CurrentPosition) + (gsi?.HeroLevel is int lvl ? " · " + L.Format("dash_level", lvl) : "");
             var next = h.CurrentBuild?.NextItem(gsi?.InventoryItems, gsi?.ClockTime);
             NextItem.Text = next?.Item.DisplayName(L.Language) ?? L.Get("ov_build_done");
             Ui.SetItemImage(NextItemIcon, next?.Item.Key);
@@ -436,7 +436,7 @@ public partial class DashboardView : UserControl, IRefreshable
     private void QuickPosition_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (_updatingPosition || !Ui.TryValue<Position>(QuickPosition, out var position)) return;
-        App.Host.Settings.Update(s => s.Position = position);
+        App.Host.SelectPosition(position);
         App.Host.RecomputeBuild();
         Refresh();
     }

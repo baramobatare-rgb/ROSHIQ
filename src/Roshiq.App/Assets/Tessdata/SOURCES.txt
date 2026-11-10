@@ -1,0 +1,8 @@
+OCR assets used for reading the assigned role on the Dota 2 draft screen:
+
+- Tesseract .NET wrapper, version 5.2.0, by Charles Weld:
+  https://github.com/charlesw/tesseract
+- Russian and English traineddata from tessdata_fast:
+  https://github.com/tesseract-ocr/tessdata_fast
+
+These components are distributed under Apache License 2.0. A copy is in LICENSE.txt.

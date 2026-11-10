@@ -1,4 +1,5 @@
 using Roshiq.Core.Settings;
+using Roshiq.Core.Models;
 
 namespace Roshiq.Vision;
 
@@ -12,6 +13,7 @@ public sealed record DraftRecognitionResult(IReadOnlyList<SlotResult> Slots, boo
 {
     public long SessionId { get; init; }
     public bool IsManual { get; init; }
+    public Position? AssignedPosition { get; init; }
     public IEnumerable<SlotResult> For(Side side) => Slots.Where(s => s.Region.Side == side);
     public int UncertainCount => Slots.Count(s => s.Match.Status is SlotStatus.Unknown or SlotStatus.Ambiguous);
 }

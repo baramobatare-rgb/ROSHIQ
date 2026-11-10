@@ -19,22 +19,28 @@ public static class RankedRoleSelection
         ("dota_lane_selection_hard_support", Position.HardSupport)
     };
 
-    public static Position? ParseSingle(string config)
+    public static IReadOnlyList<Position> ParseChecked(string config)
     {
-        if (!Enabled(config, "dota_ranked_role_queue") || Enabled(config, "dota_ranked_role_queue_automatically_select_all")) return null;
-        var selected = RoleKeys.Where(x => Enabled(config, x.Key)).Select(x => x.Position).ToArray();
-        return selected.Length == 1 ? selected[0] : null;
+        if (!Enabled(config, "dota_ranked_role_queue")) return Array.Empty<Position>();
+        if (Enabled(config, "dota_ranked_role_queue_automatically_select_all"))
+            return RoleKeys.Select(x => x.Position).ToArray();
+        return RoleKeys.Where(x => Enabled(config, x.Key)).Select(x => x.Position).ToArray();
     }
 
-    public static Position? ReadSingle(string steamRoot, long accountId)
+    public static Position? ParseSingle(string config) => ParseChecked(config) is { Count: 1 } selected ? selected[0] : null;
+
+    public static IReadOnlyList<Position> ReadChecked(string steamRoot, long accountId)
     {
-        if (accountId <= 0) return null;
+        if (accountId <= 0) return Array.Empty<Position>();
         var path = Path.Combine(steamRoot, "userdata", accountId.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "570", "local", "cfg", "machine_convars.vcfg");
-        try { return File.Exists(path) ? ParseSingle(File.ReadAllText(path)) : null; }
-        catch (IOException) { return null; }
-        catch (UnauthorizedAccessException) { return null; }
+        try { return File.Exists(path) ? ParseChecked(File.ReadAllText(path)) : Array.Empty<Position>(); }
+        catch (IOException) { return Array.Empty<Position>(); }
+        catch (UnauthorizedAccessException) { return Array.Empty<Position>(); }
     }
+
+    public static Position? ReadSingle(string steamRoot, long accountId) =>
+        ReadChecked(steamRoot, accountId) is { Count: 1 } selected ? selected[0] : null;
 
     private static bool Enabled(string config, string key) =>
         Regex.IsMatch(config, "\"" + Regex.Escape(key) + "\"\\s+\"(?:true|1)\"", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);

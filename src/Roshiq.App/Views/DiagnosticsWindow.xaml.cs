@@ -154,7 +154,7 @@ public partial class DiagnosticsWindow : Window
         sb.AppendLine($"Все экраны: {SystemParameters.VirtualScreenWidth * dpi.DpiScaleX:0}×{SystemParameters.VirtualScreenHeight * dpi.DpiScaleY:0}");
         sb.AppendLine(g.Found ? $"Окно Dota 2: {g.ClientArea.Width}×{g.ClientArea.Height}, {(g.Foreground ? "активно" : "не активно")}{(g.Minimized ? ", свёрнуто" : "")}" : "Окно Dota 2: не найдено");
         sb.AppendLine($"Оверлей: режим {s.Overlay.Mode}, масштаб {s.Overlay.Scale:0.##}, автомасштаб {(s.Overlay.AutoScale ? h.Overlay.AutoScale.ToString("0.##") : "выкл")}, итог {h.Overlay.EffectiveScale:0.##}");
-        sb.AppendLine($"Язык {s.Language}, роль {s.Position}, режим {s.UsageContext}, тема {s.Theme}/{s.Background}, масштаб окна {s.UiScale:0.##}");
+        sb.AppendLine($"Язык {s.Language}, роль матча {h.CurrentPosition} ({h.Roles.Source}), обычная роль {s.Position}, режим {s.UsageContext}, тема {s.Theme}/{s.Background}, масштаб окна {s.UiScale:0.##}");
         sb.AppendLine($"GSI: {(s.Gsi.Enabled ? "включён" : "выключен")}, порт {s.Gsi.Port}; автодрафт {(s.Vision.AutoDraftEnabled ? "включён" : "выключен")}");
         sb.AppendLine($"Steam привязан: {(h.SteamAccount != null ? "да" : "нет")}; сеть для статистики: {(s.Data.AllowOnlineStats ? "разрешена" : "запрещена")}");
         sb.AppendLine($"Матчей в истории: {h.History.All().Count}");

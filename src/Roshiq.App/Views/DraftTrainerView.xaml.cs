@@ -32,7 +32,7 @@ public partial class DraftTrainerView : UserControl, IRefreshable
 
     private void New_Click(object sender, RoutedEventArgs e)
     {
-        _scenario = App.Host.Trainer.NewScenario(_random, App.Host.Settings.Current.Position);
+        _scenario = App.Host.Trainer.NewScenario(_random, App.Host.CurrentPosition);
         _answered = false;
         ResultPanel.Children.Clear();
         ShowScenario();

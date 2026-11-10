@@ -124,6 +124,7 @@ public class AutomationTests
     {
         const string roles = "\"dota_lane_selection_offlane\" \"true\"\n\"dota_lane_selection_hard_support\" \"true\"";
         Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"true\"\n" + roles));
+        Assert.Equal(new[] { Position.Offlane, Position.HardSupport }, RankedRoleSelection.ParseChecked("\"dota_ranked_role_queue\" \"true\"\n" + roles));
         Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"false\"\n" + roles));
         Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"true\""));
         Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"true\"\n\"dota_ranked_role_queue_automatically_select_all\" \"true\"\n\"dota_lane_selection_safelane\" \"true\""));

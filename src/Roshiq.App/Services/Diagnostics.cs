@@ -6,6 +6,7 @@ using Roshiq.Core.Diagnostics;
 using Roshiq.Core.Localization;
 using Roshiq.Core.Settings;
 using Roshiq.GSI;
+using Roshiq.Recommendations;
 
 namespace Roshiq.App.Services;
 
@@ -101,6 +102,21 @@ public static class DiagnosticsRunner
                         L.Get(dotaRunning ? "diag_data_none_running" : "diag_data_none")));
             }
         }
+
+        // Source of the active role, so a wrong tip can be traced to queue, screen, lane or manual choice.
+        var roleName = L.PositionName(host.CurrentPosition);
+        var roleKey = !host.Roles.Active ? "diag_role_default" : host.Roles.Source switch
+        {
+            MatchRoleSource.Queue => "diag_role_queue",
+            MatchRoleSource.Screen => "diag_role_screen",
+            MatchRoleSource.Lane => "diag_role_lane",
+            MatchRoleSource.Manual => "diag_role_manual",
+            _ => host.QueueHasMultiple ? "diag_role_multiple" : "diag_role_wait"
+        };
+        list.Add(host.Roles.Active
+            ? new DiagnosticCheck(CheckStatus.Info, L.Get("diag_role"), L.Format(roleKey, roleName), L.Get("diag_role_pick"),
+                () => { Roshiq.App.Views.RolePromptWindow.Open(); return Task.FromResult<string?>(null); })
+            : new DiagnosticCheck(CheckStatus.Info, L.Get("diag_role"), L.Format(roleKey, roleName)));
 
         // 6. Параметр запуска
         var flag = DotaLaunchOptions.CheckInstalled();

@@ -9,6 +9,7 @@
     <ApplicationIcon>Assets\roshiq.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Tesseract" Version="5.2.0" />
     <ProjectReference Include="..\Roshiq.Core\Roshiq.Core.csproj" />
     <ProjectReference Include="..\Roshiq.Data\Roshiq.Data.csproj" />
     <ProjectReference Include="..\Roshiq.Draft\Roshiq.Draft.csproj" />
@@ -30,4 +31,17 @@
     <EmbeddedResource Include="Assets\ItemIcons.zip" Condition="Exists('Assets\ItemIcons.zip')" />
     <SplashScreen Include="Assets\Brand\splash.jpg" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Assets\Tessdata\*.traineddata" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="tessdata\%(Filename)%(Extension)" />
+    <Content Include="Assets\Tessdata\LICENSE.txt;Assets\Tessdata\SOURCES.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="tessdata\%(Filename)%(Extension)" />
+  </ItemGroup>
+  <!-- The OCR wrapper locates its native DLLs relative to Tesseract.dll; it needs a real on-disk assembly path. -->
+  <Target Name="KeepTesseractFilesBesideExe" BeforeTargets="_ComputeFilesToBundle">
+    <ItemGroup>
+      <ResolvedFileToPublish Update="@(ResolvedFileToPublish)"
+        Condition="'%(ResolvedFileToPublish.Filename)%(ResolvedFileToPublish.Extension)' == 'Tesseract.dll' Or '%(ResolvedFileToPublish.Filename)%(ResolvedFileToPublish.Extension)' == 'tesseract50.dll' Or '%(ResolvedFileToPublish.Filename)%(ResolvedFileToPublish.Extension)' == 'leptonica-1.82.0.dll'">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
 </Project>

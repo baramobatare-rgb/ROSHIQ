@@ -46,7 +46,7 @@ public partial class DraftView : UserControl, IRefreshable
             if (App.Host.AutoDraftLive)
             {
                 _ready = false;
-                Ui.SelectValue(PositionBox, App.Host.Settings.Current.Position);
+                Ui.SelectValue(PositionBox, App.Host.CurrentPosition);
                 Ui.SelectValue(SideBox, App.Host.MySide);
                 _ready = true;
             }
@@ -158,7 +158,7 @@ public partial class DraftView : UserControl, IRefreshable
     {
         _ready = false;
         var L = Loc.Instance;
-        var pos = App.Host.Settings.Current.Position;
+        var pos = App.Host.CurrentPosition;
         PositionBox.Items.Clear();
         foreach (var c in Ui.Positions()) PositionBox.Items.Add(c);
         Ui.SelectValue(PositionBox, pos);
@@ -196,7 +196,7 @@ public partial class DraftView : UserControl, IRefreshable
         _ready = false;
         AutoDraftBox.IsChecked = App.Host.Settings.Current.Vision.AutoDraftEnabled;
         AutoStatus.Text = App.Host.AutoDraftStatus;
-        Ui.SelectValue(PositionBox, App.Host.Settings.Current.Position);
+        Ui.SelectValue(PositionBox, App.Host.CurrentPosition);
         Ui.SelectValue(SideBox, App.Host.MySide);
         _ready = true;
         UpdateMode();
@@ -255,7 +255,7 @@ public partial class DraftView : UserControl, IRefreshable
         MyHeroName.Text = hero == null ? "—" : hero.DisplayName(L.Language);
         MyHeroMeta.Text = hero == null
             ? L.Get("draft_my_hero_none")
-            : L.PositionName(App.Host.Settings.Current.Position) + " · " + string.Join(", ", hero.Traits.Take(4).Select(t => App.Host.Database.TraitText(t, L.Language)));
+            : L.PositionName(App.Host.CurrentPosition) + " · " + string.Join(", ", hero.Traits.Take(4).Select(t => App.Host.Database.TraitText(t, L.Language)));
     }
 
     /// <summary>Оценка состава: какие важные для драфта роли уже закрыты союзниками.</summary>
@@ -342,7 +342,7 @@ public partial class DraftView : UserControl, IRefreshable
     private void Position_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_ready || !Ui.TryValue<Position>(PositionBox, out var p)) return;
-        App.Host.Settings.Update(s => s.Position = p);
+        App.Host.SelectPosition(p);
         ShowMyHero();
         if (!App.Host.AutoDraftLive) Analyze_Click(this, new RoutedEventArgs());
         else ShowAnalysis(App.Host.AutoDraftAnalysis);

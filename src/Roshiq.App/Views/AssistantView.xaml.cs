@@ -33,7 +33,7 @@ public partial class AssistantView : UserControl, IRefreshable
         _ready = false;
         PositionBox.Items.Clear();
         foreach (var c in Ui.Positions()) PositionBox.Items.Add(c);
-        Ui.SelectValue(PositionBox, App.Host.Settings.Current.Position);
+        Ui.SelectValue(PositionBox, App.Host.CurrentPosition);
         _ready = true;
         ShowRole();
         ShowSituations();
@@ -54,7 +54,7 @@ public partial class AssistantView : UserControl, IRefreshable
     private void Position_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (!_ready || !Ui.TryValue<Position>(PositionBox, out var p)) return;
-        App.Host.Settings.Update(s => s.Position = p);
+        App.Host.SelectPosition(p);
         ShowRole();
         ShowSituations();
         Reminders.Refresh();
@@ -63,7 +63,7 @@ public partial class AssistantView : UserControl, IRefreshable
     private void ShowRole()
     {
         var L = Loc.Instance;
-        var pos = App.Host.Settings.Current.Position;
+        var pos = App.Host.CurrentPosition;
         RoleTitle.Text = L.PositionName(pos);
         RoleTips.Children.Clear();
         int i = 1;

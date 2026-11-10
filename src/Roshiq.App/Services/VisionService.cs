@@ -17,6 +17,7 @@ public sealed class VisionService
 {
     private readonly SettingsService _settings;
     private readonly RecognitionThrottle _throttle = new();
+    private DateTime _lastRoleOcrUtc;
 
     public VisionService(SettingsService settings)
     {
@@ -61,10 +62,11 @@ public sealed class VisionService
     public bool IsAllowed => ComplianceGate.IsAllowed(Feature.AutoDraftRecognition, _settings.Current.UsageContext);
 
     /// <summary>Вызывается периодически. Возвращает true, если запущено распознавание.</summary>
-    public bool MaybeRun(GameWindowState game, bool heroSelectionByGsi, bool manualRequest, long sessionId = 0, IntPtr gameWindow = default)
+    public bool MaybeRun(GameWindowState game, bool heroSelectionByGsi, bool manualRequest, long sessionId = 0,
+        IntPtr gameWindow = default, string? rolePlayerName = null)
     {
         var v = _settings.Current.Vision;
-        bool wanted = manualRequest || (v.AutoDraftEnabled && heroSelectionByGsi);
+        bool wanted = manualRequest || (v.AutoDraftEnabled && heroSelectionByGsi) || !string.IsNullOrWhiteSpace(rolePlayerName);
         string? blocked = !IsAllowed ? "режим не разрешает" : !game.Found ? "окно Dota не найдено" : game.Minimized ? "Dota свёрнута"
             : !game.Foreground ? "Dota не активное окно" : game.ClientArea.IsEmpty ? "пустая область окна" : null;
         if (blocked != null)
@@ -110,6 +112,17 @@ public sealed class VisionService
                 }
                 // В кадре только верхняя полоса — разметка считается от высоты всего окна игры
                 var result = Recognizer.Recognize(img, layout, area.Height) with { SessionId = sessionId, IsManual = manualRequest };
+                if (!string.IsNullOrWhiteSpace(rolePlayerName) &&
+                    DateTime.UtcNow - _lastRoleOcrUtc >= TimeSpan.FromSeconds(5))
+                {
+                    _lastRoleOcrUtc = DateTime.UtcNow;
+                    try
+                    {
+                        var slots = DraftLayout.Compute(layout, img.Width, img.Height, area.Height);
+                        result = result with { AssignedPosition = DraftRoleOcr.Read(img, rolePlayerName, slots) };
+                    }
+                    catch (Exception ex) { LogOnce(sessionId, "role_ocr_error", "Vision: OCR роли недоступен: " + ex.Message); }
+                }
                 LogResult(result, img, sessionId);
                 LastResult = result;
                 LastRunUtc = DateTime.UtcNow;
