@@ -45,6 +45,9 @@ public partial class SettingsView : UserControl, IRefreshable
         PersonalStatsBox.IsChecked = s.Data.UsePersonalStats;
         (s.Preset switch { HintPreset.Minimal => PresetMin, HintPreset.Full => PresetFull, _ => PresetNormal }).IsChecked = true;
         PresetDescription.Text = Loc.T("preset_desc_" + s.Preset.ToString().ToLowerInvariant());
+        StrategyDuringMatchBox.IsChecked = s.AdviceDelivery.StrategyDuringMatch;
+        PaceDuringMatchBox.IsChecked = s.AdviceDelivery.PaceDuringMatch;
+        ItemsDuringMatchBox.IsChecked = s.AdviceDelivery.ItemsDuringMatch;
         AdvancedBox.IsChecked = s.ShowAdvancedSettings;
         ApplyAdvancedVisibility(s.ShowAdvancedSettings);
         RefreshSteam();
@@ -347,6 +350,17 @@ public partial class SettingsView : UserControl, IRefreshable
         var preset = PresetMin.IsChecked == true ? HintPreset.Minimal : PresetFull.IsChecked == true ? HintPreset.Full : HintPreset.Normal;
         App.Host.Settings.Update(s => HintPresets.Apply(s, preset));
         Refresh();
+    }
+
+    private void AdviceDelivery_Changed(object sender, RoutedEventArgs e)
+    {
+        if (!_ready) return;
+        App.Host.Settings.Update(s =>
+        {
+            s.AdviceDelivery.StrategyDuringMatch = StrategyDuringMatchBox.IsChecked == true;
+            s.AdviceDelivery.PaceDuringMatch = PaceDuringMatchBox.IsChecked == true;
+            s.AdviceDelivery.ItemsDuringMatch = ItemsDuringMatchBox.IsChecked == true;
+        });
     }
 
     private void Advanced_Changed(object sender, RoutedEventArgs e)

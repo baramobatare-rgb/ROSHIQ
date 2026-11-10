@@ -33,6 +33,28 @@ public sealed class DeathEvent
     public int? Y { get; set; }
 }
 
+/// <summary>Nonurgent advice saved for the recap instead of interrupting the match.</summary>
+public sealed class DeferredMatchTip
+{
+    public string Kind { get; set; } = "";
+    public string Text { get; set; } = "";
+    public int Clock { get; set; }
+}
+
+/// <summary>Список отложенных советов матча: без повторов и не длиннее <see cref="Max"/>.</summary>
+public static class DeferredTipList
+{
+    public const int Max = 20;
+
+    public static bool Add(List<DeferredMatchTip> list, DeferredMatchTip tip)
+    {
+        if (string.IsNullOrWhiteSpace(tip.Text) || list.Count >= Max) return false;
+        if (list.Any(t => t.Kind == tip.Kind && t.Text == tip.Text)) return false;
+        list.Add(tip);
+        return true;
+    }
+}
+
 /// <summary>Один сыгранный матч в локальной истории (записан по GSI или импортирован из OpenDota).</summary>
 public sealed class MatchRecord
 {
@@ -65,6 +87,7 @@ public sealed class MatchRecord
     public Dictionary<string, int> AlertsFollowed { get; set; } = new();
     /// <summary>Исходы советов диспетчера: «вид:исход» → сколько раз (показан, истёк, неактуален…). Для проверки пользы.</summary>
     public Dictionary<string, int> TipOutcomes { get; set; } = new();
+    public List<DeferredMatchTip> DeferredTips { get; set; } = new();
     public List<DeathEvent> DeathEvents { get; set; } = new();
 
     /// <summary>

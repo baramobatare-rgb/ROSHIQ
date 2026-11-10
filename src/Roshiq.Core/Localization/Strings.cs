@@ -82,7 +82,7 @@ internal static class Strings
         ["role_short_4"] = ("Саппорт 4", "Support 4"),
         ["role_short_5"] = ("Саппорт 5", "Support 5"),
         ["top_dota_tip"] = ("Состояние подключения к Dota 2: окно игры и данные Game State Integration", "Dota 2 connection: game window and Game State Integration data"),
-        ["top_dota_gsi"] = ("Dota 2 · GSI", "Dota 2 · GSI"),
+        ["top_dota_gsi"] = ("Dota 2 · данные идут", "Dota 2 · connected"),
         ["top_dota_window"] = ("Dota 2 · окно", "Dota 2 · window"),
         ["top_dota_minimized"] = ("Dota 2 · свёрнута", "Dota 2 · minimized"),
         ["top_dota_off"] = ("Dota 2 · не запущена", "Dota 2 · offline"),

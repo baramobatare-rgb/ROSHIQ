@@ -44,6 +44,7 @@ public sealed class AppSettings
     public TimerSettings Timers { get; set; } = new();
     public AlertSettings Alerts { get; set; } = new();
     public AutomationSettings Automation { get; set; } = new();
+    public AdviceDeliverySettings AdviceDelivery { get; set; } = new();
     public SoundSettings Sounds { get; set; } = new();
     /// <summary>Пройден мастер первого запуска (1). 0 — ещё нет.</summary>
     public int SetupVersion { get; set; }
@@ -85,6 +86,7 @@ public sealed class AppSettings
         Timers ??= new();
         Alerts ??= new();
         Automation ??= new();
+        AdviceDelivery ??= new();
         Sounds ??= new();
         Sounds.Normalize();
         Timers.Normalize();
@@ -343,6 +345,22 @@ public sealed class OverlayProfile
 }
 
 /// <summary>Автоматическая работа с игрой: без нажатий в Доте — только то, что делает сам ROSHIQ.</summary>
+/// <summary>Which optional advice should interrupt a match; unchecked categories are kept for the match recap.</summary>
+public sealed class AdviceDeliverySettings
+{
+    public bool StrategyDuringMatch { get; set; } = true;
+    public bool PaceDuringMatch { get; set; } = true;
+    public bool ItemsDuringMatch { get; set; } = true;
+
+    public bool ShowDuringMatch(string kind) => kind switch
+    {
+        "lane" or "spike" => StrategyDuringMatch,
+        "pace_lh" => PaceDuringMatch,
+        "pace_item" or "spike_item" => ItemsDuringMatch,
+        _ => true // safety warnings, timers and game connection remain immediate
+    };
+}
+
 public sealed class AutomationSettings
 {
     /// <summary>Следить за запуском и закрытием Dota 2.</summary>

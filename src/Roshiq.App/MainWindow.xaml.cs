@@ -546,10 +546,14 @@ public partial class MainWindow : Window
         bool gsiFresh = gsi != null && DateTime.UtcNow - gsi.ReceivedUtc < TimeSpan.FromSeconds(40);
 
         string key; string brush;
-        if (gsiFresh) { key = "top_dota_gsi"; brush = "Accent"; }
-        else if (game.Found && game.Minimized) { key = "top_dota_minimized"; brush = "Warning"; }
-        else if (game.Found) { key = "top_dota_window"; brush = "Accent"; }
-        else { key = "top_dota_off"; brush = "Faint"; }
+        switch (h.ConnectionState)
+        {
+            case Roshiq.Core.Diagnostics.ConnectionState.Connected: key = "top_dota_gsi"; brush = "Accent"; break;
+            case Roshiq.Core.Diagnostics.ConnectionState.Offline: key = "top_dota_off"; brush = "Faint"; break;
+            case Roshiq.Core.Diagnostics.ConnectionState.Waiting when game.Minimized: key = "top_dota_minimized"; brush = "Warning"; break;
+            case Roshiq.Core.Diagnostics.ConnectionState.Waiting: key = "top_dota_waiting"; brush = "Warning"; break;
+            default: key = "top_dota_problem"; brush = "Warning"; break;
+        }
 
         StatusText.Text = L.Get(key).ToUpperInvariant();
         StatusDot.Fill = (Brush)FindResource(brush);

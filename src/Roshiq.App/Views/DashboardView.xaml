@@ -46,6 +46,19 @@
                 </DockPanel>
             </Border>
 
+            <!-- Always-visible connection state with a concrete reason and one path to fix it. -->
+            <Border x:Name="ConnectionCard" Style="{StaticResource Card}" Padding="22,14">
+                <DockPanel>
+                    <Button x:Name="ConnectionAction" DockPanel.Dock="Right" Style="{StaticResource GhostButton}"
+                            Content="{app:T conn_diagnostics}" Click="Fix_Click" VerticalAlignment="Center" />
+                    <StackPanel>
+                        <TextBlock Text="{app:T conn_header, Upper=True}" Style="{StaticResource Eyebrow}" />
+                        <TextBlock x:Name="ConnectionTitle" Style="{StaticResource Value}" FontWeight="SemiBold" />
+                        <TextBlock x:Name="ConnectionDetail" Style="{StaticResource MutedText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
             <!-- Профиль Steam -->
             <Border x:Name="ProfileCard" Style="{StaticResource Card}" Padding="22,14">
                 <DockPanel>

@@ -94,6 +94,9 @@ public sealed class OverlayController : IDisposable
         }
     }
 
+    /// <summary>Панель скрыта игроком клавишей — уведомления поверх игры тоже не показываются.</summary>
+    public bool HiddenByUser => _userHidden;
+
     /// <summary>F8: показать/скрыть панель.</summary>
     public void ToggleHidden()
     {

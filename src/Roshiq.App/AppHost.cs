@@ -187,6 +187,20 @@ public sealed class AppHost : IDisposable
 
     /// <summary>Сторож связи с игрой (Dota запущена, а данных GSI нет).</summary>
     public GsiWatchdog GsiWatch { get; } = new();
+    public ConnectionState ConnectionState => ConnectionHealth.Evaluate(Settings.Current.Gsi.Enabled, Gsi?.IsRunning == true,
+        Overlay.Game.Found, Gsi?.LastPacketUtc, GsiWatch.GameSinceUtc, GsiWatch.Current, DateTime.UtcNow);
+    /// <summary>Почему подсказки сейчас молчат: нет связи, меню, драфт, пауза, скрытая панель.</summary>
+    public TipSilence TipSilence
+    {
+        get
+        {
+            var g = LastGsi;
+            bool fresh = g != null && DateTime.UtcNow - g.ReceivedUtc < ConnectionHealth.Fresh;
+            return ConnectionHealth.Silence(ConnectionState, fresh ? g!.GameState : null, fresh && g!.Paused == true, Overlay.HiddenByUser);
+        }
+    }
+    /// <summary>Советы, отложенные до разбора, пока запись матча ещё не началась (совет по линии приходит на 0:00).</summary>
+    private readonly List<DeferredMatchTip> _deferredEarly = new();
     /// <summary>Журнал подсказок по матчам (logs\tips, только на этом компьютере).</summary>
     public TipJournal TipLog { get; } = new(Path.Combine(AppPaths.Logs, "tips"));
 
@@ -302,6 +316,7 @@ public sealed class AppHost : IDisposable
             var completed = _recorder.Observe(ToTick(snap));
             if (completed != null) SaveMatch(completed);
             if (_recorder.Current is MatchRecord cur && cur.Id != _paceMatchId) OnMatchStarted(cur);
+            if (_deferredEarly.Count > 0 && _recorder.Current is MatchRecord rec) FlushDeferred(rec);
             if (_recorder.Current is MatchRecord live && DateTime.UtcNow - _lastCheckpointUtc >= CheckpointEvery)
             {
                 _lastCheckpointUtc = DateTime.UtcNow;
@@ -316,6 +331,7 @@ public sealed class AppHost : IDisposable
             Reminders.Reset();
             Alerts.Reset();
             Tips.Clear(t => t.InGameOnly);          // советы прошлого матча не переносим
+            _deferredEarly.Clear();
             _alertActive = Array.Empty<string>();
             _timerAnnouncer.Reset();
             Roshan.Clear();
@@ -1388,13 +1404,29 @@ public sealed class AppHost : IDisposable
         string kind = "event", int ttlSec = 30, bool inGame = false, Func<bool>? stillValid = null, object? tag = null, string? key = null,
         bool allowWhenDead = false)
     {
-        Tips.Enqueue(new Tip
+        var tip = new Tip
         {
             Kind = kind, Key = key, Header = header, Text = text, Warning = warning, Priority = priority,
             Ttl = TimeSpan.FromSeconds(ttlSec), InGameOnly = inGame, StillValid = stillValid, Tag = tag, AllowWhenDead = allowWhenDead
-        }, DateTime.UtcNow);
+        };
+        if (inGame && !Settings.Current.AdviceDelivery.ShowDuringMatch(kind))
+        {
+            var deferred = new DeferredMatchTip { Kind = kind, Text = text, Clock = Math.Max(0, LastGsi?.ClockTime ?? 0) };
+            if (_recorder.Current is MatchRecord current) { FlushDeferred(current); DeferredTipList.Add(current.DeferredTips, deferred); }
+            else DeferredTipList.Add(_deferredEarly, deferred);
+            OnTipOutcome(tip, TipOutcome.Deferred);
+            return false;
+        }
+        Tips.Enqueue(tip, DateTime.UtcNow);
         PumpTips();
         return true;
+    }
+
+    /// <summary>Перенести в запись матча советы, отложенные до её появления.</summary>
+    private void FlushDeferred(MatchRecord record)
+    {
+        foreach (var t in _deferredEarly) DeferredTipList.Add(record.DeferredTips, t);
+        _deferredEarly.Clear();
     }
 
     /// <summary>Раз в секунду (и сразу при новом совете): выбрать совет и показать его в оверлее.</summary>
@@ -1440,6 +1472,7 @@ public sealed class AppHost : IDisposable
             TipOutcome.Expired => "истёк, не дождавшись показа",
             TipOutcome.Invalidated => "снят — уже неактуален",
             TipOutcome.Merged => "заменён более свежим",
+            TipOutcome.Deferred => "сохранён для разбора после матча",
             _ => outcome.ToString() }}");
     }
 

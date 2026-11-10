@@ -181,6 +181,24 @@ public partial class DashboardView : UserControl, IRefreshable
         var gsi = h.LastGsi;
         bool gsiFresh = gsi != null && DateTime.UtcNow - gsi.ReceivedUtc < TimeSpan.FromSeconds(40);
 
+        var connection = h.ConnectionState;
+        var connectionKey = "conn_" + connection.ToString().ToLowerInvariant();
+        ConnectionTitle.Text = L.Get(connectionKey + "_title");
+        // связь есть, а подсказок нет — называем причину: меню, драфт, пауза, скрытая панель
+        var silence = h.TipSilence;
+        ConnectionDetail.Text = connection == ConnectionState.Connected
+            ? L.Get("conn_silence_" + silence.ToString().ToLowerInvariant()) + SavedForRecapNote(s, silence, L)
+            : L.Get(connectionKey + "_detail");
+        ConnectionAction.Visibility = connection is ConnectionState.Connected or ConnectionState.Offline
+            ? Visibility.Collapsed : Visibility.Visible;
+        ConnectionCard.BorderBrush = Ui.Res(connection switch
+        {
+            ConnectionState.Connected => "Success",
+            ConnectionState.Offline => "Line",
+            ConnectionState.Waiting => "Accent",
+            _ => "Warning"
+        });
+
         RefreshProfile(s, L);
         _updatingPosition = true;
         if (QuickPosition.Tag as string != L.Language.ToString())
@@ -193,9 +211,8 @@ public partial class DashboardView : UserControl, IRefreshable
 
         // --- уведомления о патче и обновлении
         var notices = new List<string>();
-        _noticeDiagnostics = h.SafeMode || h.GsiWatch.Current != Roshiq.Core.Diagnostics.GsiProblem.None;
+        _noticeDiagnostics = h.SafeMode;
         if (h.SafeMode) notices.Add(L.Get("dash_notice_safe"));
-        if (h.GsiWatch.Current != Roshiq.Core.Diagnostics.GsiProblem.None) notices.Add(L.Get("dash_notice_gsi"));
         if (h.NewPatchNotice is string patch) notices.Add(L.Format("dash_notice_patch", patch));
         if (h.AvailableUpdate is { } upd) notices.Add(L.Format("dash_notice_update", upd.Tag));
         NoticeCard.Visibility = notices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -451,6 +468,15 @@ public partial class DashboardView : UserControl, IRefreshable
     private void GoHistory_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("history");
 
     private void Fix_Click(object sender, RoutedEventArgs e) => DiagnosticsWindow.Open();
+
+    /// <summary>В матче: напомнить, что часть советов по настройке уходит в разбор, а не на экран.</summary>
+    private static string SavedForRecapNote(Roshiq.Core.Settings.AppSettings s, TipSilence silence, Loc L)
+    {
+        if (silence != TipSilence.None) return "";
+        var d = s.AdviceDelivery;
+        int saved = (d.StrategyDuringMatch ? 0 : 1) + (d.PaceDuringMatch ? 0 : 1) + (d.ItemsDuringMatch ? 0 : 1);
+        return saved == 0 ? "" : " " + L.Get("conn_silence_saved");
+    }
 
     private void GoDraft_Click(object sender, RoutedEventArgs e) => MainWindow.Navigate("draft");
 

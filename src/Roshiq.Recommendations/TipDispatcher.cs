@@ -4,7 +4,7 @@ namespace Roshiq.Recommendations;
 public enum TipPriority { Background = 0, Normal = 1, Urgent = 2 }
 
 /// <summary>Что стало с советом: показан, не показан (оверлей отказал), истёк срок, стал неактуален, заменён более свежим.</summary>
-public enum TipOutcome { Shown, Dropped, Expired, Invalidated, Merged }
+public enum TipOutcome { Shown, Dropped, Expired, Invalidated, Merged, Deferred }
 
 /// <summary>Один совет для всплывающего уведомления.</summary>
 public sealed class Tip

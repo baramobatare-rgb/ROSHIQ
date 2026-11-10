@@ -54,6 +54,23 @@
                 </StackPanel>
             </Border>
 
+            <!-- Optional advice can be saved for the match recap instead of interrupting play. -->
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="{app:T advice_delivery_title, Upper=True}" Style="{StaticResource Eyebrow}" />
+                    <TextBlock Text="{app:T advice_delivery_desc}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                    <CheckBox x:Name="StrategyDuringMatchBox" Checked="AdviceDelivery_Changed" Unchecked="AdviceDelivery_Changed" Margin="0,0,0,5">
+                        <StackPanel><TextBlock Text="{app:T advice_strategy}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T advice_strategy_desc}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="PaceDuringMatchBox" Checked="AdviceDelivery_Changed" Unchecked="AdviceDelivery_Changed" Margin="0,0,0,5">
+                        <StackPanel><TextBlock Text="{app:T advice_pace}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T advice_pace_desc}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="ItemsDuringMatchBox" Checked="AdviceDelivery_Changed" Unchecked="AdviceDelivery_Changed">
+                        <StackPanel><TextBlock Text="{app:T advice_items}" Style="{StaticResource OptTitle}" /><TextBlock Text="{app:T advice_items_desc}" Style="{StaticResource OptDesc}" /></StackPanel>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+
             <!-- Оформление -->
             <Grid>
                 <Grid.ColumnDefinitions>

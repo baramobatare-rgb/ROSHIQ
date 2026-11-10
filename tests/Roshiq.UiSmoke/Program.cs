@@ -75,6 +75,50 @@ class Program
             "Without Steam the OpenDota options say why they do not work");
     }
 
+    /// <summary>Статус связи на главной, выбор «в матче или в разборе» и разбор: что помогло, что пропущено, что отложено.</summary>
+    static void QuietTipsChecks(AppHost host)
+    {
+        var L = Roshiq.Core.Localization.Loc.Instance;
+        var dash = new DashboardView(); dash.Refresh();
+        Check(Control<TextBlock>(dash, "ConnectionTitle").Text == L.Get("conn_disabled_title")
+              && Control<TextBlock>(dash, "ConnectionDetail").Text.Length > 0
+              && Control<Button>(dash, "ConnectionAction").Visibility == Visibility.Visible,
+            "Dashboard names the connection state and offers diagnostics");
+        Check(host.TipSilence == Roshiq.Core.Diagnostics.TipSilence.NoConnection, "Without game data the silence reason is the connection");
+
+        var settings = new SettingsView(); settings.Refresh();
+        var pace = Control<CheckBox>(settings, "PaceDuringMatchBox");
+        Check(pace.IsChecked == true && Control<CheckBox>(settings, "StrategyDuringMatchBox").IsChecked == true
+              && Control<CheckBox>(settings, "ItemsDuringMatchBox").IsChecked == true, "All advice is shown during a match by default");
+        pace.IsChecked = false;
+        Check(!host.Settings.Current.AdviceDelivery.PaceDuringMatch, "Unchecking a category saves it for the recap");
+        Check(!host.ShowEventToast("ТЕМП", "Отстаёте на 8 добиваний", kind: "pace_lh", inGame: true),
+            "Saved category does not interrupt the match");
+        pace.IsChecked = true;
+        Check(host.Settings.Current.AdviceDelivery.PaceDuringMatch, "Checking it again restores live advice");
+
+        var m = new Roshiq.Recommendations.MatchRecord { HeroId = 1, DurationSec = 1800 };
+        m.AlertsFollowed[Roshiq.Recommendations.MatchAlerts.NoTeleport] = 2;
+        m.AlertsIgnored[Roshiq.Recommendations.MatchAlerts.NoBuyback] = 1;
+        for (int i = 0; i < PostMatchWindow.MaxDeferredShown + 2; i++)
+            m.DeferredTips.Add(new Roshiq.Recommendations.DeferredMatchTip { Kind = "pace_lh", Text = "Совет " + i, Clock = 600 + i * 60 });
+        var sum = new Roshiq.Recommendations.PostMatchSummary(m, Array.Empty<Roshiq.Recommendations.Insight>(), null, 0);
+        var win = new PostMatchWindow(sum);
+        Check(Control<Panel>(win, "FeedbackPanel").Children.Count == 2 && Control<FrameworkElement>(win, "FeedbackBlock").Visibility == Visibility.Visible,
+            "Post-match window says which tip helped and which was missed");
+        Check(Control<Panel>(win, "DeferredPanel").Children.Count == PostMatchWindow.MaxDeferredShown + 1,
+            "Post-match window lists saved advice briefly and counts the rest");
+        Check(Control<TextBlock>(win, "NextGoalText").Text == Roshiq.Recommendations.PostMatch.NextGoal(sum).Text(L.Language)
+              && Control<TextBlock>(win, "NextGoalText").Text.Length > 0, "Post-match window keeps one goal for the next game");
+        win.Close();
+        Check(new MatchTakeaways(sum).Children.Count == 6, "History summary adds tip feedback and saved advice");
+        var plain = new PostMatchWindow(new Roshiq.Recommendations.PostMatchSummary(new Roshiq.Recommendations.MatchRecord { HeroId = 1, DurationSec = 1800 },
+            Array.Empty<Roshiq.Recommendations.Insight>(), new Roshiq.Recommendations.Insight("no_tp", -2, "Нет ТП", "No TP"), 3));
+        Check(Control<FrameworkElement>(plain, "FeedbackBlock").Visibility == Visibility.Collapsed
+              && Control<FrameworkElement>(plain, "DeferredBlock").Visibility == Visibility.Collapsed, "Match without tip data hides the empty blocks");
+        plain.Close();
+    }
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -140,6 +184,7 @@ class Program
             resultWindow.Close();
             var takeaways = new MatchTakeaways(summary);
             Check(takeaways.Children.Count == 4, "History summary includes three takeaways and comparison basis");
+            QuietTipsChecks(host);
             var view = new HeroesView(); view.Refresh();
             var favorites = Control<CheckBox>(view, "FavoritesOnly");
             favorites.IsChecked = true;

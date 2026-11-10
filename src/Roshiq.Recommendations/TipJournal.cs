@@ -33,6 +33,7 @@ public sealed class TipJournal
         TipOutcome.Expired => "истекла, не дождавшись показа",
         TipOutcome.Invalidated => "снята — уже неактуальна",
         TipOutcome.Merged => "заменена более свежей",
+        TipOutcome.Deferred => "сохранена для разбора после матча",
         _ => outcome.ToString()
     };
 

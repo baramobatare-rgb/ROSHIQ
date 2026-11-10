@@ -11,6 +11,8 @@ namespace Roshiq.App.Views;
 public partial class PostMatchWindow : Window
 {
     private readonly PostMatchSummary _summary;
+    /// <summary>Сколько отложенных советов помещается в окно итога; остальные — в истории матча.</summary>
+    public const int MaxDeferredShown = 4;
 
     public PostMatchWindow(PostMatchSummary summary)
     {
@@ -35,8 +37,23 @@ public partial class PostMatchWindow : Window
         if (summary.MainMistake is { } bad) MistakeText.Text = bad.Text(L.Language);
         else MistakeBlock.Visibility = Visibility.Collapsed;
 
+        // как сработали подсказки: что помогло, что пропущено; отложенные советы — коротко, остальное в истории
+        bool ru = L.Language == Roshiq.Core.Models.Language.Russian;
+        var fb = PostMatch.Feedback(m, MaxDeferredShown);
+        if (fb.HelpedKey != null)
+            FeedbackPanel.Children.Add(Line(L.Format("pm_feedback_followed", PostMatch.AlertName(fb.HelpedKey, ru), fb.HelpedCount)));
+        if (fb.MissedKey != null)
+            FeedbackPanel.Children.Add(Line(L.Format("pm_feedback_ignored", PostMatch.AlertName(fb.MissedKey, ru), fb.MissedCount), muted: true));
+        if (!fb.HasFeedback) FeedbackBlock.Visibility = Visibility.Collapsed;
+
+        foreach (var tip in fb.Deferred)
+            DeferredPanel.Children.Add(Line(PostMatch.DeferredLine(tip), muted: true));
+        if (fb.DeferredMore > 0) DeferredPanel.Children.Add(Line(L.Format("pm_deferred_more", fb.DeferredMore), muted: true));
+        if (fb.Deferred.Count == 0) DeferredBlock.Visibility = Visibility.Collapsed;
+
         NextGoalText.Text = PostMatch.NextGoal(summary).Text(L.Language);
-        BasisText.Text = summary.Compared >= 3 ? L.Format("pm_basis", summary.Compared) : L.Get("pm_basis_few");
+        BasisText.Text = summary.Compared >= PostMatch.MinValues && summary.Basis is string basis
+            ? L.Format("pm_basis2", L.Get(basis), summary.Compared) : L.Get("pm_basis_few");
     }
 
     private static FrameworkElement Line(string text, bool muted = false)

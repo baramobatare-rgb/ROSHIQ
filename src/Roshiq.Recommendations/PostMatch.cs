@@ -6,11 +6,44 @@ namespace Roshiq.Recommendations;
 /// <param name="Basis">Основание сравнения (ключ строки: bd_basis_hero_role / bd_basis_role / bd_basis_hero); null — сравнения нет.</param>
 public sealed record PostMatchSummary(MatchRecord Match, IReadOnlyList<Insight> Good, Insight? MainMistake, int Compared, string? Basis = null)
 {
-    public bool HasContent => Good.Count > 0 || MainMistake != null;
+    public bool HasContent => Good.Count > 0 || MainMistake != null || PostMatch.Feedback(Match).Any;
+}
+
+/// <summary>
+/// Как сработали подсказки в матче: что помогло (условие исчезло после подсказки), что пропущено
+/// (условие осталось) и что было отложено до разбора.
+/// </summary>
+public sealed record TipFeedback(string? HelpedKey, int HelpedCount, string? MissedKey, int MissedCount,
+    IReadOnlyList<DeferredMatchTip> Deferred, int DeferredMore)
+{
+    public bool HasFeedback => HelpedKey != null || MissedKey != null;
+    public bool Any => HasFeedback || Deferred.Count > 0;
 }
 
 public static class PostMatch
 {
+    /// <summary>
+    /// Самая частая сработавшая и самая частая пропущенная подсказка, плюс отложенные советы по времени игры.
+    /// <paramref name="maxDeferred"/> — сколько отложенных показать сразу; остальные считаются в DeferredMore.
+    /// </summary>
+    public static TipFeedback Feedback(MatchRecord m, int maxDeferred = int.MaxValue)
+    {
+        static (string? Key, int Count) Top(Dictionary<string, int> d)
+        {
+            // при равенстве — по ключу, чтобы итог не зависел от порядка словаря
+            var best = d.Where(kv => kv.Value > 0).OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key, StringComparer.Ordinal).FirstOrDefault();
+            return best.Value > 0 ? (best.Key, best.Value) : (null, 0);
+        }
+        var helped = Top(m.AlertsFollowed);
+        var missed = Top(m.AlertsIgnored);
+        var deferred = m.DeferredTips.Where(t => !string.IsNullOrWhiteSpace(t.Text)).OrderBy(t => t.Clock).ToList();
+        int take = Math.Max(0, Math.Min(maxDeferred, deferred.Count));
+        return new TipFeedback(helped.Key, helped.Count, missed.Key, missed.Count, deferred.Take(take).ToList(), deferred.Count - take);
+    }
+
+    /// <summary>Время совета в формате игровых часов.</summary>
+    public static string DeferredLine(DeferredMatchTip t) => $"{Clock(Math.Max(0, t.Clock))} · {t.Text}";
+
     /// <summary>Короткие матчи (ливы, ремейки) не разбираем.</summary>
     public const int MinDurationSec = 10 * 60;
 
@@ -142,10 +175,20 @@ public static class PostMatch
             "no_tp" => ("Перед выходом с базы проверяйте наличие свитка телепорта.", "Check that you have a teleport scroll before leaving base."),
             "gold_risk" => ("Перед дракой проверяйте запас золота и покупайте запланированные компоненты.", "Before fighting, check your gold and buy planned components."),
             "ignored" => ("При появлении подсказки проверьте ситуацию и решите, какое действие сейчас нужно.", "When a tip appears, check the situation and choose the appropriate action."),
-            _ => ("Выберите одну цель перед игрой и после матча проверьте, удалось ли её выполнить.", "Choose one goal before the game and check it after the match.")
+            _ => MissedGoal(Feedback(summary.Match).MissedKey)
         };
         return new Insight("next_goal", 0, ru, en);
     }
+
+    /// <summary>Главной ошибки нет — цель берём из подсказки, которую чаще всего пропускали.</summary>
+    private static (string Ru, string En) MissedGoal(string? alertKey) => alertKey switch
+    {
+        MatchAlerts.NoTeleport => ("Перед выходом с базы проверяйте наличие свитка телепорта.", "Check that you have a teleport scroll before leaving base."),
+        MatchAlerts.NoBuyback => ("После 30-й минуты держите золото на выкуп перед важными драками.", "After minute 30, keep buyback gold before important fights."),
+        MatchAlerts.ItemsInStash or MatchAlerts.WardsInStash => ("После каждой покупки сразу отправляйте курьера.", "Send the courier right after every purchase."),
+        MatchAlerts.UnspentGold => ("Перед дракой тратьте накопленное золото на запланированные компоненты.", "Before a fight, spend saved gold on planned components."),
+        _ => ("Выберите одну цель перед игрой и после матча проверьте, удалось ли её выполнить.", "Choose one goal before the game and check it after the match.")
+    };
 
     /// <summary>
     /// Самый заметный ключевой предмет: разница с вашим медианным временем на этом герое в этой роли (сек).
@@ -179,7 +222,7 @@ public static class PostMatch
         return ru ? $" Больше всего — {phase}: {groups.Count()} из {m.DeathEvents.Count}." : $" Most of them {phase}: {groups.Count()} of {m.DeathEvents.Count}.";
     }
 
-    private static string AlertName(string key, bool ru) => key switch
+    public static string AlertName(string key, bool ru) => key switch
     {
         MatchAlerts.NoTeleport => ru ? "нет телепорта" : "no teleport",
         MatchAlerts.NoBuyback => ru ? "не хватает на выкуп" : "can't buy back",

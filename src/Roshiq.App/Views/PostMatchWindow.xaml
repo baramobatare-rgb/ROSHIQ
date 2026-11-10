@@ -28,6 +28,16 @@
             </Border>
         </StackPanel>
 
+        <StackPanel x:Name="FeedbackBlock" Margin="0,16,0,0">
+            <TextBlock Text="{app:T pm_feedback_title, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
+            <StackPanel x:Name="FeedbackPanel" />
+        </StackPanel>
+
+        <StackPanel x:Name="DeferredBlock" Margin="0,16,0,0">
+            <TextBlock Text="{app:T pm_deferred_title, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
+            <StackPanel x:Name="DeferredPanel" />
+        </StackPanel>
+
         <TextBlock Text="{app:T pm_next_goal, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,16,0,6" />
         <Border Style="{StaticResource Callout}" BorderBrush="{DynamicResource Accent}" Margin="0"><TextBlock x:Name="NextGoalText" Style="{StaticResource Value}" /></Border>
         <TextBlock x:Name="BasisText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,14,0,0" />
