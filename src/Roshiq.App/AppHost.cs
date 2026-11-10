@@ -45,6 +45,8 @@ public sealed class AppHost : IDisposable
     private string? _lastMatchId;
     private readonly DraftPickTracker _autoPicks = new();
     private readonly LaneRoleDetector _roleDetector = new();
+    private bool _queueRoleApplied;
+    private DateTime _queueRoleLastCheckUtc;
     private readonly GameLaunchWatcher _gameWatch = new();
     private readonly HashSet<string> _importPending = new(StringComparer.Ordinal);
     private MatchRecord? _lastSaved;
@@ -295,6 +297,7 @@ public sealed class AppHost : IDisposable
             _timerAnnouncer.Reset();
             Roshan.Clear();
             _roleDetector.Reset();
+            if (_queueRoleApplied && snap.IsHeroSelection) _roleDetector.AcceptAssignedRole();
             _spikesShown.Clear();
             _spikeItems.Clear();
             _spikeSeeded = false;
@@ -307,6 +310,7 @@ public sealed class AppHost : IDisposable
         hero ??= Database.FindHero(snap.HeroName);
         if (hero != null && hero.Id != CurrentHero?.Id) SelectHero(hero);
         TryLinkFromGsi(snap);
+        TickRankedRoleSelection(snap);
         TickRoleDetection(snap);
         TickGameInsights(snap);
         RaiseChanged();
@@ -803,6 +807,36 @@ public sealed class AppHost : IDisposable
     };
 
     // ------------------------------------------------------------------ автоматика: игра, роль, импорт, режимы оверлея
+
+    /// <summary>One checked role in Steam's ranked queue config is known before lane play starts.</summary>
+    private void TickRankedRoleSelection(GameStateSnapshot snap)
+    {
+        if (!snap.IsHeroSelection)
+        {
+            _queueRoleApplied = false;
+            return;
+        }
+        if (!Settings.Current.Automation.AutoRole || _queueRoleApplied || DateTime.UtcNow - _queueRoleLastCheckUtc < TimeSpan.FromSeconds(5)) return;
+        _queueRoleLastCheckUtc = DateTime.UtcNow;
+        var steamRoot = SteamLink.SteamPath();
+        if (steamRoot == null) return;
+        var account = SteamIds.ToAccountId(snap.SteamId)
+            ?? SteamLink.LocalUsers().FirstOrDefault(u => u.MostRecent)?.AccountId
+            ?? SteamIds.ToAccountId(Settings.Current.Data.SteamAccountId);
+        if (account is not long accountId) return;
+        var position = RankedRoleSelection.ReadSingle(steamRoot, accountId);
+        if (position == null) return;
+
+        _queueRoleApplied = true;
+        _roleDetector.AcceptAssignedRole();
+        Log.Info($"Роль из выбора рейтингового поиска: {position}");
+        if (_recorder.Current != null) _recorder.Current.Position = position;
+        if (Settings.Current.Position == position) return;
+        Settings.Update(s => s.Position = position.Value);
+        var L = Loc.Instance;
+        ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
+            L.Format("role_queue_changed", L.PositionName(position.Value)), kind: "role", ttlSec: 60);
+    }
 
     private bool GsiFresh => LastGsi != null && DateTime.UtcNow - LastGsi.ReceivedUtc < TimeSpan.FromSeconds(10);
 

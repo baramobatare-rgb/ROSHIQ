@@ -107,6 +107,43 @@ public class AutomationTests
         Assert.True(d.Decided);
     }
 
+    [Theory]
+    [InlineData("dota_lane_selection_safelane", Position.Carry)]
+    [InlineData("dota_lane_selection_midlane", Position.Mid)]
+    [InlineData("dota_lane_selection_offlane", Position.Offlane)]
+    [InlineData("dota_lane_selection_soft_support", Position.SoftSupport)]
+    [InlineData("dota_lane_selection_hard_support", Position.HardSupport)]
+    public void RankedRoleQueue_OneCheckedRoleIsKnown(string key, Position expected)
+    {
+        var config = "\"dota_ranked_role_queue\" \"true\"\n\"" + key + "\" \"true\"";
+        Assert.Equal(expected, RankedRoleSelection.ParseSingle(config));
+    }
+
+    [Fact]
+    public void RankedRoleQueue_MultipleOrClassicRolesAreUnknown()
+    {
+        const string roles = "\"dota_lane_selection_offlane\" \"true\"\n\"dota_lane_selection_hard_support\" \"true\"";
+        Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"true\"\n" + roles));
+        Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"false\"\n" + roles));
+        Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"true\""));
+        Assert.Null(RankedRoleSelection.ParseSingle("\"dota_ranked_role_queue\" \"true\"\n\"dota_ranked_role_queue_automatically_select_all\" \"true\"\n\"dota_lane_selection_safelane\" \"true\""));
+    }
+
+    [Fact]
+    public void RankedRoleQueue_ReadsOnlyTheSpecifiedAccount()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "roshiq-roles-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var path = Path.Combine(root, "userdata", "42", "570", "local", "cfg", "machine_convars.vcfg");
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, "\"dota_ranked_role_queue\" \"true\"\n\"dota_lane_selection_offlane\" \"true\"");
+            Assert.Equal(Position.Offlane, RankedRoleSelection.ReadSingle(root, 42));
+            Assert.Null(RankedRoleSelection.ReadSingle(root, 43));
+        }
+        finally { if (Directory.Exists(root)) Directory.Delete(root, recursive: true); }
+    }
+
     [Fact]
     public void GameWatcher_IgnoresInitialState_ThenReportsChanges()
     {

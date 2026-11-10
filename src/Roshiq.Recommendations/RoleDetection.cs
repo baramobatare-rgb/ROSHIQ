@@ -49,6 +49,9 @@ public sealed class LaneRoleDetector
     public bool Decided { get; private set; }
     public int Samples => _lanes.Count;
 
+    /// <summary>One checked ranked queue role is authoritative; lane inference must not replace it.</summary>
+    public void AcceptAssignedRole() => Decided = true;
+
     public void Reset()
     {
         _lanes.Clear();
