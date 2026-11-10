@@ -833,7 +833,7 @@ public sealed class AppHost : IDisposable
         var guess = _roleDetector.TryDecide(clock, CurrentHero, snap.TeamName, () => History.All(), Settings.Current.Position);
         if (guess == null) return;
         Log.Info($"Роль определена: {guess.Position} ({guess.Confidence:0.00}; {guess.ReasonRu})");
-        if (guess.Confidence < 0.45) return;
+        if (guess.Confidence < LaneRoleDetector.MinConfidence) return;
         if (_recorder.Current != null) _recorder.Current.Position = guess.Position;
         if (guess.Position == Settings.Current.Position) return;
         var L = Loc.Instance;

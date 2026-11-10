@@ -38,10 +38,12 @@ public sealed class LaneRoleDetector
     public const int FromSec = 20;
     public const int DecideAtSec = 150;
     public const int GiveUpSec = 240;
+    public const double MinConfidence = 0.45;
     private const int SampleEverySec = 5;
 
     private readonly List<Lane> _lanes = new();
     private int _lastSample = int.MinValue;
+    private int _lastAttemptSampleCount = -1;
     private int? _lastHits;
 
     public bool Decided { get; private set; }
@@ -51,6 +53,7 @@ public sealed class LaneRoleDetector
     {
         _lanes.Clear();
         _lastSample = int.MinValue;
+        _lastAttemptSampleCount = -1;
         _lastHits = null;
         Decided = false;
     }
@@ -72,6 +75,8 @@ public sealed class LaneRoleDetector
     public RoleGuess? TryDecide(int clock, Hero hero, string? team, Func<IEnumerable<MatchRecord>> history, Position current)
     {
         if (Decided || clock < DecideAtSec) return null;
+        if (_lastAttemptSampleCount == _lanes.Count && clock < GiveUpSec) return null;
+        _lastAttemptSampleCount = _lanes.Count;
         var known = _lanes.Where(l => l != Lane.Unknown).ToList();
         if (team is not ("radiant" or "dire") || known.Count < 6)
         {
@@ -85,7 +90,6 @@ public sealed class LaneRoleDetector
             if (clock >= GiveUpSec) Decided = true;
             return null;
         }
-        Decided = true;
         var lane = top.Key;
         string laneRu, laneEn;
         Position[] candidates;
@@ -94,7 +98,11 @@ public sealed class LaneRoleDetector
         else { candidates = new[] { Position.Offlane, Position.SoftSupport }; laneRu = "сложная линия"; laneEn = "off lane"; }
 
         if (candidates.Length == 1)
-            return new RoleGuess(Position.Mid, Math.Round(share, 2), lane, $"{laneRu}", $"{laneEn}");
+        {
+            var midGuess = new RoleGuess(Position.Mid, Math.Round(share, 2), lane, laneRu, laneEn);
+            Decided = midGuess.Confidence >= MinConfidence || clock >= GiveUpSec;
+            return midGuess;
+        }
 
         var mine = history().Where(m => m.HeroId == hero.Id && m.Position != null).ToList();
         double Score(Position p, out string whyRu, out string whyEn)
@@ -126,6 +134,7 @@ public sealed class LaneRoleDetector
         double confidence = Math.Round(Math.Clamp(0.5 + margin / 6, 0.3, 0.95) * share, 2);
         string lhRu = _lastHits is int l ? $", добиваний {l}" : "";
         string lhEn = _lastHits is int l2 ? $", {l2} last hits" : "";
+        Decided = confidence >= MinConfidence || clock >= GiveUpSec;
         return new RoleGuess(best.P, confidence, lane,
             laneRu + lhRu + (best.Ru.Length > 0 ? ", " + best.Ru : ""),
             laneEn + lhEn + (best.En.Length > 0 ? ", " + best.En : ""));

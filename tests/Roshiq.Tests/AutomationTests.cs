@@ -87,6 +87,27 @@ public class AutomationTests
     }
 
     [Fact]
+    public void LowConfidenceRole_RetriesWhenLastHitsClarify()
+    {
+        var d = new LaneRoleDetector();
+        for (int clock = 20, sample = 0; clock <= 150; clock += 5, sample++)
+            d.Observe(clock, sample < 16 ? 5200 : 300, sample < 16 ? -6200 : -3500, null);
+
+        var hero = H();
+        var first = d.TryDecide(150, hero, "radiant", () => Array.Empty<MatchRecord>(), Position.Mid);
+        Assert.NotNull(first);
+        Assert.True(first!.Confidence < LaneRoleDetector.MinConfidence);
+        Assert.False(d.Decided);
+        Assert.Null(d.TryDecide(151, hero, "radiant", () => Array.Empty<MatchRecord>(), Position.Mid));
+
+        d.Observe(155, 5200, -6200, 14);
+        var second = d.TryDecide(155, hero, "radiant", () => Array.Empty<MatchRecord>(), Position.Mid);
+        Assert.Equal(Position.Carry, second!.Position);
+        Assert.True(second.Confidence >= LaneRoleDetector.MinConfidence);
+        Assert.True(d.Decided);
+    }
+
+    [Fact]
     public void GameWatcher_IgnoresInitialState_ThenReportsChanges()
     {
         var w = new GameLaunchWatcher(onAfter: 3, offAfter: 5);
