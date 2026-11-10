@@ -162,11 +162,11 @@ h2{font-weight:900;font-size:clamp(38px,5.4vw,72px);line-height:.95;letter-spaci
 
 /* Карточки возможностей: следующая накрывает предыдущую при прокрутке. */
 .feature-stack{counter-reset:feature;display:grid;gap:24px;border-top:0;padding-bottom:20px;isolation:isolate}
-.feature-stack .row{counter-increment:feature;position:sticky;top:calc(24px + var(--card-index)*12px);z-index:var(--card-index);min-height:280px;padding:60px 44px 42px;border:1px solid #354338;border-radius:16px;background:linear-gradient(115deg,color-mix(in srgb,var(--lime) 7%,transparent),transparent 70%),var(--ink);box-shadow:0 -12px 32px rgba(0,0,0,.18);align-content:center;align-items:center}
+.feature-stack .row{counter-increment:feature;position:sticky;top:calc(var(--nav-height,76px) + 24px + var(--card-index)*12px);z-index:var(--card-index);min-height:280px;padding:60px 44px 42px;border:1px solid #354338;border-radius:16px;background:linear-gradient(115deg,color-mix(in srgb,var(--lime) 7%,transparent),transparent 70%),var(--ink);box-shadow:0 -12px 32px rgba(0,0,0,.18);align-content:center;align-items:center}
 .feature-stack .row::before{content:counter(feature,decimal-leading-zero) " / 06";position:absolute;top:22px;left:44px;color:var(--lime);font:800 12px/1 Inter,sans-serif;letter-spacing:.1em}
 .feature-stack .row h3{font-size:clamp(30px,3.6vw,46px);line-height:1.06;max-width:9em}
 .feature-stack .row p{font-size:20px;line-height:1.55}
-@media(max-width:760px){.feature-stack{gap:18px}.feature-stack .row{min-height:300px;padding:55px 24px 30px;top:calc(16px + var(--card-index)*8px);gap:16px;border-radius:12px}.feature-stack .row::before{left:24px;top:23px}.feature-stack .row p{font-size:17px}.feature-stack .row h3{max-width:none}}
+@media(max-width:760px){.feature-stack{gap:18px}.feature-stack .row{min-height:300px;padding:55px 24px 30px;top:calc(var(--nav-height,104px) + 16px + var(--card-index)*8px);gap:16px;border-radius:12px}.feature-stack .row::before{left:24px;top:23px}.feature-stack .row p{font-size:17px}.feature-stack .row h3{max-width:none}}
 @media(prefers-reduced-motion:reduce){.feature-stack .row{position:relative;top:auto}}
 
 .ban{background:var(--lime);color:var(--ink);padding:150px 0;clip-path:polygon(0 5vw,100% 0,100% calc(100% - 5vw),0 100%)}
@@ -291,14 +291,36 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
 .help .row h3{font-size:clamp(22px,2.4vw,30px)}
 .help .row p b{color:#fff}
 .help code{font:700 .9em Inter,sans-serif;background:#1A211B;border:1px solid #2A352C;border-radius:3px;padding:1px 6px;color:#fff}
+/* Навигация вне анимированного первого экрана: остаётся доступной при прокрутке. */
+html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
+.nav.site-nav{position:sticky;top:0;z-index:50;padding:14px 32px;background:color-mix(in srgb,var(--ink) 95%,transparent);border-bottom:1px solid var(--line);backdrop-filter:blur(16px)}
+.header-download{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 15px;background:var(--lime);color:var(--ink);font-size:14px;font-weight:800;border:1px solid var(--lime);border-radius:5px;text-decoration:none;white-space:nowrap}
+.header-download:hover{background:#fff;border-color:#fff}
+.hero .main{min-height:calc(100svh - var(--nav-height,76px))}
+.hero .stamp{top:0}
+@media(min-width:961px) and (max-width:1200px){.nav.site-nav{gap:9px;padding:12px 20px}.site-nav nav{gap:12px;padding:8px;font-size:12px}.site-nav .logo{font-size:18px}.site-nav .top-socials a{width:32px;height:32px}}
+@media(max-width:960px){.nav.site-nav{padding:12px 20px;gap:8px}.site-nav .top-socials{order:9;flex:1;flex-basis:auto;padding-top:0}.site-nav .top-socials a{padding:0 10px;gap:7px}.site-nav .header-download{order:9}.hero .main{min-height:0}.site-nav nav.is-open{max-height:40svh;overflow-y:auto}}
+@media(max-width:360px){.nav.site-nav{padding:10px 16px}.site-nav .top-socials span{display:none}.site-nav .top-socials a{width:40px;padding:0}}
+
+/* Реальный интерфейс приложения: изображения открываются крупнее без тяжёлого плеера. */
+#screens{padding:76px 0}
+.screen-tabs{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.screen-tabs button{padding:13px 19px;min-height:46px;border:1px solid #354338;border-radius:6px;background:transparent;color:var(--soft);font:700 15px Inter,sans-serif;cursor:pointer}
+.screen-tabs button[aria-selected=true]{background:var(--lime);border-color:var(--lime);color:var(--ink)}
+.screen-tabs button:hover{border-color:var(--lime)}
+.screen-panel{margin-top:20px;border:1px solid #354338;border-radius:12px;overflow:hidden;background:var(--ink)}
+.screen-panel[hidden]{display:none}
+.screen-panel a{display:block;text-decoration:none}
+.screen-panel img{display:block;width:100%;height:auto;aspect-ratio:1346/893;object-fit:contain;background:#0a0f0b}
+.screen-panel figcaption{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px 24px;border-top:1px solid var(--line);font-size:15px;color:var(--soft)}
+.screen-panel figcaption .screen-zoom{color:var(--lime);font-size:13px;white-space:nowrap}
+.screens-note{margin-top:16px;font-size:13px;color:var(--grey)}
+@media(max-width:640px){.screen-panel{border-radius:8px}.screen-panel figcaption{padding:16px;font-size:14px}.screen-tabs button{padding:12px 14px;font-size:14px}}
 </style>
 </head>
 <body>
 
-<header class="hero" id="top">
-  <div class="stripe" aria-hidden="true"></div>
-  <div class="ghost" aria-hidden="true">ROSHIQ</div>
-  <div class="nav">
+  <div class="nav site-nav">
     <img id="logo" src="site/logo-green.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
     <div class="top-socials">
       <a aria-label="ВКонтакте" href="https://vk.ru/roshiq" data-goal="vk" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.785 17.241C6.658 17.241 3.163 13.044 3.017 6.054h3.07c.101 5.13 2.364 7.303 4.157 7.751V6.054h2.89v4.425c1.77-.19 3.63-2.207 4.258-4.425h2.89c-.482 2.733-2.499 4.75-3.933 5.58 1.434.672 3.73 2.431 4.604 5.607H17.77c-.683-2.128-2.386-3.775-4.637-3.999v3.999z"/></svg><span data-i18n="vk">ВКонтакте</span></a>
@@ -307,10 +329,15 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
     <span class="sp"></span>
     <button type="button" class="menu-toggle" id="menuToggle" aria-expanded="false" aria-controls="siteNav" data-i18n="menu">Меню</button>
     <nav id="siteNav" aria-label="Разделы"><a href="#match" data-i18n="n0">Как работает</a><a href="#what" data-i18n="n1">Что внутри</a><a href="#ban" data-i18n="n2">Данные и безопасность</a><a href="#help" data-i18n="n3">Помощь</a></nav>
+    <a class="header-download" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="shortDownload">Скачать</a>
     <div class="tp"><button type="button" id="tpBtn" aria-expanded="false" aria-controls="tpp"><i></i><span data-i18n="tp">Тема</span></button>
       <div class="tpp" id="tpp" hidden><b data-i18n="tpa">Цвет</b><div id="tpAcc"></div><b data-i18n="tpb">Фон</b><div id="tpBg"></div></div></div>
     <button class="lang" type="button" id="lang">EN</button>
   </div>
+
+<header class="hero" id="top">
+  <div class="stripe" aria-hidden="true"></div>
+  <div class="ghost" aria-hidden="true">ROSHIQ</div>
   <div class="w main">
     <div>
       <div class="eyebrow">DOTA 2 · WINDOWS · OPEN SOURCE</div>
@@ -318,7 +345,7 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
       <p data-i18n="p1">Подсказки в нужный момент. Одна главная ошибка после матча. И понятная цель на следующую игру.</p>
       <div class="cta">
         <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
-        <a class="btn-secondary" href="#match" data-i18n="see">Попробовать демо</a>
+        <a class="btn-secondary" href="#screens" data-i18n="see">Посмотреть программу</a>
       </div>
       <small class="download-meta" data-i18n="dls">Windows 10 и 11.<br>Права администратора не нужны.</small>
       <div class="proof"><span data-i18n="free">Бесплатно, без подписки</span><span data-i18n="local">История хранится на ПК</span></div>
@@ -335,6 +362,31 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
 </header>
 
 <main>
+
+<section class="block" id="screens">
+  <div class="w">
+    <span class="demo-label" data-i18n="screensLabel">Настоящий интерфейс ROSHIQ</span>
+    <h2 data-i18n="screensTitle">Вот что ты откроешь.</h2>
+    <p class="sub" data-i18n="screensIntro">Сборка до матча. Понятный разбор после. Посмотри программу до установки.</p>
+    <div class="screen-tabs" role="tablist" aria-label="Экраны программы" id="screenTabs">
+      <button type="button" role="tab" id="screenTab-build" aria-controls="screen-build" aria-selected="true" data-screen="build" data-i18n="screenBuild">Сборка героя</button>
+      <button type="button" role="tab" id="screenTab-review" aria-controls="screen-review" aria-selected="false" tabindex="-1" data-screen="review" data-i18n="screenReview">Разбор матча</button>
+    </div>
+    <figure class="screen-panel" role="tabpanel" id="screen-build" aria-labelledby="screenTab-build">
+      <a href="site/screens/build.webp" target="_blank" rel="noopener noreferrer">
+        <img src="site/screens/build.webp" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: сборка Juggernaut, предметы по этапам матча и объяснения выбора.">
+      </a>
+      <figcaption><span data-i18n="screenBuildCaption">Предметы под героя и роль — с пояснениями и этапами игры.</span><a class="screen-zoom" href="site/screens/build.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
+    </figure>
+    <figure class="screen-panel" role="tabpanel" id="screen-review" aria-labelledby="screenTab-review" hidden>
+      <a href="site/screens/review.webp" target="_blank" rel="noopener noreferrer">
+        <img src="site/screens/review.webp" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.">
+      </a>
+      <figcaption><span data-i18n="screenReviewCaption">Выводы, цель на следующую игру и сравнение со своими матчами.</span><a class="screen-zoom" href="site/screens/review.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
+    </figure>
+    <p class="screens-note" data-i18n="screensNote">Скриншоты настоящей программы. Матчи и статистика — демонстрационные. Нажми на изображение, чтобы рассмотреть детали.</p>
+  </div>
+</section>
 
 <section class="block" id="match">
   <div class="w">
@@ -521,6 +573,16 @@ h2f:"Your next match — with it.",vk:"VK",legal:"ROSHIQ isn’t affiliated with
 EN.h2m="One tip.<br>At the right moment.";
 EN.mp="Pick a situation or move through the match. See what ROSHIQ reminds you about, and why it helps.";
 EN.mov="example tips";
+EN.see="See the app";
+EN.shortDownload="Download";
+EN.screensLabel="The real ROSHIQ interface";
+EN.screensTitle="Here’s what you’ll open.";
+EN.screensIntro="Builds before the match. A clear review after. Explore the app before installing.";
+EN.screenBuild="Hero build";EN.screenReview="Match review";
+EN.screenBuildCaption="Items for your hero and role, with explanations and game stages.";
+EN.screenReviewCaption="Takeaways, a goal for your next game, and comparison with your own matches.";
+EN.screenZoom="Open full size ↗";
+EN.screensNote="Screenshots of the real app. Matches and statistics are examples. Click an image to explore the details.";
 EN.stackIntro="From the first pick to your next match — help at every stage.";
 document.querySelectorAll('.feature-stack .row').forEach((card,index)=>card.style.setProperty('--card-index',index));
 const RU={};document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
@@ -530,6 +592,9 @@ function setLang(l){lang=l;const d=l==='en'?EN:RU;
   document.documentElement.lang=l;document.getElementById('lang').textContent=l==='en'?'RU':'EN';
   document.getElementById('siteNav').setAttribute('aria-label',l==='en'?'Sections':'Разделы');
   document.getElementById('mMoments').setAttribute('aria-label',l==='en'?'Match situations':'Ситуации матча');
+  document.getElementById('screenTabs').setAttribute('aria-label',l==='en'?'App screens':'Экраны программы');
+  document.querySelector('#screen-build img').alt=l==='en'?'ROSHIQ app: Juggernaut build, items by game stage, and explanations.':'Окно ROSHIQ: сборка Juggernaut, предметы по этапам матча и объяснения выбора.';
+  document.querySelector('#screen-review img').alt=l==='en'?'ROSHIQ app: match history, takeaways, a goal and phase review using example data.':'Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.';
   try{localStorage.setItem('roshiq-site-lang',l)}catch(e){}}
 document.getElementById('lang').addEventListener('click',()=>{setLang(lang==='ru'?'en':'ru');paintThemes()});
 try{if(localStorage.getItem('roshiq-site-lang')==='en')setLang('en')}catch(e){}
@@ -698,6 +763,36 @@ window.addEventListener('load',scheduleScrollEffects);
 motionPreference.addEventListener('change',scheduleScrollEffects);
 new ResizeObserver(scheduleScrollEffects).observe(document.querySelector('main'));
 paintScrollEffects();
+
+// Высота закреплённой шапки учитывается в якорях и наложении карточек, в том числе с открытым меню.
+const siteHeader=document.querySelector('.site-nav');
+new ResizeObserver(()=>{
+  document.documentElement.style.setProperty('--nav-height',Math.ceil(siteHeader.getBoundingClientRect().height)+'px');
+}).observe(siteHeader);
+
+// Галерея: без автопереключения; стрелки и Home/End работают с клавиатуры.
+const screenTabs=[...document.querySelectorAll('[data-screen]')];
+function chooseScreen(key,focus=false){
+  screenTabs.forEach(tab=>{
+    const active=tab.dataset.screen===key;
+    tab.setAttribute('aria-selected',String(active));tab.tabIndex=active?0:-1;
+    document.getElementById('screen-'+tab.dataset.screen).hidden=!active;
+    if(active&&focus)tab.focus();
+  });
+}
+screenTabs.forEach((tab,index)=>{
+  tab.addEventListener('click',()=>chooseScreen(tab.dataset.screen));
+  tab.addEventListener('keydown',event=>{
+    let next=index;
+    if(event.key==='ArrowRight')next=(index+1)%screenTabs.length;
+    else if(event.key==='ArrowLeft')next=(index+screenTabs.length-1)%screenTabs.length;
+    else if(event.key==='Home')next=0;
+    else if(event.key==='End')next=screenTabs.length-1;
+    else return;
+    event.preventDefault();chooseScreen(screenTabs[next].dataset.screen,true);
+  });
+});
+document.getElementById('lang').addEventListener('click',()=>document.getElementById('screenTabs').setAttribute('aria-label',lang==='en'?'App screens':'Экраны программы'));
 </script>
 </body>
 </html>
