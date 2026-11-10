@@ -87,6 +87,11 @@ h1{font-weight:900;font-size:clamp(42px,4.5vw,64px);line-height:1.02;letter-spac
 .mobile-share{display:none;margin-top:14px}
 .copy-link{background:transparent;color:var(--soft);border:0;border-bottom:1px solid var(--line);font:600 14px Inter,sans-serif;padding:8px 0;cursor:pointer}
 .copy-status{display:block;font-size:13px;color:var(--grey);margin-top:5px;overflow-wrap:anywhere}
+.portable-choice{margin-top:14px;color:var(--soft);font-size:14px}
+.portable-choice a{text-underline-offset:4px;font-weight:700}
+.portable-choice a:hover{color:var(--lime)}
+.start-link{display:inline-block;margin-top:16px;font-size:14px;font-weight:700;color:var(--soft);text-underline-offset:4px}
+.start-link:hover{color:var(--lime)}
 @media(max-width:960px){
   .nav{flex-wrap:wrap;padding:20px;gap:10px}.nav .logo{font-size:18px}
   .nav .menu-toggle{display:block}.nav nav{order:10;flex-basis:100%;display:none;padding:18px 0 4px;color:#fff;gap:16px 24px;flex-wrap:wrap;border-top:1px solid var(--line);margin-top:8px}
@@ -291,6 +296,21 @@ footer nav a:hover{color:var(--ink);background:var(--lime);border-color:var(--li
 .help .row h3{font-size:clamp(22px,2.4vw,30px)}
 .help .row p b{color:#fff}
 .help code{font:700 .9em Inter,sans-serif;background:#1A211B;border:1px solid #2A352C;border-radius:3px;padding:1px 6px;color:#fff}
+.setup-steps .step{display:flex;flex-direction:column}
+.setup-steps .step::before{font-size:48px;margin-bottom:20px}
+.setup-steps .step>span{flex:1;font-size:16px;line-height:1.6}
+.setup-steps code{overflow-wrap:anywhere;font-size:.9em;color:#fff}
+.setup-image{display:block;margin-top:24px;border:1px solid #354338;border-radius:8px;overflow:hidden;text-decoration:none;background:#080d09}
+.setup-image img{display:block;width:100%;height:auto;aspect-ratio:746/633;object-fit:contain}
+.setup-image>span{display:block;padding:12px 14px;border-top:1px solid var(--line);color:var(--lime);font-size:12px;font-weight:700}
+.setup-image:hover{border-color:var(--lime)}
+.support-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:28px;max-width:920px;margin-top:32px;padding:30px;border:1px solid #354338;border-radius:10px;background:linear-gradient(120deg,color-mix(in srgb,var(--lime) 7%,transparent),transparent),var(--ink)}
+.support-card h3{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-bottom:12px}
+.support-card p{font-size:16px;line-height:1.65;color:var(--soft)}
+.support-actions{display:flex;flex-direction:column;align-items:flex-start;gap:16px}
+.support-btn{font-size:15px;padding:16px 18px;background:var(--lime);max-width:280px}
+.support-fallback{color:var(--soft);font-size:13px;text-underline-offset:4px}
+@media(max-width:760px){.support-card{grid-template-columns:1fr;padding:24px}.support-actions{gap:14px}.support-btn{max-width:100%}}
 /* Навигация вне анимированного первого экрана: остаётся доступной при прокрутке. */
 html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 .nav.site-nav{position:sticky;top:0;z-index:50;padding:14px 32px;background:color-mix(in srgb,var(--ink) 95%,transparent);border-bottom:1px solid var(--line);backdrop-filter:blur(16px)}
@@ -348,6 +368,8 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
         <a class="btn-secondary" href="#screens" data-i18n="see">Посмотреть программу</a>
       </div>
       <small class="download-meta" data-i18n="dls">Windows 10 и 11.<br>Права администратора не нужны.</small>
+      <div class="portable-choice"><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-portable data-goal="portable" data-i18n="portable">Портативная версия (.zip) — без установки</a></div>
+      <a class="start-link" href="#start" data-i18n="startLink">Как запустить в первый раз ↗</a>
       <div class="proof"><span data-i18n="free">Бесплатно, без подписки</span><span data-i18n="local">История хранится на ПК</span></div>
       <div class="mobile-share"><button type="button" class="copy-link" id="copyLink" data-i18n="copy">Скопировать ссылку для ПК</button><span class="copy-status" id="copyStatus" role="status"></span></div>
     </div>
@@ -379,10 +401,10 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
       <figcaption><span data-i18n="screenBuildCaption">Предметы под героя и роль — с пояснениями и этапами игры.</span><a class="screen-zoom" href="site/screens/build.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
     </figure>
     <figure class="screen-panel" role="tabpanel" id="screen-review" aria-labelledby="screenTab-review" hidden>
-      <a href="site/screens/review.webp" target="_blank" rel="noopener noreferrer">
-        <img src="site/screens/review.webp" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.">
+      <a href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer">
+        <img src="site/screens/review-mistake.webp" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.">
       </a>
-      <figcaption><span data-i18n="screenReviewCaption">Выводы, цель на следующую игру и сравнение со своими матчами.</span><a class="screen-zoom" href="site/screens/review.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
+      <figcaption><span data-i18n="screenReviewCaption">Пример: две смерти с запасом золота → цель покупать компоненты перед дракой.</span><a class="screen-zoom" href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
     </figure>
     <p class="screens-note" data-i18n="screensNote">Скриншоты настоящей программы. Матчи и статистика — демонстрационные. Нажми на изображение, чтобы рассмотреть детали.</p>
   </div>
@@ -460,12 +482,14 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 
 <section class="block" id="start">
   <div class="w">
-    <h2 data-i18n="h2c">Три минуты — и в игру</h2>
-    <div class="steps">
-      <div class="step"><b data-i18n="s1">Скачай</b><span data-i18n="s1p">установщик и запусти. Ставить .NET отдельно не нужно.</span></div>
-      <div class="step"><b data-i18n="s2">Настрой</b><span data-i18n="s2p">язык, роль и связь с игрой — для связи там одна кнопка.</span></div>
-      <div class="step"><b data-i18n="s3">Играй</b><span data-i18n="s3p">перезапусти Dota 2. Панель включается клавишей <kbd>F8</kbd>.</span></div>
+    <h2 data-i18n="h2c">Первый запуск.<br>Три простых шага.</h2>
+    <p class="sub" data-i18n="startIntro">Скачай установщик или распакуй ZIP и открой Roshiq.exe. Дальше программа проведёт по настройке. Изображения можно открыть крупнее.</p>
+    <div class="steps setup-steps">
+      <div class="step"><b data-i18n="s1">Выбери язык и роль</b><span data-i18n="s1p">В мастере первого запуска выбери язык, оформление и свою обычную роль. Всё можно изменить позже.</span><a class="setup-image" href="site/screens/setup-welcome.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-welcome.webp" width="746" height="593" loading="lazy" decoding="async" alt="Первый запуск ROSHIQ: выбор языка и оформления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
+      <div class="step"><b data-i18n="s2">Подключи Dota 2</b><span data-i18n="s2p">На шаге «Связь с игрой» нажми «Настроить связь с игрой». Затем перезапусти Dota 2. Если данные не приходят, проверь параметр запуска <code>-gamestateintegration</code>.</span><a class="setup-image" href="site/screens/setup-connect.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-connect.webp" width="746" height="593" loading="lazy" decoding="async" alt="Шаг связи с игрой: кнопка настройки GSI и напоминание о перезапуске Dota 2."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
+      <div class="step"><b data-i18n="s3">Проверь связь</b><span data-i18n="s3p">Открой «Настройки → Диагностика» или «Что не так?» на обзоре. Если связь не работает, здесь будут причины и кнопки исправления. В Dota выбери «Окно без рамки»; панель включается <kbd>F8</kbd>.</span><a class="setup-image" href="site/screens/setup-check.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-check.webp" width="706" height="633" loading="lazy" decoding="async" alt="Пример диагностики ROSHIQ при выключенной связи с игрой: причины и кнопки исправления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
     </div>
+    <p class="screens-note" data-i18n="setupNote">На третьем изображении — пример диагностики при отсутствии связи. У тебя результаты проверки могут отличаться.</p>
   </div>
 </section>
 
@@ -492,14 +516,18 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 <section class="block tight help" id="help">
   <div class="w">
     <h2 data-i18n="h2h">Если что-то не так</h2>
-    <div class="rows">
-      <div class="row"><h3 data-i18n="h1q">Windows пишет «Компьютер защищён»</h3><p data-i18n="h1a">Нажми <b>«Подробнее»</b> → <b>«Выполнить в любом случае»</b>. У программы пока нет платной цифровой подписи, поэтому Windows её не узнаёт. Файл можно сверить с <code>SHA256SUMS.txt</code> на странице релиза.</p></div>
-      <div class="row"><h3 data-i18n="h2q">Подсказки в игре не появляются</h3><p data-i18n="h2a2">Открой <b>Настройки → Диагностика</b>. Она проверит связь с игрой, порт и параметр запуска <code>-gamestateintegration</code> — рядом с проблемой будет кнопка «Исправить». Потом перезапусти Dota 2: связь включается только при запуске игры.</p></div>
-      <div class="row"><h3 data-i18n="h3q">Панели не видно поверх игры</h3><p data-i18n="h3a">Переключи Dota 2 в режим <b>«Окно без рамки»</b> (Настройки → Видео). Поверх полноэкранного режима прозрачные окна не рисуются. Показать или скрыть панель — <kbd>F8</kbd>.</p></div>
-      <div class="row"><h3 data-i18n="h4q">Как привязать Steam</h3><p data-i18n="h4a">Обычно ничего делать не нужно: после первого матча аккаунт привяжется из игры сам. Или <b>Настройки → Steam</b>: «Найти Steam на этом ПК» либо «Войти через Steam» — вход идёт на сайте Steam, пароль ROSHIQ не видит.</p></div>
-      <div class="row"><h3 data-i18n="h5q">Матчи и статистика не подтягиваются</h3><p data-i18n="h5a">OpenDota не видит скрытую историю. В Dota 2: <b>Настройки → Параметры → Социальные</b> → включи «Общедоступная история матчей», сыграй матч и обнови профиль в ROSHIQ.</p></div>
-      <div class="row"><h3 data-i18n="h6q">Ничего не помогло</h3><p data-i18n="h6a"><b>Настройки → Диагностика → «Собрать отчёт»</b> — один zip с журналами, без Steam ID и ключей. Пришли его в сообщения <a href="https://vk.ru/roshiq" data-goal="vk">группы ВКонтакте</a> и опиши, что случилось.</p></div>
+    <div class="faq help-faq">
+      <details><summary data-i18n="h1q">Windows пишет «Компьютер защищён»</summary><p data-i18n="h1a">Нажми <b>«Подробнее»</b> → <b>«Выполнить в любом случае»</b>. У программы пока нет платной цифровой подписи, поэтому Windows её не узнаёт. Файл можно сверить с <code>SHA256SUMS.txt</code> на странице релиза.</p></details>
+      <details><summary data-i18n="h2q">Подсказки в игре не появляются</summary><p data-i18n="h2a2">Открой <b>Настройки → Диагностика</b>. Она проверит связь с игрой, порт и параметр запуска <code>-gamestateintegration</code> — рядом с проблемой будет кнопка «Исправить». Потом перезапусти Dota 2: связь включается только при запуске игры.</p></details>
+      <details><summary data-i18n="h3q">Панели не видно поверх игры</summary><p data-i18n="h3a">Переключи Dota 2 в режим <b>«Окно без рамки»</b> (Настройки → Видео). Поверх полноэкранного режима прозрачные окна не рисуются. Показать или скрыть панель — <kbd>F8</kbd>.</p></details>
+      <details><summary data-i18n="h4q">Как привязать Steam</summary><p data-i18n="h4a">Обычно ничего делать не нужно: после первого матча аккаунт привяжется из игры сам. Или <b>Настройки → Steam</b>: «Найти Steam на этом ПК» либо «Войти через Steam» — вход идёт на сайте Steam, пароль ROSHIQ не видит.</p></details>
+      <details><summary data-i18n="h5q">Матчи и статистика не подтягиваются</summary><p data-i18n="h5a">OpenDota не видит скрытую историю. В Dota 2: <b>Настройки → Параметры → Социальные</b> → включи «Общедоступная история матчей», сыграй матч и обнови профиль в ROSHIQ.</p></details>
+      <details><summary data-i18n="h6q">Ничего не помогло</summary><p data-i18n="h6a"><b>Настройки → Диагностика → «Собрать отчёт»</b> — один zip с журналами, без Steam ID и ключей. Пришли его в сообщения <a href="https://vk.ru/roshiq" data-goal="vk">группы ВКонтакте</a> и опиши, что случилось.</p></details>
     </div>
+    <aside class="support-card" id="support">
+      <div><h3 data-i18n="supportTitle">Не нашёл решение?</h3><p data-i18n="supportText">В программе открой <b>Настройки → Диагностика → «Собрать отчёт»</b>. Приложи получившийся ZIP к сообщению и напиши, что произошло. Программа удаляет из отчёта Steam ID и ключи; сама его никуда не отправляет.</p></div>
+      <div class="support-actions"><a class="btn support-btn" href="https://vk.me/roshiq" target="_blank" rel="noopener noreferrer" data-goal="vk" data-i18n="reportProblem">Сообщить о проблеме в ВК ↗</a><a class="support-fallback" href="https://vk.ru/roshiq" target="_blank" rel="noopener noreferrer" data-goal="vk" data-i18n="supportGroup">Открыть группу ВКонтакте</a></div>
+    </aside>
   </div>
 </section>
 
@@ -519,6 +547,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
   <div class="w">
     <h2 data-i18n="h2f">Следующий матч — уже с ним.</h2>
     <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
+    <div class="portable-choice"><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-portable data-goal="portable" data-i18n="portable">Портативная версия (.zip) — без установки</a></div>
   </div>
 </section>
 </main>
@@ -583,6 +612,22 @@ EN.screenBuildCaption="Items for your hero and role, with explanations and game 
 EN.screenReviewCaption="Takeaways, a goal for your next game, and comparison with your own matches.";
 EN.screenZoom="Open full size ↗";
 EN.screensNote="Screenshots of the real app. Matches and statistics are examples. Click an image to explore the details.";
+EN.portable="Portable version (.zip) — no installation";
+EN.startLink="First launch guide ↗";
+EN.h2c="First launch.<br>Three simple steps.";
+EN.startIntro="Download the installer or extract the ZIP and open Roshiq.exe. The app guides you through setup. Open the images to see them full size.";
+EN.s1="Choose language and role";
+EN.s1p="In the first-launch wizard, choose your language, appearance and usual role. You can change everything later.";
+EN.s2="Connect Dota 2";
+EN.s2p="At the game connection step, click “Set up game connection”. Then restart Dota 2. If data does not arrive, check the <code>-gamestateintegration</code> launch option.";
+EN.s3="Check the connection";
+EN.s3p="Open “Settings → Diagnostics” or “What’s wrong?” on the dashboard. If the connection fails, it shows the causes and fix buttons. Use Borderless window in Dota; <kbd>F8</kbd> toggles the panel.";
+EN.setupNote="The third image shows example diagnostics with no game connection. Your check results may differ.";
+EN.screenReviewCaption="Example: two deaths holding lots of gold → a goal to buy components before fighting.";
+EN.supportTitle="Still need help?";
+EN.supportText="In the app, open <b>Settings → Diagnostics → “Create report”</b>. Attach the ZIP to your message and describe what happened. The app removes Steam IDs and keys from the report; it never sends it automatically.";
+EN.reportProblem="Report a problem on VK ↗";
+EN.supportGroup="Open the VK community";
 EN.stackIntro="From the first pick to your next match — help at every stage.";
 document.querySelectorAll('.feature-stack .row').forEach((card,index)=>card.style.setProperty('--card-index',index));
 const RU={};document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
@@ -639,7 +684,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')tpOpen(false)});
 document.addEventListener('click',e=>{const a=e.target.closest('a[data-goal]');if(a&&window.ym)try{ym(114137127,'reachGoal',a.dataset.goal)}catch(_){}});
 // «Скачать» сразу отдаёт установщик последней версии. Если GitHub не ответил — кнопка ведёт на страницу релиза.
 fetch('https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest').then(r=>r.ok?r.json():null).then(j=>{
-  const a=j&&(j.assets||[]).find(x=>/^Roshiq-Setup-.*\.exe$/i.test(x.name));if(!a)return;
+  const assets=j&&(j.assets||[]),portable=assets&&assets.find(x=>/^Roshiq-Portable-.*\.zip$/i.test(x.name));
+  if(portable)document.querySelectorAll('a[data-portable]').forEach(link=>{link.href=portable.browser_download_url;link.setAttribute('download','')});
+  const a=assets&&assets.find(x=>/^Roshiq-Setup-.*\.exe$/i.test(x.name));if(!a)return;
   document.querySelectorAll('a[data-goal="download"]').forEach(l=>{l.href=a.browser_download_url;l.setAttribute('download','');});
   const mb=Math.round(a.size/1048576),v=(j.tag_name||'').replace(/^v/i,'');
   RU.dls=`Windows 10 и 11, ${mb} МБ, версия ${v}.<br>Права администратора не нужны.`;
