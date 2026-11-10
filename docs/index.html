@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <!-- Yandex.Metrika counter -->
 <script type="text/javascript">
+if(location.hostname==='baramobatare-rgb.github.io'){
 (function(m,e,t,r,i,k,a){
 m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
 m[i].l=1*new Date();
@@ -12,18 +13,19 @@ k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNo
 })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=114137127', 'ym');
 
 ym(114137127, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
+}
 </script>
 <noscript><div><img src="https://mc.yandex.ru/watch/114137127" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ROSHIQ — бесплатный помощник для Dota 2: подсказки в игре и разбор матча</title>
-<meta name="description" content="ROSHIQ — бесплатная программа для Dota 2 с открытым кодом. Напоминает про ТП, тайник и выкуп во время игры, подсказывает в драфте и честно разбирает матч после. Только официальный Game State Integration, без чтения памяти игры.">
+<meta name="description" content="ROSHIQ — бесплатная программа для Dota 2 с открытым кодом. Напоминает про ТП, тайник и выкуп во время игры, подсказывает в драфте и честно разбирает матч после. Данные через Game State Integration, без чтения памяти игры.">
 <meta name="keywords" content="помощник для доты, оверлей dota 2, контрпики дота 2, разбор матча дота, подсказки дота 2, dota 2 helper">
 <link rel="canonical" href="https://baramobatare-rgb.github.io/ROSHIQ/">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="ru_RU">
 <meta property="og:title" content="ROSHIQ — меньше глупых смертей, больше выигранных линий">
-<meta property="og:description" content="Бесплатный помощник для Dota 2: подсказки во время игры и честный разбор после. Только официальный GSI.">
+<meta property="og:description" content="Бесплатный помощник для Dota 2: подсказки во время игры и честный разбор после. Данные через GSI.">
 <meta property="og:image" content="https://baramobatare-rgb.github.io/ROSHIQ/site/og.png">
 <meta property="og:url" content="https://baramobatare-rgb.github.io/ROSHIQ/">
 <meta name="twitter:card" content="summary_large_image">
@@ -168,7 +170,7 @@ h2{font-weight:900;font-size:clamp(38px,5.4vw,72px);line-height:.95;letter-spaci
 /* Карточки возможностей: следующая накрывает предыдущую при прокрутке. */
 .feature-stack{counter-reset:feature;display:grid;gap:24px;border-top:0;padding-bottom:20px;isolation:isolate}
 .feature-stack .row{counter-increment:feature;position:sticky;top:calc(var(--nav-height,76px) + 24px + var(--card-index)*12px);z-index:var(--card-index);min-height:280px;padding:60px 44px 42px;border:1px solid #354338;border-radius:16px;background:linear-gradient(115deg,color-mix(in srgb,var(--lime) 7%,transparent),transparent 70%),var(--ink);box-shadow:0 -12px 32px rgba(0,0,0,.18);align-content:center;align-items:center}
-.feature-stack .row::before{content:counter(feature,decimal-leading-zero) " / 06";position:absolute;top:22px;left:44px;color:var(--lime);font:800 12px/1 Inter,sans-serif;letter-spacing:.1em}
+.feature-stack .row::before{content:counter(feature,decimal-leading-zero) " / 03";position:absolute;top:22px;left:44px;color:var(--lime);font:800 12px/1 Inter,sans-serif;letter-spacing:.1em}
 .feature-stack .row h3{font-size:clamp(30px,3.6vw,46px);line-height:1.06;max-width:9em}
 .feature-stack .row p{font-size:20px;line-height:1.55}
 @media(max-width:760px){.feature-stack{gap:18px}.feature-stack .row{min-height:300px;padding:55px 24px 30px;top:calc(var(--nav-height,104px) + 16px + var(--card-index)*8px);gap:16px;border-radius:12px}.feature-stack .row::before{left:24px;top:23px}.feature-stack .row p{font-size:17px}.feature-stack .row h3{max-width:none}}
@@ -335,6 +337,20 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 .screen-panel figcaption{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px 24px;border-top:1px solid var(--line);font-size:15px;color:var(--soft)}
 .screen-panel figcaption .screen-zoom{color:var(--lime);font-size:13px;white-space:nowrap}
 .screens-note{margin-top:16px;font-size:13px;color:var(--grey)}
+.audience{display:grid;grid-template-columns:1fr 1.25fr;align-items:start;gap:28px;padding:26px 0;margin-bottom:56px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.audience h3{font-size:clamp(22px,2.4vw,30px);line-height:1.2;letter-spacing:-.025em;max-width:15em}
+.audience p{font-size:16px;line-height:1.65;color:var(--soft)}
+@media(max-width:760px){.audience{grid-template-columns:1fr;gap:14px;margin-bottom:38px}.block{padding:76px 0}.feature-stack .row{min-height:270px}}
+/* Свечение работает только у видимого края страницы; прокрутка не запускает постоянную перерисовку. */
+.hero::before,.final::before{animation-play-state:paused}
+.hero.motion-visible::before,.final.motion-visible::before{animation-play-state:running}
+.project-extra{border:1px solid #354338;border-radius:8px;padding:0 24px}
+.project-extra>summary{font-size:22px;padding:24px 0}
+.project-extra-content .block{padding:24px 0 42px}
+.project-extra-content .w{padding:0;max-width:none}
+.project-extra-content h2{font-size:36px}
+.project-extra-content .vids,.project-extra-content .news{margin-top:26px}
+@media(max-width:640px){.hero .stickers .s2,.hero .stickers .s4{display:none}.hero .stripe{height:350px}.hero .main{gap:48px}.project-extra{padding:0 18px}}
 @media(max-width:640px){.screen-panel{border-radius:8px}.screen-panel figcaption{padding:16px;font-size:14px}.screen-tabs button{padding:12px 14px;font-size:14px}}
 </style>
 </head>
@@ -387,6 +403,10 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 
 <section class="block" id="screens">
   <div class="w">
+    <aside class="audience" id="for-whom">
+      <h3 data-i18n="audienceTitle">Для тех, кто хочет играть внимательнее.</h3>
+      <p data-i18n="audienceText">Если забываешь про ТП и выкуп, путаешься в сборках или не понимаешь, что исправить после матча — здесь есть помощь. Решения и управление героем остаются за тобой.</p>
+    </aside>
     <span class="demo-label" data-i18n="screensLabel">Настоящий интерфейс ROSHIQ</span>
     <h2 data-i18n="screensTitle">Вот что ты откроешь.</h2>
     <p class="sub" data-i18n="screensIntro">Сборка до матча. Понятный разбор после. Посмотри программу до установки.</p>
@@ -396,13 +416,13 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     </div>
     <figure class="screen-panel" role="tabpanel" id="screen-build" aria-labelledby="screenTab-build">
       <a href="site/screens/build.webp" target="_blank" rel="noopener noreferrer">
-        <img src="site/screens/build.webp" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: сборка Juggernaut, предметы по этапам матча и объяснения выбора.">
+        <img src="site/screens/build-480.webp" srcset="site/screens/build-480.webp 480w, site/screens/build-960.webp 960w, site/screens/build.webp 1346w" sizes="(max-width: 640px) calc(100vw - 40px), (max-width: 1240px) calc(100vw - 64px), 1176px" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: сборка Juggernaut, предметы по этапам матча и объяснения выбора.">
       </a>
       <figcaption><span data-i18n="screenBuildCaption">Предметы под героя и роль — с пояснениями и этапами игры.</span><a class="screen-zoom" href="site/screens/build.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
     </figure>
     <figure class="screen-panel" role="tabpanel" id="screen-review" aria-labelledby="screenTab-review" hidden>
       <a href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer">
-        <img src="site/screens/review-mistake.webp" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.">
+        <img src="site/screens/review-mistake-480.webp" srcset="site/screens/review-mistake-480.webp 480w, site/screens/review-mistake-960.webp 960w, site/screens/review-mistake.webp 1346w" sizes="(max-width: 640px) calc(100vw - 40px), (max-width: 1240px) calc(100vw - 64px), 1176px" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.">
       </a>
       <figcaption><span data-i18n="screenReviewCaption">Пример: две смерти с запасом золота → цель покупать компоненты перед дракой.</span><a class="screen-zoom" href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
     </figure>
@@ -448,12 +468,9 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     <h2 data-i18n="h2a">Что внутри</h2>
     <p class="sub" data-i18n="stackIntro">От первого пика до следующего матча — помощь на каждом этапе.</p>
     <div class="rows feature-stack">
-      <div class="row"><h3 data-i18n="r1">Драфт</h3><p data-i18n="r1p">Контрпики и героев в связку под твою роль, с коротким «почему». Учитывает, на ком ты играешь чаще всего.</p></div>
-      <div class="row"><h3 data-i18n="r2">Панель в игре</h3><p data-i18n="r2p">Прозрачная панель поверх Dota: руны, Рошан, ТП, тайник, выкуп. Мышь проходит сквозь неё — в игре не мешает.</p></div>
-      <div class="row"><h3 data-i18n="r3">Разбор матча</h3><p data-i18n="r3p">Что получилось и одна главная ошибка. Керри сравнивается с керри, саппорт — с саппортом, и только по твоим играм.</p></div>
-      <div class="row"><h3 data-i18n="r4">Сборки и тайминги</h3><p data-i18n="r4p">Предметы по фазам игры, что сейчас собирают чаще всего, и твои собственные тайминги ключевых предметов.</p></div>
-      <div class="row"><h3 data-i18n="r5">Цели</h3><p data-i18n="r5p">Одна конкретная цель на следующую игру — и история, по которой видно, получается ли её держать.</p></div>
-      <div class="row"><h3 data-i18n="r6">Без возни</h3><p data-i18n="r6p">Сам прячется при запуске Dota, сам определяет роль и обновляется одной кнопкой, без переустановки.</p></div>
+      <div class="row"><h3 data-i18n="r1">До матча</h3><p data-i18n="r1p">Разбери видимые пики, выбери героя под свою роль и подготовь сборку. У рекомендаций есть короткое объяснение.</p></div>
+      <div class="row"><h3 data-i18n="r2">Во время игры</h3><p data-i18n="r2p">Оставь нужные напоминания на прозрачной панели. Её можно скрыть клавишей F8, а клики проходят в игру.</p></div>
+      <div class="row"><h3 data-i18n="r3">После матча</h3><p data-i18n="r3p">Разбери главную ошибку, выбери одну цель и проверь результат в следующих играх. Сравнение — с твоими матчами на той же роли.</p></div>
     </div>
   </div>
 </section>
@@ -485,14 +502,16 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     <h2 data-i18n="h2c">Первый запуск.<br>Три простых шага.</h2>
     <p class="sub" data-i18n="startIntro">Скачай установщик или распакуй ZIP и открой Roshiq.exe. Дальше программа проведёт по настройке. Изображения можно открыть крупнее.</p>
     <div class="steps setup-steps">
-      <div class="step"><b data-i18n="s1">Выбери язык и роль</b><span data-i18n="s1p">В мастере первого запуска выбери язык, оформление и свою обычную роль. Всё можно изменить позже.</span><a class="setup-image" href="site/screens/setup-welcome.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-welcome.webp" width="746" height="593" loading="lazy" decoding="async" alt="Первый запуск ROSHIQ: выбор языка и оформления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
-      <div class="step"><b data-i18n="s2">Подключи Dota 2</b><span data-i18n="s2p">На шаге «Связь с игрой» нажми «Настроить связь с игрой». Затем перезапусти Dota 2. Если данные не приходят, проверь параметр запуска <code>-gamestateintegration</code>.</span><a class="setup-image" href="site/screens/setup-connect.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-connect.webp" width="746" height="593" loading="lazy" decoding="async" alt="Шаг связи с игрой: кнопка настройки GSI и напоминание о перезапуске Dota 2."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
-      <div class="step"><b data-i18n="s3">Проверь связь</b><span data-i18n="s3p">Открой «Настройки → Диагностика» или «Что не так?» на обзоре. Если связь не работает, здесь будут причины и кнопки исправления. В Dota выбери «Окно без рамки»; панель включается <kbd>F8</kbd>.</span><a class="setup-image" href="site/screens/setup-check.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-check.webp" width="706" height="633" loading="lazy" decoding="async" alt="Пример диагностики ROSHIQ при выключенной связи с игрой: причины и кнопки исправления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
+      <div class="step"><b data-i18n="s1">Выбери язык и роль</b><span data-i18n="s1p">В мастере первого запуска выбери язык, оформление и свою обычную роль. Всё можно изменить позже.</span><a class="setup-image" href="site/screens/setup-welcome.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-welcome-480.webp" srcset="site/screens/setup-welcome-480.webp 480w, site/screens/setup-welcome.webp 746w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="746" height="593" loading="lazy" decoding="async" alt="Первый запуск ROSHIQ: выбор языка и оформления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
+      <div class="step"><b data-i18n="s2">Подключи Dota 2</b><span data-i18n="s2p">На шаге «Связь с игрой» нажми «Настроить связь с игрой». Затем перезапусти Dota 2. Если данные не приходят, проверь параметр запуска <code>-gamestateintegration</code>.</span><a class="setup-image" href="site/screens/setup-connect.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-connect-480.webp" srcset="site/screens/setup-connect-480.webp 480w, site/screens/setup-connect.webp 746w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="746" height="593" loading="lazy" decoding="async" alt="Шаг связи с игрой: кнопка настройки GSI и напоминание о перезапуске Dota 2."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
+      <div class="step"><b data-i18n="s3">Проверь связь</b><span data-i18n="s3p">Открой «Настройки → Диагностика» или «Что не так?» на обзоре. Если связь не работает, здесь будут причины и кнопки исправления. В Dota выбери «Окно без рамки»; панель включается <kbd>F8</kbd>.</span><a class="setup-image" href="site/screens/setup-check.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-check-480.webp" srcset="site/screens/setup-check-480.webp 480w, site/screens/setup-check.webp 706w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="706" height="633" loading="lazy" decoding="async" alt="Пример диагностики ROSHIQ при выключенной связи с игрой: причины и кнопки исправления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
     </div>
     <p class="screens-note" data-i18n="setupNote">На третьем изображении — пример диагностики при отсутствии связи. У тебя результаты проверки могут отличаться.</p>
   </div>
 </section>
 
+<section class="block tight" id="project-extra">
+  <div class="w"><details class="project-extra" id="projectMore"><summary data-i18n="projectMore">Ролики и новости проекта</summary><div class="project-extra-content">
 <section class="block tight" id="video">
   <div class="w">
     <h2 data-i18n="h2v">Ролики</h2>
@@ -511,6 +530,9 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     </ul>
     <a class="all" href="https://github.com/baramobatare-rgb/ROSHIQ/blob/main/CHANGELOG.md" data-goal="github" data-i18n="all">Вся история изменений</a>
   </div>
+</section>
+
+  </div></details></div>
 </section>
 
 <section class="block tight help" id="help">
@@ -628,6 +650,12 @@ EN.supportTitle="Still need help?";
 EN.supportText="In the app, open <b>Settings → Diagnostics → “Create report”</b>. Attach the ZIP to your message and describe what happened. The app removes Steam IDs and keys from the report; it never sends it automatically.";
 EN.reportProblem="Report a problem on VK ↗";
 EN.supportGroup="Open the VK community";
+EN.audienceTitle="For players who want to pay attention.";
+EN.audienceText="If you forget TP or buyback, get lost in builds, or wonder what to improve after a match, there’s help here. Decisions and control of your hero stay with you.";
+EN.r1="Before the match";EN.r1p="Review visible picks, choose a hero for your role and prepare a build. Recommendations come with a short explanation.";
+EN.r2="During the game";EN.r2p="Keep the reminders you need on a transparent panel. F8 hides it, and clicks pass through to the game.";
+EN.r3="After the match";EN.r3p="Review the main mistake, choose one goal and check your progress in the next games. Comparisons use your own matches on the same role.";
+EN.projectMore="Project videos and updates";
 EN.stackIntro="From the first pick to your next match — help at every stage.";
 document.querySelectorAll('.feature-stack .row').forEach((card,index)=>card.style.setProperty('--card-index',index));
 const RU={};document.querySelectorAll('[data-i18n]').forEach(e=>{const k=e.dataset.i18n;if(!(k in RU))RU[k]=e.innerHTML;});
@@ -680,8 +708,17 @@ tpBtn.onclick=e=>{e.stopPropagation();tpOpen(tpp.hidden)};
 tpp.onclick=e=>e.stopPropagation();
 document.addEventListener('click',()=>tpOpen(false));
 document.addEventListener('keydown',e=>{if(e.key==='Escape')tpOpen(false)});
-// Метрика: клики по «Скачать», GitHub и соцсетям — цели download, github, vk, youtube, tiktok.
-document.addEventListener('click',e=>{const a=e.target.closest('a[data-goal]');if(a&&window.ym)try{ym(114137127,'reachGoal',a.dataset.goal)}catch(_){}});
+// Локальные проверки видны в консоли, но не попадают в статистику опубликованного сайта.
+const productionSite=location.hostname==='baramobatare-rgb.github.io';
+function trackGoal(goal,params={}){
+  if(!productionSite){console.debug('[ROSHIQ goal] '+JSON.stringify({goal,...params}));return}
+  try{if(window.ym)window.ym(114137127,'reachGoal',goal,params)}catch(_){}
+}
+document.addEventListener('click',event=>{
+  const link=event.target.closest('a[data-goal]');if(!link)return;
+  const place=link.closest('.site-nav')?'header':link.closest('section')?.id||(link.closest('.hero')?'hero':link.closest('.final')?'final':'footer');
+  trackGoal(link.dataset.goal,{place,language:lang});
+});
 // «Скачать» сразу отдаёт установщик последней версии. Если GitHub не ответил — кнопка ведёт на страницу релиза.
 fetch('https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest').then(r=>r.ok?r.json():null).then(j=>{
   const assets=j&&(j.assets||[]),portable=assets&&assets.find(x=>/^Roshiq-Portable-.*\.zip$/i.test(x.name));
@@ -743,29 +780,30 @@ const MEV=[
 const MCOL={timer:'#4DB8FF',warn:'#FFB547',pace:'var(--lime)',bad:'#FF6B57',after:'#fff'};
 const mR=document.getElementById('mRange'),mClock=document.getElementById('mClock'),mNow=document.getElementById('mNow'),
   mHist=document.getElementById('mHist'),mTicks=document.getElementById('mTicks'),mPlay=document.getElementById('mPlay');
+const mMoments=[...document.querySelectorAll('.moment')],mContext=document.getElementById('mContext');
 const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
 let mLast=-2,mAnim=0;
 function mRender(force){
   const t=+mR.value,en=lang==='en';mClock.textContent=fmt(t);
   mR.setAttribute('aria-valuetext',fmt(t));mR.setAttribute('aria-label',en?'Match time':'Время матча');
-  const moments=[...document.querySelectorAll('.moment')];
-  const selected=moments.filter(b=>+b.dataset.time<=t).at(-1);
-  moments.forEach(b=>b.setAttribute('aria-pressed',String(b===selected)));
-  document.getElementById('mContext').textContent=t>=2700?(en?'After the match · app window':'После матча · окно программы'):(en?'Example match · carry':'Пример матча · керри');
   let idx=-1;MEV.forEach((e,i)=>{if(e[0]<=t)idx=i});
-  [...mTicks.children].forEach((b,i)=>b.classList.toggle('on',i<=idx));
   if(idx===mLast&&!force)return;const changed=idx!==mLast;mLast=idx;
+  const selected=mMoments.filter(b=>+b.dataset.time<=t).at(-1);
+  mMoments.forEach(b=>b.setAttribute('aria-pressed',String(b===selected)));
+  mContext.textContent=t>=2700?(en?'After the match · app window':'После матча · окно программы'):(en?'Example match · carry':'Пример матча · керри');
+  [...mTicks.children].forEach((b,i)=>b.classList.toggle('on',i<=idx));
   if(idx<0){mNow.innerHTML='';mHist.innerHTML='';return}
   const e=MEV[idx],tt=en?e[4]:e[2],nn=en?e[5]:e[3],lab=e[1]==='after'?(en?'after the game':'после игры'):fmt(e[0]);
   mNow.innerHTML=`<div class="tip${changed?' now':''}" style="--c:${MCOL[e[1]]}"><em>${lab}</em><b>${tt}</b><span>${nn}</span></div>`;
   mHist.innerHTML=MEV.slice(Math.max(0,idx-4),idx).reverse().map(x=>`<li><em>${fmt(x[0])}</em>${en?x[4]:x[2]}</li>`).join('');
 }
 MEV.forEach(e=>{const b=document.createElement('button');b.type='button';b.style.left=(e[0]/2700*100)+'%';b.style.setProperty('--c',MCOL[e[1]]);
-  b.tabIndex=-1;b.setAttribute('aria-hidden','true');b.onclick=()=>{mStop();mR.value=e[0];mRender()};mTicks.appendChild(b)});
+  b.tabIndex=-1;b.setAttribute('aria-hidden','true');b.onclick=()=>{mStop();mR.value=e[0];mRender();trackGoal('demo',{interaction:'tick',time:e[0]})};mTicks.appendChild(b)});
 function mStop(){if(mAnim){cancelAnimationFrame(mAnim);mAnim=0}mPlay.textContent=(lang==='en'?EN:RU).mpl}
-document.querySelectorAll('.moment').forEach(b=>b.addEventListener('click',()=>{mStop();mR.value=b.dataset.time;mRender()}));
+mMoments.forEach(b=>b.addEventListener('click',()=>{mStop();mR.value=b.dataset.time;mRender();trackGoal('demo',{interaction:'moment',time:+b.dataset.time})}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden)mStop()});
 mR.addEventListener('input',()=>{mStop();mRender()});
+mR.addEventListener('change',()=>trackGoal('demo',{interaction:'seek',time:+mR.value}));
 mPlay.onclick=()=>{
   if(mAnim){mStop();return}
   if(+mR.value>=2700)mR.value=0;
@@ -773,7 +811,7 @@ mPlay.onclick=()=>{
   mPlay.textContent=lang==='en'?'Pause':'Пауза';
   (function f(now){const p=Math.min(1,(now-t0)/dur);mR.value=Math.round(start+(2700-start)*p);mRender();
     if(p<1)mAnim=requestAnimationFrame(f);else{mAnim=0;mStop()}})(t0);
-  try{window.ym&&ym(114137127,'reachGoal','demo')}catch(_){}
+  trackGoal('demo',{interaction:'play'});
 };
 mRender(true);
 
@@ -785,7 +823,7 @@ function vRender(){const en=lang==='en';vids.innerHTML='';
   VIDS.forEach(([id,ru,eng])=>{const d=document.createElement('div');d.className='vid';
     d.innerHTML=`<button type="button" aria-label="${(en?'Play: ':'Смотреть: ')+(en?eng:ru)}"><img src="https://i.ytimg.com/vi/${id}/hqdefault.jpg" alt="" loading="lazy"><span class="pl"></span><span class="cap">${en?eng:ru}</span></button>`;
     d.querySelector('button').onclick=()=>{d.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="${en?eng:ru}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;
-      try{window.ym&&ym(114137127,'reachGoal','video')}catch(_){}};
+      trackGoal('video',{video:id})};
     vids.appendChild(d)})}
 vRender();
 document.getElementById('lang').addEventListener('click',()=>{mRender(true);if(mAnim)mPlay.textContent=lang==='en'?'Pause':'Пауза';else mStop();if(!vids.querySelector('iframe'))vRender()});
@@ -793,15 +831,16 @@ document.getElementById('lang').addEventListener('click',()=>{mRender(true);if(m
 // Прокрутка управляет разрезом и разворачиванием цветной секции. Без JS всё видно сразу.
 const cutHero=document.querySelector('.hero'),rollSection=document.getElementById('ban');
 const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');
-let scrollFrame=0;
+let scrollFrame=0,lastCut='',lastRoll='',effectsEnabled=false;
 const clamp01=n=>Math.max(0,Math.min(1,n));
 function paintScrollEffects(){
   scrollFrame=0;
-  if(motionPreference.matches){cutHero.classList.remove('scroll-cut');rollSection.classList.remove('roll-ready');return}
+  if(motionPreference.matches){if(effectsEnabled){cutHero.classList.remove('scroll-cut');rollSection.classList.remove('roll-ready');effectsEnabled=false}return}
   const heroRect=cutHero.getBoundingClientRect(),rollRect=rollSection.getBoundingClientRect(),vh=window.innerHeight;
-  cutHero.style.setProperty('--cut',clamp01(-heroRect.top/(heroRect.height*.8)).toFixed(4));
-  rollSection.style.setProperty('--roll',clamp01((vh*.9-rollRect.top)/(rollRect.height+vh*.08)).toFixed(4));
-  cutHero.classList.add('scroll-cut');rollSection.classList.add('roll-ready');
+  const cut=clamp01(-heroRect.top/(heroRect.height*.8)).toFixed(4),roll=clamp01((vh*.9-rollRect.top)/(rollRect.height+vh*.08)).toFixed(4);
+  if(cut!==lastCut){cutHero.style.setProperty('--cut',cut);lastCut=cut}
+  if(roll!==lastRoll){rollSection.style.setProperty('--roll',roll);lastRoll=roll}
+  if(!effectsEnabled){cutHero.classList.add('scroll-cut');rollSection.classList.add('roll-ready');effectsEnabled=true}
 }
 function scheduleScrollEffects(){if(!scrollFrame)scrollFrame=requestAnimationFrame(paintScrollEffects)}
 window.addEventListener('scroll',scheduleScrollEffects,{passive:true});
@@ -810,6 +849,17 @@ window.addEventListener('load',scheduleScrollEffects);
 motionPreference.addEventListener('change',scheduleScrollEffects);
 new ResizeObserver(scheduleScrollEffects).observe(document.querySelector('main'));
 paintScrollEffects();
+
+const ambientSections=[cutHero,document.querySelector('.final')],ambientInView=new Set();
+function updateAmbient(){ambientSections.forEach(section=>section.classList.toggle('motion-visible',!document.hidden&&ambientInView.has(section)))}
+const ambientObserver=new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{if(entry.isIntersecting)ambientInView.add(entry.target);else ambientInView.delete(entry.target)});
+  updateAmbient();
+});ambientSections.forEach(section=>ambientObserver.observe(section));
+document.addEventListener('visibilitychange',updateAmbient);
+
+function revealProjectHash(){if(['#video','#new'].includes(location.hash))document.getElementById('projectMore').open=true}
+window.addEventListener('hashchange',revealProjectHash);revealProjectHash();
 
 // Высота закреплённой шапки учитывается в якорях и наложении карточек, в том числе с открытым меню.
 const siteHeader=document.querySelector('.site-nav');
