@@ -18,7 +18,7 @@ ym(114137127, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLa
 <noscript><div><img src="https://mc.yandex.ru/watch/114137127" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
 <!-- /Yandex.Metrika counter -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ROSHIQ — бесплатный помощник для Dota 2: подсказки в игре и разбор матча</title>
+<title>ROSHIQ — бесплатный помощник для Dota 2 с разбором матча</title>
 <meta name="description" content="ROSHIQ — бесплатная программа для Dota 2 с открытым кодом. Напоминает про ТП, тайник и выкуп во время игры, подсказывает в драфте и честно разбирает матч после. Данные через Game State Integration, без чтения памяти игры.">
 <meta name="keywords" content="помощник для доты, оверлей dota 2, контрпики дота 2, разбор матча дота, подсказки дота 2, dota 2 helper">
 <link rel="canonical" href="https://baramobatare-rgb.github.io/ROSHIQ/">
@@ -355,6 +355,8 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 @media(max-width:640px){.hero .stickers .s2,.hero .stickers .s4{display:none}.hero .stripe{height:350px}.hero .main{gap:48px}.project-extra{padding:0 18px}}
 @media(max-width:640px){.screen-panel{border-radius:8px}.screen-panel figcaption{padding:16px;font-size:14px}.screen-tabs button{padding:12px 14px;font-size:14px}}
 </style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "ROSHIQ", "description": "Бесплатный помощник для Dota 2 с открытым кодом: подсказки во время игры, автодрафт, сборки и разбор матча.", "applicationCategory": "GameApplication", "operatingSystem": "Windows 10, Windows 11", "softwareVersion": "0.20.1", "url": "https://baramobatare-rgb.github.io/ROSHIQ/", "downloadUrl": "https://github.com/baramobatare-rgb/ROSHIQ/releases/latest", "image": "https://baramobatare-rgb.github.io/ROSHIQ/site/og.png", "inLanguage": ["ru", "en"], "isAccessibleForFree": true, "license": "https://github.com/baramobatare-rgb/ROSHIQ", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "RUB"}, "sameAs": ["https://github.com/baramobatare-rgb/ROSHIQ", "https://vk.ru/roshiq", "https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ", "https://www.tiktok.com/@baramobatare", "https://discord.gg/BhZTcTFwuM"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Нужен ли интернет?", "acceptedAnswer": {"@type": "Answer", "text": "Нет. Без интернета работают драфт, сборки, таймеры, подсказки и итог матча. Интернет нужен для статистики OpenDota и обновлений, его можно выключить одной галочкой."}}, {"@type": "Question", "name": "Могут ли забанить?", "acceptedAnswer": {"@type": "Answer", "text": "Гарантий не даст никто: Valve программу не проверяла. ROSHIQ получает данные через Game State Integration — интерфейс самой Dota 2 — и смотрит на экран драфта. Он не читает память игры, не внедряет код и не нажимает клавиши."}}, {"@type": "Question", "name": "Сколько стоит?", "acceptedAnswer": {"@type": "Answer", "text": "Нисколько. Ни подписок, ни рекламы, ни платных функций. Код открыт — любой может посмотреть, что внутри."}}, {"@type": "Question", "name": "Нашёл ошибку или есть идея", "acceptedAnswer": {"@type": "Answer", "text": "Напиши в комментариях под роликами, в сообществе ВКонтакте или открой issue на GitHub."}}]}</script>
 </head>
 <body>
 
@@ -562,6 +564,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     <h2 data-i18n="h2e">Вопросы</h2>
     <div class="faq">
       <details><summary data-i18n="q1">Нужен ли интернет?</summary><p data-i18n="a1">Нет. Без интернета работают драфт, сборки, таймеры, подсказки и итог матча. Интернет нужен для статистики OpenDota и обновлений, его можно выключить одной галочкой.</p></details>
+      <details><summary data-i18n="q6">Могут ли забанить?</summary><p data-i18n="a6">Гарантий не даст никто: Valve программу не проверяла. ROSHIQ получает данные через Game State Integration — интерфейс самой Dota 2 — и смотрит на экран драфта. Он не читает память игры, не внедряет код и не нажимает клавиши.</p></details>
       <details><summary data-i18n="q4">Сколько стоит?</summary><p data-i18n="a4">Нисколько. Ни подписок, ни рекламы, ни платных функций. Код открыт — любой может посмотреть, что внутри.</p></details>
       <details><summary data-i18n="q5">Нашёл ошибку или есть идея</summary><p data-i18n="a5">Напиши в комментариях под роликами, в сообществе ВКонтакте или открой issue на GitHub.</p></details>
     </div>
@@ -623,6 +626,7 @@ v3:"Builds from pro matches",v3d:"★ builds show what pro players buy most on e
 h2e:"Questions",q1:"Do I need internet?",a1:"No. Draft, builds, timers, tips and the match summary work offline. Internet is for OpenDota stats and updates — one checkbox turns it off.",
 q2:"I can’t see the panel over the game",a2:"Switch Dota 2 to “Borderless window” (Settings → Video). Transparent windows can’t be drawn over exclusive fullscreen.",
 q3:"Windows says it protected my PC",a3:"Click “More info” → “Run anyway”. The app doesn’t have a paid code signature yet. You can check the file with SHA256SUMS.txt on the release page.",
+q6:"Can I get banned?",a6:"Nobody can promise that: Valve hasn’t reviewed the app. ROSHIQ gets data through Game State Integration — Dota 2’s own interface — and looks at the draft screen. It doesn’t read game memory, inject code or press keys.",
 q4:"How much is it?",a4:"Nothing. No subscriptions, ads or paid features. The code is open — anyone can see what’s inside.",
 q5:"Found a bug or have an idea",a5:"Comment under the videos, write in the VK community or open an issue on GitHub.",
 h2f:"Your next match — with it.",vk:"VK",legal:"ROSHIQ isn’t affiliated with Valve. Dota 2 is a trademark of Valve Corporation.<br>Visits are counted with Yandex Metrica (cookies)."};
