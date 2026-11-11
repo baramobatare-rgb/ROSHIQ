@@ -40,6 +40,26 @@ public class ItemTests
     }
 
     [Fact]
+    public void BootsOnlyInLaterPhase_AreNotDoubledByAGuess()
+    {
+        // данные OpenDota: сапоги стоят в средней стадии, на раннюю данных нет — движок не должен дописать в раннюю свои сапоги
+        var dir = Path.Combine(Path.GetTempPath(), "dp_boots_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(Path.Combine(dir, "hero_builds.txt"),
+                "enchantress|5|mid|item_tranquil_boots,item_glimmer_cape\nenchantress|5|late|item_aghanims_shard\n");
+            var db = Roshiq.Data.GameDatabase.Load(dir);
+            var hero = db.FindHero("enchantress")!;
+            var b = new ItemBuildEngine(db).Build(hero, Position.HardSupport);
+            var main = new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late }.SelectMany(p => b[p]).ToList();
+            Assert.Equal(1, main.Count(p => p.Item.Group == "boots"));
+            Assert.Contains(main, p => p.Item.Key == "item_tranquil_boots" && p.Curated);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
     public void MainBuild_HasAtMostOnePairOfBoots()
     {
         foreach (var hero in TestData.Db.Heroes)

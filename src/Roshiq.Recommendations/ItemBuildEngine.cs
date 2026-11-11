@@ -67,6 +67,14 @@ public sealed class ItemBuildEngine
         var phases = new Dictionary<BuildPhase, IReadOnlyList<ItemPick>>();
         // базовая сборка — для этой роли, а если её нет, то для ближайшей роли героя из той же группы (кор / саппорт)
         var basePosition = _db.CuratedPosition(hero, position);
+        // группы предметов из настоящей сборки (сапоги и т. п.) заняты сразу: догадка на стадии без данных не добавит вторую пару сапог,
+        // если настоящие сапоги стоят в более поздней стадии
+        if (basePosition is Position reserved)
+        {
+            foreach (var phase in new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late })
+                foreach (var key in _db.CuratedBuild(hero, reserved, phase) ?? Array.Empty<string>())
+                    if (_db.FindItem(key) is { Group: { } group }) usedGroups.Add(group);
+        }
 
         foreach (var phase in new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late })
         {
