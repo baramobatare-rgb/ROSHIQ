@@ -102,6 +102,23 @@ public class StabilityTests : IDisposable
     }
 
     [Fact]
+    public void Watchdog_SilentInMenuWhenSetupIsReady()
+    {
+        // 11.11.2026: Dota пролежала в меню 9 минут, данных не было — это нормально, данные приходят с загрузкой матча
+        var w = new GsiWatchdog();
+        var t0 = new DateTime(2026, 11, 11, 0, 0, 0, DateTimeKind.Utc);
+        w.Tick(true, true, null, 0, t0, setupReady: true);
+        Assert.Equal(GsiProblem.None, w.Tick(true, true, null, 0, t0.AddSeconds(561), setupReady: true));
+        Assert.Equal(GsiProblem.None, w.Current);
+        // файла связи нет — тогда молчание игры и есть поломка
+        Assert.Equal(GsiProblem.NoData, w.Tick(true, true, null, 0, t0.AddSeconds(600), setupReady: false));
+        // неверный ключ — всегда поломка, даже если файл на месте
+        var w2 = new GsiWatchdog();
+        w2.Tick(true, true, null, 1, t0, setupReady: true);
+        Assert.Equal(GsiProblem.BadToken, w2.Tick(true, true, null, 4, t0.AddSeconds(100), setupReady: true));
+    }
+
+    [Fact]
     public void Watchdog_SilentWhenDataArrives()
     {
         var w = new GsiWatchdog();

@@ -139,6 +139,20 @@ public sealed class GameDatabase
     public bool HasCuratedBuild(Hero hero, Position position) =>
         _curated.Keys.Any(k => k.Hero == hero.Key.ToLowerInvariant() && k.Pos == position);
 
+    /// <summary>
+    /// Позиция, чью базовую сборку показывать: сама позиция, если сборка для неё есть; иначе ближайшая из той же группы
+    /// (керри/мид/оффлейн или саппорты). Сборку кора саппорту и наоборот не подставляем — тогда null.
+    /// </summary>
+    public Position? CuratedPosition(Hero hero, Position position)
+    {
+        if (HasCuratedBuild(hero, position)) return position;
+        static bool Core(Position p) => (int)p <= 3;
+        var key = hero.Key.ToLowerInvariant();
+        var same = _curated.Keys.Where(k => k.Hero == key && Core(k.Pos) == Core(position)).Select(k => k.Pos).Distinct()
+            .OrderBy(p => Math.Abs((int)p - (int)position)).ThenBy(p => (int)p).ToList();
+        return same.Count > 0 ? same[0] : null;
+    }
+
     // ---------------- загрузка ----------------
 
     private void LoadAll(DataSource src)

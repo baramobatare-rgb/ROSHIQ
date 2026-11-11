@@ -187,8 +187,12 @@ public sealed class GsiWatchdog
 
     public GsiProblem Current { get; private set; }
 
-    /// <summary>Возвращает проблему один раз, когда её пора показать; иначе None.</summary>
-    public GsiProblem Tick(bool gameFound, bool gsiEnabled, DateTime? lastPacketUtc, long rejectedPackets, DateTime nowUtc)
+    /// <summary>
+    /// Возвращает проблему один раз, когда её пора показать; иначе None.
+    /// <paramref name="setupReady"/>: файл связи на месте и параметр запуска стоит. Тогда отсутствие данных — не поломка:
+    /// Dota 2 начинает присылать их, только когда загружается матч, а в меню молчит (проверено по журналам 08–11.11.2026).
+    /// </summary>
+    public GsiProblem Tick(bool gameFound, bool gsiEnabled, DateTime? lastPacketUtc, long rejectedPackets, DateTime nowUtc, bool setupReady = false)
     {
         if (!gameFound)
         {
@@ -208,8 +212,9 @@ public sealed class GsiWatchdog
             Current = GsiProblem.None;
             return GsiProblem.None;
         }
-        Current = gsiEnabled && rejectedPackets > _rejectedAtStart ? GsiProblem.BadToken : GsiProblem.NoData;
-        if (_warned) return GsiProblem.None;
+        Current = gsiEnabled && rejectedPackets > _rejectedAtStart ? GsiProblem.BadToken
+            : setupReady && gsiEnabled ? GsiProblem.None : GsiProblem.NoData;
+        if (Current == GsiProblem.None || _warned) return GsiProblem.None;
         _warned = true;
         return Current;
     }

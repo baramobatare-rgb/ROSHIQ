@@ -65,11 +65,13 @@ public sealed class ItemBuildEngine
         var used = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var usedGroups = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var phases = new Dictionary<BuildPhase, IReadOnlyList<ItemPick>>();
+        // базовая сборка — для этой роли, а если её нет, то для ближайшей роли героя из той же группы (кор / саппорт)
+        var basePosition = _db.CuratedPosition(hero, position);
 
         foreach (var phase in new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late })
         {
             var picks = new List<ItemPick>();
-            var curated = _db.CuratedBuild(hero, position, phase);
+            var curated = basePosition is Position bp ? _db.CuratedBuild(hero, bp, phase) : null;
             if (curated != null)
             {
                 foreach (var key in curated)
@@ -79,16 +81,18 @@ public sealed class ItemBuildEngine
                     var (s, rs) = Score(item, hero, position);
                     var reasons = new List<Reason>(rs)
                     {
-                        new(ReasonKind.Item, 0, "базовая сборка для героя", "standard build for this hero")
+                        new(ReasonKind.Item, 0, "часто покупают на этом герое (OpenDota)", "often bought on this hero (OpenDota)")
                     };
                     picks.Add(new ItemPick(item, s, reasons, true));
                     Mark(item, used, usedGroups);
                 }
             }
 
+            // есть настоящая сборка на эту стадию — догадки движка к ней не дописываем; подбор по признакам только там, где данных нет
+            bool fromData = picks.Count > 0;
             foreach (var pick in RankPhase(phase, hero, position, used, usedGroups))
             {
-                if (picks.Count >= PhaseSize[phase]) break;
+                if (fromData || picks.Count >= PhaseSize[phase]) break;
                 picks.Add(pick);
                 Mark(pick.Item, used, usedGroups);
             }
@@ -107,7 +111,7 @@ public sealed class ItemBuildEngine
             Position = position,
             Phases = phases,
             EnemyAware = enemyList.Count > 0,
-            HasCuratedBase = _db.HasCuratedBuild(hero, position)
+            HasCuratedBase = basePosition != null
         };
     }
 

@@ -136,6 +136,41 @@ public class CoachingTests
     }
 
     [Fact]
+    public void GoalStore_DoesNotRepeatAGoalFailedEveryTime()
+    {
+        // 07–11.11.2026: «Всегда носить ТП» не получилась 5 раз подряд — и сразу была выбрана снова, ещё на 2 провала
+        var path = Path.Combine(Path.GetTempPath(), "roshiq-goals-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            var store = new GoalStore(path);
+            MatchRecord NoTp(string id)
+            {
+                var m = Gsi(id);
+                m.Alerts[MatchAlerts.NoTeleport] = 3;
+                return m;
+            }
+            var all = new List<MatchRecord> { NoTp("30") };
+            store.OnMatchSaved(all[0], all);
+            Assert.Equal(GoalKind.CarryTeleport, store.Active!.Kind);
+            for (int i = 0; i < GoalEngine.MaxAttempts; i++)
+            {
+                var m = NoTp("3" + (i + 1));
+                all.Add(m);
+                Assert.False(store.OnMatchSaved(m, all)!.Value.Result.Achieved);
+            }
+            Assert.Null(store.Active);                                    // других проблем в матче нет — передышка, без повтора
+            Assert.Single(store.Goals);
+
+            var mixed = NoTp("40");
+            mixed.DeathEvents.AddRange(Enumerable.Range(0, 3).Select(i => new DeathEvent { Clock = 900 + i, GoldAtRisk = 2000, HadTeleport = true }));
+            all.Add(mixed);
+            store.OnMatchSaved(mixed, all);
+            Assert.Equal(GoalKind.GoldOnDeath, store.Active!.Kind);       // другая проблема того же матча
+        }
+        finally { try { File.Delete(path); } catch { } }
+    }
+
+    [Fact]
     public void Trends_CompareHalves()
     {
         var start = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);

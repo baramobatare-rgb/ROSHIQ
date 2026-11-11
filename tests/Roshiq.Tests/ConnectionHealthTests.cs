@@ -12,7 +12,9 @@ public class ConnectionHealthTests
     {
         Assert.Equal(ConnectionState.Waiting, ConnectionHealth.Evaluate(true, true, true, null, Now.AddSeconds(-20), GsiProblem.None, Now));
         Assert.Equal(ConnectionState.Connected, ConnectionHealth.Evaluate(true, true, true, Now.AddSeconds(-5), Now.AddMinutes(-3), GsiProblem.None, Now));
-        Assert.Equal(ConnectionState.NoData, ConnectionHealth.Evaluate(true, true, true, Now.AddMinutes(-2), Now.AddMinutes(-3), GsiProblem.None, Now));
+        Assert.Equal(ConnectionState.NoData, ConnectionHealth.Evaluate(true, true, true, Now.AddMinutes(-2), Now.AddMinutes(-3), GsiProblem.NoData, Now));
+        // связь настроена, Dota в меню: данных нет долго, но это не поломка — ждём матча
+        Assert.Equal(ConnectionState.Waiting, ConnectionHealth.Evaluate(true, true, true, null, Now.AddMinutes(-9), GsiProblem.None, Now));
     }
 
     [Fact]
@@ -34,9 +36,9 @@ public class ConnectionHealthTests
     }
 
     [Fact]
-    public void HeartbeatInMenuKeepsConnectionAlive()
+    public void RecentPacketKeepsConnectionAlive()
     {
-        // в меню Dota шлёт пакет раз в 30 секунд — это не «данных нет»
+        // пакет полминуты назад — связь есть
         Assert.Equal(ConnectionState.Connected, ConnectionHealth.Evaluate(true, true, true, Now.AddSeconds(-31), Now.AddMinutes(-10), GsiProblem.None, Now));
     }
 

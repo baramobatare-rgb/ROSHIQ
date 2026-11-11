@@ -31,8 +31,11 @@ public class ItemTests
         {
             var b = Engine.Build(hero, hero.Positions[0]);
             var all = b.Phases.Values.SelectMany(x => x).Select(p => p.Item.Key).ToList();
-            if (hero.Has("ranged")) Assert.DoesNotContain("item_bfury", all);
-            if (hero.Has("melee")) Assert.DoesNotContain("item_dragon_lance", all);
+            // правило для подбора движка; базовая сборка из открытых данных отражает то, что на герое реально покупают
+            var guessed = b.Phases.Values.SelectMany(x => x).Where(p => !p.Curated).Select(p => p.Item.Key).ToList();
+            if (hero.Has("ranged")) Assert.DoesNotContain("item_bfury", guessed);
+            if (hero.Has("melee")) Assert.DoesNotContain("item_dragon_lance", guessed);
+            Assert.NotEmpty(all);
         }
     }
 
@@ -52,7 +55,45 @@ public class ItemTests
     {
         var b = Engine.Build(TestData.Hero("antimage"), Position.Carry);
         Assert.True(b.HasCuratedBase);
-        Assert.Contains(b[BuildPhase.Mid], p => p.Item.Key == "item_bfury" && p.Curated);
+        // сборки обновляются из открытых данных — проверяем не конкретный предмет, а что стадия целиком взята из сборки
+        Assert.NotEmpty(b[BuildPhase.Mid]);
+        Assert.All(b[BuildPhase.Mid], p => Assert.True(p.Curated));
+    }
+
+    [Fact]
+    public void CuratedPhase_IsNotPaddedWithGuesses()
+    {
+        var db = TestData.Db;
+        foreach (var hero in db.Heroes)
+            foreach (var pos in hero.Positions.Where(p => db.HasCuratedBuild(hero, p)))
+            {
+                var b = Engine.Build(hero, pos);
+                foreach (var phase in new[] { BuildPhase.Start, BuildPhase.Early, BuildPhase.Mid, BuildPhase.Late })
+                    if (db.CuratedBuild(hero, pos, phase) is { Count: > 0 })
+                        Assert.All(b[phase], p => Assert.True(p.Curated, $"{hero.Key}/{pos}/{phase}: {p.Item.Key} дописан движком"));
+            }
+    }
+
+    [Fact]
+    public void MissingRole_UsesNearestRoleOfTheSameKind()
+    {
+        var db = TestData.Db;
+        // герой со сборкой хотя бы для одной кор-роли и без сборки для другой кор-роли
+        var found = db.Heroes.SelectMany(h => new[] { Position.Carry, Position.Mid, Position.Offlane }
+                .Where(p => !db.HasCuratedBuild(h, p) && db.CuratedPosition(h, p) != null).Select(p => (Hero: h, Pos: p))).FirstOrDefault();
+        if (found.Hero != null)
+        {
+            var from = db.CuratedPosition(found.Hero, found.Pos)!.Value;
+            Assert.True((int)from <= 3);                                   // сборку саппорта кору не подставляем
+            var b = Engine.Build(found.Hero, found.Pos);
+            Assert.True(b.HasCuratedBase);
+            Assert.Contains(b[BuildPhase.Mid].Concat(b[BuildPhase.Late]), p => p.Curated);
+        }
+        foreach (var h in db.Heroes)
+        {
+            if (db.CuratedPosition(h, Position.HardSupport) is Position sp) Assert.True((int)sp >= 4, h.Key);
+            if (db.CuratedPosition(h, Position.Carry) is Position cp) Assert.True((int)cp <= 3, h.Key);
+        }
     }
 
     [Fact]
@@ -99,8 +140,9 @@ public class ItemTests
     [Fact]
     public void Explanations_MentionItemPurpose()
     {
-        var b = Engine.Build(TestData.Hero("axe"), Position.Offlane);
-        var blink = b[BuildPhase.Mid].First(p => p.Item.Key == "item_blink");
+        // Blink берём у любого героя, у кого он есть в сборке: состав сборок обновляется из открытых данных
+        var blink = TestData.Db.Heroes.SelectMany(h => h.Positions.Select(p => Engine.Build(h, p)))
+            .SelectMany(b => b[BuildPhase.Mid].Concat(b[BuildPhase.Late]).Concat(b[BuildPhase.Alternative])).First(p => p.Item.Key == "item_blink");
         Assert.Contains("инициации", blink.Explain(Language.Russian));
     }
 }

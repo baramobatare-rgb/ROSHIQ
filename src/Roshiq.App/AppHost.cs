@@ -1369,9 +1369,34 @@ public sealed class AppHost : IDisposable
     /// <summary>Сторож уже предупредил в этом запуске Dota — ждём, когда данные всё-таки пойдут, чтобы записать это в журнал.</summary>
     private bool _gsiWarned;
 
+    private DateTime _setupCheckedUtc = DateTime.MinValue;
+    private bool _setupReady;
+
+    /// <summary>
+    /// Связь с Dota настроена: файл связи с нашим портом и ключом на месте и параметр запуска стоит (или его не проверить).
+    /// Проверяется раз в две минуты — это чтение двух небольших файлов.
+    /// </summary>
+    private bool GsiSetupReady()
+    {
+        if (DateTime.UtcNow - _setupCheckedUtc < TimeSpan.FromMinutes(2)) return _setupReady;
+        _setupCheckedUtc = DateTime.UtcNow;
+        try
+        {
+            var g = Settings.Current.Gsi;
+            var root = SteamLocator.FindDotaRoot();
+            static string Flat(string s) => string.Concat(s.Where(c => !char.IsWhiteSpace(c)));
+            bool cfg = root != null && GsiConfigWriter.Exists(root)
+                       && Flat(File.ReadAllText(GsiConfigWriter.TargetPath(root))) == Flat(GsiConfigWriter.BuildContent(g.Port, g.Token));
+            _setupReady = cfg && DotaLaunchOptions.CheckInstalled() != false;
+        }
+        catch { _setupReady = false; }
+        return _setupReady;
+    }
+
     private void TickGsiWatchdog()
     {
-        var problem = GsiWatch.Tick(Overlay.Game.Found, Settings.Current.Gsi.Enabled, Gsi?.LastPacketUtc, Gsi?.PacketsRejected ?? 0, DateTime.UtcNow);
+        var problem = GsiWatch.Tick(Overlay.Game.Found, Settings.Current.Gsi.Enabled, Gsi?.LastPacketUtc, Gsi?.PacketsRejected ?? 0, DateTime.UtcNow,
+            Overlay.Game.Found && GsiSetupReady());
         if (!Overlay.Game.Found) _gsiWarned = false;
         else if (_gsiWarned && GsiWatch.GameSinceUtc is DateTime since && Gsi?.LastPacketUtc is DateTime packet && packet >= since)
         {
@@ -1445,6 +1470,8 @@ public sealed class AppHost : IDisposable
             Stale: !fresh,
             Dead: g?.HeroAlive == false);
         var now = DateTime.UtcNow;
+        // окна игры пока нет (загрузка карты, игра свёрнута) — совет ждёт в очереди до своего срока, а не теряется
+        if (Overlay.ToastWaitsForGame) return;
         if (Tips.Next(ctx, now) is not { } tip) return;
         bool shown = Overlay.ShowToast(tip.Header, tip.Text, tip.Warning);
         Tips.Report(tip, shown, now);

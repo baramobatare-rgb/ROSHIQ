@@ -60,8 +60,13 @@ public sealed class DraftRecognizer
         {
             if (region.X < 0 || region.X >= frame.Width || region.Y >= frame.Height) continue;
             var crop = frame.Crop(region.X, region.Y, Math.Min(region.Width, frame.Width - region.X), Math.Min(region.Height, frame.Height - region.Y));
-            results.Add(new SlotResult(region, _matcher.Match(crop), crop));
+            results.Add(new SlotResult(region, _matcher.MatchSlot(crop), crop));
         }
+        // один герой не может стоять в двух слотах: оставляем более уверенное совпадение, второе — под вопросом
+        foreach (var dup in results.Where(r => r.Match.Status == SlotStatus.Recognized).GroupBy(r => r.Match.HeroKey, StringComparer.OrdinalIgnoreCase)
+                     .Where(g => g.Count() > 1).ToList())
+            foreach (var weaker in dup.OrderByDescending(r => r.Match.Score).Skip(1).ToList())
+                results[results.IndexOf(weaker)] = weaker with { Match = weaker.Match with { Status = SlotStatus.Ambiguous, HeroKey = null } };
         // Эвристика "интерфейс драфта виден": хотя бы одна ячейка не пустая и выглядит как портрет.
         bool visible = results.Count(r => r.Match.Status != SlotStatus.Empty) >= 1;
         return new DraftRecognitionResult(results, visible, sw.Elapsed);

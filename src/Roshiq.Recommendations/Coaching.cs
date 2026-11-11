@@ -215,8 +215,11 @@ public static class GoalEngine
         }
     }
 
-    /// <summary>Выбрать одну самую заметную проблему матча и превратить её в цель. null — явных проблем нет.</summary>
-    public static CoachGoal? Suggest(MatchRecord m, IReadOnlyList<MatchRecord> history)
+    /// <summary>
+    /// Выбрать одну самую заметную проблему матча и превратить её в цель. null — явных проблем нет.
+    /// <paramref name="avoid"/> — виды целей, которые сейчас не предлагать (только что не получились все попытки подряд).
+    /// </summary>
+    public static CoachGoal? Suggest(MatchRecord m, IReadOnlyList<MatchRecord> history, IReadOnlyCollection<GoalKind>? avoid = null)
     {
         if (!m.FromGsi) return null;
         var others = history.Where(x => x.Id != m.Id).ToList();
@@ -255,6 +258,7 @@ public static class GoalEngine
             candidates.Add(((at - bench.AvgSec) / 60.0, G(GoalKind.ItemTiming, bench.AvgSec, item)));
         }
 
+        if (avoid != null) candidates.RemoveAll(c => avoid.Contains(c.Goal.Kind));
         return candidates.Count == 0 ? null : candidates.OrderByDescending(c => c.Severity).First().Goal;
     }
 }
@@ -312,7 +316,10 @@ public sealed class GoalStore
             }
             if (!Goals.Any(g => !g.Closed))
             {
-                var next = GoalEngine.Suggest(m, history);
+                // цель провалена во всех попытках — сразу ту же не повторяем: берём другую проблему матча или даём передышку
+                var avoid = Goals.Where(g => g.Closed).TakeLast(2)
+                    .Where(g => g.Achieved == 0 && g.Results.Count >= GoalEngine.MaxAttempts).Select(g => g.Kind).ToHashSet();
+                var next = GoalEngine.Suggest(m, history, avoid);
                 if (next != null) Goals.Add(next);
             }
             if (Goals.Count > 60) Goals.RemoveRange(0, Goals.Count - 60);

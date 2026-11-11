@@ -52,24 +52,3 @@ storm_spirit|2|start|item_tango,item_circlet,item_branches,item_faerie_fire
 storm_spirit|2|early|item_bottle,item_power_treads,item_magic_wand
 storm_spirit|2|mid|item_kaya_and_sange,item_orchid,item_black_king_bar
 storm_spirit|2|late|item_bloodthorn,item_sheepstick,item_bloodstone
-# Обновлено 04.11.2026 по популярным сборкам dota2protracker.com (данные 7.36–7.40c, 7000+ MMR и про-матчи)
-axe|3|start|item_tango,item_gauntlets,item_branches
-axe|3|early|item_magic_wand,item_phase_boots
-axe|3|mid|item_blade_mail,item_blink
-axe|3|late|item_black_king_bar,item_lotus_orb,item_ultimate_scepter
-juggernaut|1|start|item_tango,item_quelling_blade,item_slippers,item_branches
-juggernaut|1|early|item_magic_wand,item_power_treads
-juggernaut|1|mid|item_bfury,item_manta
-juggernaut|1|late|item_butterfly,item_ultimate_scepter,item_blink
-pudge|4|start|item_tango,item_flask,item_ward_observer,item_branches
-pudge|4|early|item_tranquil_boots,item_magic_wand,item_smoke_of_deceit
-pudge|4|mid|item_aether_lens,item_blink
-pudge|4|late|item_ethereal_blade,item_force_staff,item_glimmer_cape
-invoker|2|start|item_tango,item_circlet,item_branches,item_faerie_fire
-invoker|2|early|item_null_talisman,item_magic_wand,item_hand_of_midas
-invoker|2|mid|item_rod_of_atos,item_travel_boots,item_ultimate_scepter
-invoker|2|late|item_black_king_bar,item_octarine_core,item_sheepstick
-largo|3|start|item_tango,item_gauntlets,item_branches
-largo|3|early|item_magic_wand,item_arcane_boots,item_soul_ring
-largo|3|mid|item_ultimate_scepter,item_kaya_and_sange
-largo|3|late|item_black_king_bar,item_shivas_guard,item_guardian_greaves

@@ -41,9 +41,8 @@ public static class ConnectionHealth
         if (!gameFound)
             // окно могло не найтись (другое имя процесса, запуск через лаунчер) — но данные идут, значит связь есть
             return lastPacketUtc is DateTime p && nowUtc - p < FreshWithoutWindow ? ConnectionState.Connected : ConnectionState.Offline;
-        if (problem == GsiProblem.NoData || gameSinceUtc is DateTime since && nowUtc - since >= GsiWatchdog.Grace)
-            return ConnectionState.NoData;
-        return ConnectionState.Waiting;
+        // «данных нет» решает сторож: он знает, настроена ли связь. Настроена — значит, Dota просто в меню и ждёт матча
+        return problem == GsiProblem.NoData ? ConnectionState.NoData : ConnectionState.Waiting;
     }
 
     /// <summary>

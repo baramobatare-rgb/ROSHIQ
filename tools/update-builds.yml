@@ -1,0 +1,64 @@
+# Раз в неделю обновляет базовые сборки героев по открытым данным OpenDota (tools/update_builds.py).
+# Если сборки изменились и проверки данных прошли — коммитит hero_builds.txt и новую dataVersion в main.
+# Установленные программы забирают файл с GitHub сами (вкладка «Обновления» → данные), новая версия ROSHIQ не нужна.
+name: Update builds
+
+on:
+  schedule:
+    - cron: '17 3 * * 1'        # понедельник, 06:17 по Москве
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - tools/update_builds.py
+      - .github/workflows/update-builds.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-builds
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Сборки из OpenDota
+        run: python tools/update_builds.py
+
+      - name: Изменились ли данные
+        id: diff
+        shell: pwsh
+        run: |
+          git diff --quiet -- src/Roshiq.Data/Resources
+          "changed=$($LASTEXITCODE -ne 0)".ToLower() >> $env:GITHUB_OUTPUT
+          exit 0
+
+      - uses: actions/setup-dotnet@v4
+        if: steps.diff.outputs.changed == 'true'
+        with:
+          dotnet-version: 8.0.x
+
+      # Сломанные данные в main не попадают: файл читается без предупреждений, сборки проходят проверки движка
+      - name: Проверка данных
+        if: steps.diff.outputs.changed == 'true'
+        run: dotnet test tests/Roshiq.Tests/Roshiq.Tests.csproj -c Release --filter "FullyQualifiedName~DataTests|FullyQualifiedName~ItemTests|FullyQualifiedName~ItemCatalogTests|FullyQualifiedName~AdaptationTests"
+
+      - name: Коммит
+        if: steps.diff.outputs.changed == 'true'
+        shell: pwsh
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/Roshiq.Data/Resources/hero_builds.txt src/Roshiq.Data/Resources/data_version.txt
+          git commit -m "Данные: сборки героев по OpenDota ($(Get-Date -Format 'dd.MM.yyyy'))"
+          git pull --rebase origin main
+          git push origin HEAD:main

@@ -148,23 +148,38 @@ public sealed class OpenDotaClient : IDisposable
         }
     }
 
+    /// <summary>Пауза после ответа «слишком много запросов» (бесплатный лимит OpenDota — около 60 в минуту).</summary>
+    public TimeSpan RateLimitPause { get; set; } = TimeSpan.FromSeconds(60);
+
     /// <summary>Обновить кэш для набора героев. Пауза между запросами — бережём лимиты API.</summary>
     public async Task<int> RefreshAsync(MatchupStatsCache cache, IEnumerable<int> heroIds, IProgress<string>? progress, CancellationToken ct)
     {
-        int ok = 0;
+        int ok = 0, limited = 0;
         foreach (var id in heroIds)
         {
             ct.ThrowIfCancellationRequested();
-            try
+            for (int attempt = 0; ; attempt++)
             {
-                var rows = await GetMatchupsAsync(id, ct).ConfigureAwait(false);
-                cache.Put(id, rows, "OpenDota", DateTime.UtcNow);
-                ok++;
-                progress?.Report($"hero {id}: {rows.Count}");
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                progress?.Report($"hero {id}: {ex.Message}");
+                try
+                {
+                    var rows = await GetMatchupsAsync(id, ct).ConfigureAwait(false);
+                    cache.Put(id, rows, "OpenDota", DateTime.UtcNow);
+                    ok++;
+                    limited = 0;
+                    progress?.Report($"hero {id}: {rows.Count}");
+                }
+                catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                {
+                    // лимит OpenDota: ждём минуту и пробуем этого же героя ещё раз; три лимита подряд — остальное в следующий раз
+                    if (++limited >= 3) { progress?.Report("OpenDota: лимит запросов, остальные герои — позже"); return ok; }
+                    if (attempt == 0) { await Task.Delay(RateLimitPause, ct).ConfigureAwait(false); continue; }
+                    progress?.Report($"hero {id}: {ex.Message}");
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    progress?.Report($"hero {id}: {ex.Message}");
+                }
+                break;
             }
             await Task.Delay(1100, ct).ConfigureAwait(false);
         }

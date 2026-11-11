@@ -139,6 +139,9 @@ public sealed class OverlayController : IDisposable
     public void ShowToast(string header, string text) => ShowToast(header, text, warning: false);
 
     /// <summary>Показать уведомление поверх игры. false — не показано (оверлей скрыт или игры нет).</summary>
+    /// <summary>Уведомление сейчас некуда показать: окна игры нет (загрузка, свернуто), но игрок панель не скрывал.</summary>
+    public bool ToastWaitsForGame => _toast != null && !_userHidden && HostRect() == null;
+
     public bool ShowToast(string header, string text, bool warning)
     {
         if (_toast == null || _userHidden) return false;

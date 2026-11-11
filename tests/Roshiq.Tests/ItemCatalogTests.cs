@@ -33,7 +33,8 @@ public class ItemCatalogTests
             foreach (var p in h.Positions)
             {
                 var b = engine.Build(h, p, enemies);
-                Assert.DoesNotContain(b.Phases.Values.SelectMany(x => x), x => x.Item.CatalogOnly);
+                // каталожный предмет может прийти только из базовой сборки героя (данные), но не из подбора движка
+                Assert.DoesNotContain(b.Phases.Values.SelectMany(x => x), x => x.Item.CatalogOnly && !x.Curated);
                 Assert.DoesNotContain(engine.Adaptations(h, p, enemies, b), a => a.Pick.Item.CatalogOnly);
             }
     }

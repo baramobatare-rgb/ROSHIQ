@@ -49,7 +49,11 @@ public sealed class VisionService
                 foreach (var entry in archive.Entries.Where(x => x.Name.EndsWith(".dpt", StringComparison.OrdinalIgnoreCase)))
                 {
                     using var data = entry.Open();
-                    Matcher.AddTemplate(entry.FullName.Split('/')[0], RgbImage.Load(data));
+                    var key = entry.FullName.Split('/')[0];
+                    var img = RgbImage.Load(data);
+                    Matcher.AddTemplate(key, img);
+                    // в игре портреты не отражены — для слотов драфта берём только обычный вариант
+                    if (!entry.Name.StartsWith("mirror", StringComparison.OrdinalIgnoreCase)) Matcher.AddArtTemplate(key, img);
                     n++;
                 }
             }
