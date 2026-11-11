@@ -173,6 +173,11 @@ public static class GoalEngine
     public const int AchieveToClose = 2;
     /// <summary>После стольких попыток цель всё равно сменяется, чтобы не застревать.</summary>
     public const int MaxAttempts = 5;
+    /// <summary>Столько провалов подряд — цель слишком трудная сейчас: сменить, а не мучить.</summary>
+    public const int MaxFailsInRow = 3;
+
+    /// <summary>Смерти без телепорта после 5:00 (напоминания «нет ТП» не считаются — они бывают и без последствий).</summary>
+    public static int DeathsWithoutTeleport(MatchRecord m) => m.DeathEvents.Count(d => !d.HadTeleport && d.Clock >= 300);
 
     private static int AlertCount(MatchRecord m, params string[] keys) =>
         keys.Sum(k => m.Alerts.TryGetValue(k, out var c) ? c : 0);
@@ -201,7 +206,12 @@ public static class GoalEngine
                 return (lh >= goal.Target, lh);
             }
             case GoalKind.CarryTeleport:
-                return Absence(m.DeathEvents.Count(d => !d.HadTeleport && d.Clock >= 300) + AlertCount(m, MatchAlerts.NoTeleport));
+            {
+                // цель — меньше смертей без ТП, чем в матче, откуда она взята (Target — допустимое число)
+                int v = DeathsWithoutTeleport(m);
+                if (v <= goal.Target && m.Partial) return null;
+                return (v <= goal.Target, v);
+            }
             case GoalKind.CourierStash:
                 return Absence(AlertCount(m, MatchAlerts.ItemsInStash, MatchAlerts.WardsInStash));
             case GoalKind.ItemTiming:
@@ -230,8 +240,9 @@ public static class GoalEngine
         int richDeaths = m.DeathEvents.Count(d => d.GoldAtRisk >= DeathAnalysis.LotsOfGold);
         if (richDeaths >= 2) candidates.Add((richDeaths * 2.0, G(GoalKind.GoldOnDeath, DeathAnalysis.LotsOfGold)));
 
-        int noTp = m.DeathEvents.Count(d => !d.HadTeleport && d.Clock >= 300) + AlertCount(m, MatchAlerts.NoTeleport);
-        if (noTp >= 2) candidates.Add((noTp * 1.5, G(GoalKind.CarryTeleport, 0)));
+        // выполнимая планка: вдвое меньше смертей без ТП, чем в этом матче
+        int noTp = DeathsWithoutTeleport(m);
+        if (noTp >= 2) candidates.Add((noTp * 1.5, G(GoalKind.CarryTeleport, noTp / 2)));
 
         var deathHistory = others.Where(x => x.Position == m.Position).Select(x => x.Deaths).ToList();
         if (deathHistory.Count >= 3)
@@ -311,14 +322,16 @@ public sealed class GoalStore
                     var result = new GoalResult { MatchId = m.MatchId, Achieved = ev.Value.Achieved, Value = ev.Value.Value, Utc = DateTime.UtcNow };
                     active.Results.Add(result);
                     outcome = (active, result);
-                    if (active.Achieved >= GoalEngine.AchieveToClose || active.Results.Count >= GoalEngine.MaxAttempts) active.Closed = true;
+                    bool stuck = active.Results.Count >= GoalEngine.MaxFailsInRow
+                                 && active.Results.TakeLast(GoalEngine.MaxFailsInRow).All(r => !r.Achieved);
+                    if (active.Achieved >= GoalEngine.AchieveToClose || active.Results.Count >= GoalEngine.MaxAttempts || stuck) active.Closed = true;
                 }
             }
             if (!Goals.Any(g => !g.Closed))
             {
-                // цель провалена во всех попытках — сразу ту же не повторяем: берём другую проблему матча или даём передышку
-                var avoid = Goals.Where(g => g.Closed).TakeLast(2)
-                    .Where(g => g.Achieved == 0 && g.Results.Count >= GoalEngine.MaxAttempts).Select(g => g.Kind).ToHashSet();
+                // две последние цели сразу не повторяем — ни освоенные, ни проваленные: берём другую проблему матча
+                // или даём передышку. Одна и та же цель игра за игрой перестаёт работать.
+                var avoid = Goals.Where(g => g.Closed).TakeLast(2).Select(g => g.Kind).ToHashSet();
                 var next = GoalEngine.Suggest(m, history, avoid);
                 if (next != null) Goals.Add(next);
             }

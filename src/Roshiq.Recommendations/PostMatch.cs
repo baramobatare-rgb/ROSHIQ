@@ -4,9 +4,13 @@ namespace Roshiq.Recommendations;
 
 /// <summary>Итог матча сразу после игры: что получилось и одна главная ошибка — по своей истории, без интернета.</summary>
 /// <param name="Basis">Основание сравнения (ключ строки: bd_basis_hero_role / bd_basis_role / bd_basis_hero); null — сравнения нет.</param>
-public sealed record PostMatchSummary(MatchRecord Match, IReadOnlyList<Insight> Good, Insight? MainMistake, int Compared, string? Basis = null)
+/// <param name="Story">Разбор по ходу матча (по времени) — из записи этого матча, работает с первой игры.</param>
+/// <param name="RoleMismatch">Записанная роль не совпала с тем, как игрок фармил: сравнение идёт по фактической игре.</param>
+public sealed record PostMatchSummary(MatchRecord Match, IReadOnlyList<Insight> Good, Insight? MainMistake, int Compared, string? Basis = null,
+    IReadOnlyList<StoryPoint>? Story = null, bool RoleMismatch = false)
 {
-    public bool HasContent => Good.Count > 0 || MainMistake != null || PostMatch.Feedback(Match).Any;
+    public IReadOnlyList<StoryPoint> Timeline => Story ?? Array.Empty<StoryPoint>();
+    public bool HasContent => Good.Count > 0 || MainMistake != null || Timeline.Count > 0 || PostMatch.Feedback(Match).Any;
 }
 
 /// <summary>
@@ -60,13 +64,37 @@ public static class PostMatch
     /// </summary>
     public static PostMatchSummary Build(MatchRecord m, IEnumerable<MatchRecord> history, Func<string, string?>? itemName = null)
     {
+        var all = history as IReadOnlyList<MatchRecord> ?? history.ToList();
+        var summary = BuildCore(m, all, itemName);
+        // главная ошибка не должна быть той же, что в прошлый раз, если есть другая почти такая же важная:
+        // одинаковый совет после каждой игры перестают читать
+        var prev = all.Where(h => h.Id != m.Id && h.FromGsi && h.StartedUtc < m.StartedUtc && Worth(h))
+            .OrderByDescending(h => h.StartedUtc).FirstOrDefault();
+        if (summary.MainMistake is { } main && prev != null
+            && BuildCore(prev, all.Where(h => h.StartedUtc < prev.StartedUtc).ToList(), itemName).MainMistake?.Kind == main.Kind
+            && Problems(summary).FirstOrDefault(b => b.Kind != main.Kind && b.Severity <= main.Severity + 1) is { } other)
+            summary = summary with { MainMistake = other };
+        return summary;
+    }
+
+    /// <summary>Все найденные проблемы матча (для выбора главной; в итог попадает одна).</summary>
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<PostMatchSummary, List<Insight>> ProblemsOf = new();
+    private static IEnumerable<Insight> Problems(PostMatchSummary s) =>
+        ProblemsOf.TryGetValue(s, out var list) ? list : Enumerable.Empty<Insight>();
+
+    private static PostMatchSummary BuildCore(MatchRecord m, IReadOnlyList<MatchRecord> history, Func<string, string?>? itemName)
+    {
+        // роль в поиске и сыгранная роль могут не совпасть: сравниваем по тому, как игрок реально фармил
+        bool core = MatchStory.PlaysCore(m);
+        bool mismatch = MatchStory.RoleMismatch(m);
+        Position? role = mismatch ? null : m.Position;
         // обрыв записи (не видели конец матча) — итоговые счётчики неполные, такие игры не берём в «обычное»
         var others = history.Where(h => h.Id != m.Id && h.DurationSec >= MinDurationSec && h.Ended != false).ToList();
-        var pool = others.Where(h => h.HeroId == m.HeroId && h.Position == m.Position).ToList();
-        string? basis = m.Position == null ? "bd_basis_hero" : "bd_basis_hero_role";
-        if (pool.Count < MinValues && m.Position != null)
+        var pool = others.Where(h => h.HeroId == m.HeroId && (role == null || h.Position == role)).ToList();
+        string? basis = role == null ? "bd_basis_hero" : "bd_basis_hero_role";
+        if (pool.Count < MinValues && role != null)
         {
-            pool = others.Where(h => h.Position == m.Position).ToList();
+            pool = others.Where(h => h.Position == role).ToList();
             basis = "bd_basis_role";
         }
         if (pool.Count < MinValues) { pool.Clear(); basis = null; }
@@ -94,7 +122,7 @@ public static class PostMatch
         var lh10 = m.LastHitsAt(600);
         var poolLh = pool.Select(h => h.LastHitsAt(600)).Where(v => v != null).Select(v => v!.Value).ToList();
         int? target = MatchReviewBuilder.LastHitTarget(m.Position);
-        if (lh10 is int lh && (m.Position is Position.Carry or Position.Mid or Position.Offlane || m.Position == null))
+        if (lh10 is int lh && core)
         {
             if (poolLh.Count >= MinValues)
             {
@@ -104,7 +132,7 @@ public static class PostMatch
                 else if (lh <= avg * 0.75)
                     bad.Add(new("lh10", -2, $"Слабая линия: {lh} добиваний к 10-й минуте при обычных ~{avg:0}.", $"Weak lane: {lh} last hits by 10:00 vs usual ~{avg:0}."));
             }
-            else if (target is int t && lh < t * 0.7)
+            else if ((role != null ? target : MatchReviewBuilder.LastHitTarget(Position.Carry)) is int t && lh < t * 0.7)
                 bad.Add(new("lh10", -2, $"Мало добиваний: {lh} к 10-й минуте (ориентир — {t}).", $"Few last hits: {lh} by 10:00 (target {t})."));
         }
 
@@ -115,7 +143,7 @@ public static class PostMatch
             double avg = poolGpm.Average();
             if (avg > 0 && m.Gpm >= avg * 1.15)
                 good.Add(new("gpm", 1, $"Хороший фарм: {m.Gpm} золота в минуту (обычно ~{avg:0}).", $"Good farm: {m.Gpm} GPM (usually ~{avg:0})."));
-            else if (avg > 0 && m.Gpm <= avg * 0.8 && m.Position is Position.Carry or Position.Mid)
+            else if (avg > 0 && m.Gpm <= avg * 0.8 && core)
                 bad.Add(new("gpm", -1, $"Фарм ниже обычного: {m.Gpm} золота в минуту (обычно ~{avg:0}).", $"Farm below usual: {m.Gpm} GPM (usually ~{avg:0})."));
         }
 
@@ -156,11 +184,23 @@ public static class PostMatch
                 bad.Add(new("ignored", -1, $"Подсказка «{AlertName(key, true)}» висела без реакции {count} раз.", $"The “{AlertName(key, false)}” tip was ignored {count} times."));
         }
 
+        // --- разбор по ходу матча: провалы дохода, простои, золото без покупок, где и как умирал
+        var story = MatchStory.Build(m);
+        foreach (var p in story)
+        {
+            // «много смертей без телепорта/с золотом» уже есть выше — зону и серию добавляем как отдельные проблемы
+            if (p.Insight.Severity < 0) bad.Add(p.Insight);
+            else if (p.Insight.Severity > 0) good.Add(p.Insight);
+        }
+
         if (good.Count == 0 && m.Result == MatchResult.Win)
             good.Add(new("win", 1, "Победа — отличная работа.", "A win — well played."));
 
-        var main = bad.OrderBy(b => b.Severity).FirstOrDefault();
-        return new PostMatchSummary(m, good.OrderByDescending(g => g.Severity).Take(2).ToList(), main, pool.Count, basis);
+        var ordered = bad.OrderBy(b => b.Severity).ToList();
+        var summary = new PostMatchSummary(m, good.OrderByDescending(g => g.Severity).Take(2).ToList(), ordered.FirstOrDefault(), pool.Count, basis,
+            story, mismatch);
+        ProblemsOf.AddOrUpdate(summary, ordered);
+        return summary;
     }
 
     /// <summary>One concrete next-game action tied to the observed main issue.</summary>
@@ -175,6 +215,13 @@ public static class PostMatch
             "no_tp" => ("Перед выходом с базы проверяйте наличие свитка телепорта.", "Check that you have a teleport scroll before leaving base."),
             "gold_risk" => ("Перед дракой проверяйте запас золота и покупайте запланированные компоненты.", "Before fighting, check your gold and buy planned components."),
             "ignored" => ("При появлении подсказки проверьте ситуацию и решите, какое действие сейчас нужно.", "When a tip appears, check the situation and choose the appropriate action."),
+            "farm_drop" => ("Когда драк нет, сразу идите на линию или в лес: доход не должен падать от отрезка к отрезку.", "When there is no fight, go straight to a lane or camp: income should not drop between stretches."),
+            "stall" => ("Не стойте без дела: между драками всегда есть линия или лагерь, куда можно сходить.", "Do not idle: between fights there is always a wave or a camp to take."),
+            "gold_hold" => ("Как только хватает на компонент — покупайте и отправляйте курьером, не держите больше 2000 золота.", "As soon as you can afford a component, buy and courier it — do not hold more than 2000 gold."),
+            "death_zone" => ("Перед тем как идти туда, где умирали чаще всего, проверьте мини-карту и видимость.", "Before going where you died most, check the minimap and vision."),
+            "death_chain" => ("После смерти не возвращайтесь в драку в одиночку — дождитесь команды.", "After dying, do not rejoin the fight alone — wait for your team."),
+            "no_buyback" => ("После 30-й минуты держите золото на выкуп перед важной дракой.", "After minute 30, keep buyback gold before an important fight."),
+            "benchmark" or "lane" => ("Сравните добивания к 10:00 в следующей игре с этим матчем.", "Compare last hits at 10:00 next game with this match."),
             _ => MissedGoal(Feedback(summary.Match).MissedKey)
         };
         return new Insight("next_goal", 0, ru, en);

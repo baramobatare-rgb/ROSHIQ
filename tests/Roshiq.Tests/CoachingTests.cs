@@ -107,6 +107,18 @@ public class CoachingTests
     }
 
     [Fact]
+    public void TeleportGoal_CountsDeathsNotReminders()
+    {
+        var goal = new CoachGoal { Kind = GoalKind.CarryTeleport, Target = 1 };
+        var m = Gsi("50");
+        m.Alerts[MatchAlerts.NoTeleport] = 6;                             // напоминания без смертей — не провал
+        m.DeathEvents.Add(new DeathEvent { Clock = 1200, HadTeleport = false });
+        Assert.Equal((true, 1), GoalEngine.Evaluate(goal, m)!.Value);
+        m.DeathEvents.Add(new DeathEvent { Clock = 1500, HadTeleport = false });
+        Assert.Equal((false, 2), GoalEngine.Evaluate(goal, m)!.Value);
+    }
+
+    [Fact]
     public void GoalStore_TracksAndClosesAfterTwoSuccesses()
     {
         var path = Path.Combine(Path.GetTempPath(), "roshiq-goals-" + Guid.NewGuid().ToString("N") + ".json");
@@ -138,7 +150,7 @@ public class CoachingTests
     [Fact]
     public void GoalStore_DoesNotRepeatAGoalFailedEveryTime()
     {
-        // 07–11.11.2026: «Всегда носить ТП» не получилась 5 раз подряд — и сразу была выбрана снова, ещё на 2 провала
+        // 07–11.11.2026: «Всегда носить ТП» висела целью 9 игр подряд и ни разу не была выполнена
         var path = Path.Combine(Path.GetTempPath(), "roshiq-goals-" + Guid.NewGuid().ToString("N") + ".json");
         try
         {
@@ -146,19 +158,20 @@ public class CoachingTests
             MatchRecord NoTp(string id)
             {
                 var m = Gsi(id);
-                m.Alerts[MatchAlerts.NoTeleport] = 3;
+                m.DeathEvents.AddRange(Enumerable.Range(0, 4).Select(i => new DeathEvent { Clock = 900 + i * 300, GoldAtRisk = 100, HadTeleport = false }));
                 return m;
             }
             var all = new List<MatchRecord> { NoTp("30") };
             store.OnMatchSaved(all[0], all);
             Assert.Equal(GoalKind.CarryTeleport, store.Active!.Kind);
-            for (int i = 0; i < GoalEngine.MaxAttempts; i++)
+            Assert.Equal(2, store.Active.Target);                         // выполнимая планка: вдвое меньше, а не ноль
+            for (int i = 0; i < GoalEngine.MaxFailsInRow; i++)
             {
                 var m = NoTp("3" + (i + 1));
                 all.Add(m);
                 Assert.False(store.OnMatchSaved(m, all)!.Value.Result.Achieved);
             }
-            Assert.Null(store.Active);                                    // других проблем в матче нет — передышка, без повтора
+            Assert.Null(store.Active);                                    // 3 провала подряд — сменить; других проблем нет — передышка, без повтора
             Assert.Single(store.Goals);
 
             var mixed = NoTp("40");

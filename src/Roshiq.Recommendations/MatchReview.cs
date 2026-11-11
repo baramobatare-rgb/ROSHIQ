@@ -155,8 +155,8 @@ public static class MatchReviewBuilder
             ins.Add(new Insight("deaths", -1, $"Чаще всего вас убивал {ru} — {top.Count} раза", $"{en} killed you the most — {top.Count} times"));
         }
 
-        // 5. Варды (саппорты)
-        if (position is Position.SoftSupport or Position.HardSupport && r.Observers.Count >= 3)
+        // 5. Варды (саппорты) — только у разобранной записи: без разбора OpenDota варды неизвестны, а не «ноль»
+        if (d.Parsed && position is Position.SoftSupport or Position.HardSupport && r.Observers.Count >= 3)
         {
             int dewarded = r.Observers.Count(w => w.Dewarded);
             if (r.ObserverAvgLife is double life && life < 200)
@@ -169,7 +169,7 @@ public static class MatchReviewBuilder
             else if (r.ObserverAvgLife is double l2 && l2 >= 300)
                 ins.Add(new Insight("wards", 1, $"Варды живут почти всё время ({Clock((int)l2)} в среднем)", $"Your observers last almost full time ({Clock((int)l2)} avg)"));
         }
-        if (position == Position.SoftSupport || position == Position.HardSupport)
+        if (d.Parsed && (position == Position.SoftSupport || position == Position.HardSupport))
             if (r.Observers.Count < 3 && d.Duration > 1500)
                 ins.Add(new Insight("wards", -1, $"Всего {r.Observers.Count} обсервера за {Clock(d.Duration)} — карта была тёмной",
                     $"Only {r.Observers.Count} observers in {Clock(d.Duration)} — the map was dark"));

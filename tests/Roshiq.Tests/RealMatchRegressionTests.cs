@@ -87,6 +87,8 @@ public class RealMatchRegressionTests : IDisposable
             sb.Append(inv, $"postmatch compared={pm.Compared} basis={pm.Basis ?? "-"} main={pm.MainMistake?.Kind ?? "-"} good={string.Join(",", pm.Good.Select(g => g.Kind))}").Append('\n');
             if (pm.MainMistake is { } mm) sb.Append("  main: ").Append(mm.Ru).Append('\n');
             foreach (var g in pm.Good) sb.Append("  good: ").Append(g.Ru).Append('\n');
+            sb.Append(inv, $"story core={MatchStory.PlaysCore(m)} mismatch={pm.RoleMismatch}").Append('\n');
+            foreach (var p in pm.Timeline) sb.Append(inv, $"  {p.Clock} {p.Insight.Kind} {p.Insight.Severity}: {p.Insight.Ru}").Append('\n');
 
             if (PlayerReport.Breakdown(m, all) is { } bd)
             {

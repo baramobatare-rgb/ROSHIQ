@@ -13,6 +13,15 @@ public sealed class MatchTakeaways : StackPanel
         Add(L.Get("pm_good"), summary.Good.Count > 0 ? string.Join("\n", summary.Good.Select(g => g.Text(L.Language))) : L.Get("pm_good_none"), "Success");
         Add(L.Get("pm_fix"), summary.MainMistake?.Text(L.Language) ?? L.Get("pm_no_issue"), "Warning");
         Add(L.Get("pm_next_goal"), PostMatch.NextGoal(summary).Text(L.Language), "Accent");
+        if (summary.Timeline.Count > 0)
+        {
+            // весь разбор по ходу матча, по времени
+            var panel = new StackPanel();
+            var heading = Ui.Text(L.Get("pm_story_title"), "Eyebrow"); heading.Foreground = Ui.Res("Accent");
+            panel.Children.Add(heading);
+            foreach (var p in summary.Timeline) panel.Children.Add(PostMatchWindow.StoryLine(p, L.Language));
+            Children.Add(new Border { Style = (Style)Application.Current.FindResource("Callout"), BorderBrush = Ui.Res("Accent"), Child = panel });
+        }
         var m = summary.Match;
         bool ru = L.Language == Roshiq.Core.Models.Language.Russian;
         var fb = PostMatch.Feedback(m); // в истории матча — все отложенные советы, без сокращения
@@ -26,8 +35,9 @@ public sealed class MatchTakeaways : StackPanel
         if (fb.Deferred.Count > 0)
             Add(L.Get("pm_deferred_title"), string.Join("\n", fb.Deferred.Select(PostMatch.DeferredLine)), "Accent");
         // реальное основание сравнения: какие игры и сколько их; без выборки — честно, что сравнивать не с чем
-        Children.Add(Ui.Text(summary.Compared >= PostMatch.MinValues && summary.Basis is string basis
-            ? L.Format("pm_basis2", L.Get(basis), summary.Compared) : L.Get("pm_basis_few"), "MutedText", 4));
+        Children.Add(Ui.Text((summary.Compared >= PostMatch.MinValues && summary.Basis is string basis
+            ? L.Format("pm_basis2", L.Get(basis), summary.Compared) : L.Get("pm_basis_few"))
+            + (summary.RoleMismatch && m.Position is Roshiq.Core.Models.Position rp ? " " + L.Format("pm_role_mismatch", L.PositionName(rp)) : ""), "MutedText", 4));
     }
     private void Add(string title, string body, string color)
     {

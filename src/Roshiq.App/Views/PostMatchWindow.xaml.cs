@@ -13,6 +13,8 @@ public partial class PostMatchWindow : Window
     private readonly PostMatchSummary _summary;
     /// <summary>Сколько отложенных советов помещается в окно итога; остальные — в истории матча.</summary>
     public const int MaxDeferredShown = 4;
+    /// <summary>Сколько моментов разбора по ходу матча помещается в окно итога; все — в истории матча.</summary>
+    public const int MaxStoryShown = 5;
 
     public PostMatchWindow(PostMatchSummary summary)
     {
@@ -37,6 +39,12 @@ public partial class PostMatchWindow : Window
         if (summary.MainMistake is { } bad) MistakeText.Text = bad.Text(L.Language);
         else MistakeBlock.Visibility = Visibility.Collapsed;
 
+        // разбор по ходу матча: главное (оно уже выше) не повторяем
+        var story = summary.Timeline.Where(sp => !ReferenceEquals(sp.Insight, summary.MainMistake) && !summary.Good.Contains(sp.Insight))
+            .OrderBy(sp => sp.Insight.Severity).Take(MaxStoryShown).OrderBy(sp => sp.Clock).ToList();
+        foreach (var sp in story) StoryPanel.Children.Add(StoryLine(sp, L.Language));
+        if (story.Count == 0) StoryBlock.Visibility = Visibility.Collapsed;
+
         // как сработали подсказки: что помогло, что пропущено; отложенные советы — коротко, остальное в истории
         bool ru = L.Language == Roshiq.Core.Models.Language.Russian;
         var fb = PostMatch.Feedback(m, MaxDeferredShown);
@@ -52,8 +60,25 @@ public partial class PostMatchWindow : Window
         if (fb.Deferred.Count == 0) DeferredBlock.Visibility = Visibility.Collapsed;
 
         NextGoalText.Text = PostMatch.NextGoal(summary).Text(L.Language);
-        BasisText.Text = summary.Compared >= PostMatch.MinValues && summary.Basis is string basis
-            ? L.Format("pm_basis2", L.Get(basis), summary.Compared) : L.Get("pm_basis_few");
+        BasisText.Text = (summary.Compared >= PostMatch.MinValues && summary.Basis is string basis
+            ? L.Format("pm_basis2", L.Get(basis), summary.Compared) : L.Get("pm_basis_few"))
+            + (summary.RoleMismatch && m.Position is Position rp ? " " + L.Format("pm_role_mismatch", L.PositionName(rp)) : "");
+    }
+
+    /// <summary>Строка разбора по ходу матча: время и что произошло; проблемы — тёплым цветом, удачи — зелёным.</summary>
+    internal static FrameworkElement StoryLine(StoryPoint p, Roshiq.Core.Models.Language lang)
+    {
+        var dock = new DockPanel { Margin = new Thickness(0, 3, 0, 3) };
+        var clock = new TextBlock
+        {
+            Text = $"{p.Clock / 60}:{p.Clock % 60:00}", Width = 46, Foreground = Ui.Res(p.Insight.Severity < 0 ? "Warning" : "Success"),
+            FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Top
+        };
+        if (Application.Current.TryFindResource("Num") is Style num) clock.Style = num;
+        DockPanel.SetDock(clock, Dock.Left);
+        dock.Children.Add(clock);
+        dock.Children.Add(new TextBlock { Text = p.Insight.Text(lang), TextWrapping = TextWrapping.Wrap, Foreground = Ui.Res("Text") });
+        return dock;
     }
 
     private static FrameworkElement Line(string text, bool muted = false)

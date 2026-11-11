@@ -1065,6 +1065,13 @@ public sealed class AppHost : IDisposable
 
     private readonly HashSet<string> _reviewPending = new(StringComparer.Ordinal);
 
+    /// <summary>Предмета нет в базе — показать читаемое имя из ключа, а не «item_gungir».</summary>
+    private static string PrettyItem(string key)
+    {
+        var s = key.StartsWith("item_", StringComparison.Ordinal) ? key[5..] : key;
+        return string.Join(' ', s.Split('_', StringSplitOptions.RemoveEmptyEntries).Select(w => char.ToUpperInvariant(w[0]) + w[1..]));
+    }
+
     private string? HeroNpc(int heroId) => Database.FindHero(heroId)?.Key is string key ? "npc_dota_hero_" + key : null;
 
     /// <summary>
@@ -1101,7 +1108,7 @@ public sealed class AppHost : IDisposable
                 norms[p.ItemKey] = norm;
             }
             var review = MatchReviewBuilder.Build(details, position, norms,
-                key => Database.FindItem(key) is { } item ? (item.NameRu, item.Name) : (key, key),
+                key => Database.FindItem(key) is { } item ? (item.NameRu, item.Name) : (PrettyItem(key), PrettyItem(key)),
                 hid => Database.FindHero(hid) is { } h ? (h.NameRu, h.Name) : ("?", "?"),
                 Costs.Cost);
             Reviews.Save(review);

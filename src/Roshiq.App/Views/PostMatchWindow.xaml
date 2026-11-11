@@ -28,6 +28,11 @@
             </Border>
         </StackPanel>
 
+        <StackPanel x:Name="StoryBlock" Margin="0,16,0,0">
+            <TextBlock Text="{app:T pm_story_title, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
+            <StackPanel x:Name="StoryPanel" />
+        </StackPanel>
+
         <StackPanel x:Name="FeedbackBlock" Margin="0,16,0,0">
             <TextBlock Text="{app:T pm_feedback_title, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
             <StackPanel x:Name="FeedbackPanel" />
