@@ -50,6 +50,20 @@ public class AutoDraftTests
     }
 
     [Fact]
+    public void OwnHeroFromGsi_FillsAMissedAllySlot()
+    {
+        // 11.11.2026: портрет Ogre Magi закрыт значком ранга — союзников 4, а GSI знает, кого ты взял
+        var allies = new[] { "axe", "skywrath_mage", "luna", "silencer" };
+        var enemies = new[] { "viper", "pudge", "antimage", "invoker", "sand_king" };
+        Assert.Equal(new[] { "axe", "skywrath_mage", "luna", "silencer", "ogre_magi" }, DraftPickTracker.WithOwnHero(allies, enemies, "ogre_magi"));
+        Assert.Equal(allies, DraftPickTracker.WithOwnHero(allies, enemies, null));          // героя ещё нет
+        Assert.Equal(allies, DraftPickTracker.WithOwnHero(allies, enemies, "luna"));        // уже есть
+        Assert.Equal(allies, DraftPickTracker.WithOwnHero(allies, enemies, "pudge"));       // виден у врагов — не наш
+        var five = allies.Append("lion").ToArray();
+        Assert.Equal(five, DraftPickTracker.WithOwnHero(five, enemies, "ogre_magi"));        // все пять уже на месте
+    }
+
+    [Fact]
     public void NewHeroMustBeConfirmed_AndResetClearsPreviousMatch()
     {
         var tracker = new DraftPickTracker();

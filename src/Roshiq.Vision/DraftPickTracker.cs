@@ -41,6 +41,18 @@ public sealed class DraftPickTracker
             }
         }
     }
+    /// <summary>
+    /// Союзники с экрана плюс свой герой из GSI: игра сама сообщает, кого ты взял, даже если портрет закрыт значком
+    /// ранга (11.11.2026 Ogre Magi с «8» на портрете выпал из союзников). Героя, который виден у врагов, не добавляем.
+    /// </summary>
+    public static IReadOnlyList<string> WithOwnHero(IReadOnlyList<string> allies, IReadOnlyList<string> enemies, string? ownHero)
+    {
+        if (string.IsNullOrEmpty(ownHero) || allies.Count >= 5
+            || allies.Contains(ownHero, StringComparer.OrdinalIgnoreCase)
+            || enemies.Contains(ownHero, StringComparer.OrdinalIgnoreCase)) return allies;
+        return allies.Append(ownHero).ToList();
+    }
+
     public IReadOnlyList<string> Heroes(Side side)
     {
         // Duplicate portraits across slots/sides are not a trustworthy pick.

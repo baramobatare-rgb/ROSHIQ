@@ -381,7 +381,7 @@ public sealed class AppHost : IDisposable
         string? key = AutoDraftLive ? (LastGsi!.MatchId ?? "unidentified") + ":" + LastGsi.TeamName : null;
         if (key == _autoSessionKey) return;
         if (key == null && _autoSessionKey != null)
-            Log.Info($"Авто-драфт: закончился. Союзники: {Names(_autoPicks.Heroes(MySide))}; враги: {Names(AutoEnemies.Select(h => h.Key))}");
+            Log.Info($"Авто-драфт: закончился. Союзники: {Names(AutoAllyKeys)}; враги: {Names(AutoEnemies.Select(h => h.Key))}");
         if (key != null)
             Log.Info($"Авто-драфт: начался (сторона {LastGsi!.TeamName ?? "?"}, шаблонов {Vision.Matcher.HeroCount}, окно Dota " +
                      $"{(Overlay.Game.Found ? (Overlay.Game.Foreground ? "активно" : "не активно") : "не найдено")})");
@@ -453,11 +453,23 @@ public sealed class AppHost : IDisposable
         ShowEventToast(Loc.T("auto_toast_header").ToUpperInvariant(), status, warning: true, kind: "draft_problem", ttlSec: 30);
     }
 
+    /// <summary>Союзники авто-драфта: подтверждённые портреты и свой герой из GSI.</summary>
+    private IReadOnlyList<string> AutoAllyKeys
+    {
+        get
+        {
+            string? mine = LastGsi?.HeroId is int id && id > 0 ? Database.FindHero(id)?.Key : null;
+            return DraftPickTracker.WithOwnHero(_autoPicks.Heroes(MySide), AutoEnemies.Select(h => h.Key).ToList(), mine);
+        }
+    }
+
+    private List<Hero> AutoAllies => AutoAllyKeys.Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
+
     private void RecomputeAutoDraft()
     {
         if (!AutoDraftLive || !SideKnown || AutoEnemies.Count == 0)
         { AutoDraftAnalysis = null; return; }
-        var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
+        var allies = AutoAllies;
         AutoDraftAnalysis = Analyzer.Analyze(new DraftState(allies, AutoEnemies, CurrentPosition), countersOnly: true);
     }
 
@@ -484,7 +496,7 @@ public sealed class AppHost : IDisposable
         RecomputeAutoDraft();
         AnnounceCounters();
         AnnounceEnemyNotes(AutoEnemies);
-        var allies = _autoPicks.Heroes(MySide).Select(Database.FindHero).Where(x => x != null).Select(x => x!).ToList();
+        var allies = AutoAllies;
         // Keep the main draft view in sync with confirmed screen picks.
         SetDraft(allies, AutoEnemies);
         RefreshOverlay();
