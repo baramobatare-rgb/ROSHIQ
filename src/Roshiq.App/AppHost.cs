@@ -444,6 +444,9 @@ public sealed class AppHost : IDisposable
     private void TickDraftProblem()
     {
         if (!AutoDraftLive || _draftProblemToasted || AutoEnemies.Count > 0 || DateTime.UtcNow - _autoStartedUtc < TimeSpan.FromSeconds(30)) return;
+        // союзники уже распознаны — распознавание работает, враги просто ещё не выбрали (11.11.2026 предупреждение
+        // «проверьте область портретов» всплывало, хотя всё работало)
+        if (_autoPicks.Heroes(MySide).Count > 0 || Vision.LastResult?.Slots.Any(s => s.Match.Status == SlotStatus.Recognized) == true) return;
         _draftProblemToasted = true;
         var status = AutoDraftStatus;
         Log.Info("Авто-драфт: за 30 с врагов не распознано — " + status);

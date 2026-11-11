@@ -22,13 +22,31 @@ public class AutoDraftTests
     }
 
     [Fact]
-    public void BriefOcclusionKeepsPick_ThreeMissesRemoveIt()
+    public void UnclearPortraitKeepsPick_ThreeEmptyFramesRemoveIt()
     {
         var tracker = new DraftPickTracker();
         tracker.Apply(Frame(SlotStatus.Recognized)); tracker.Apply(Frame(SlotStatus.Recognized));
-        tracker.Apply(Frame(SlotStatus.Unknown)); Assert.Single(tracker.Heroes(Side.Dire));
-        tracker.Apply(Frame(SlotStatus.Empty)); Assert.Single(tracker.Heroes(Side.Dire));
-        tracker.Apply(Frame(SlotStatus.Unknown)); Assert.Empty(tracker.Heroes(Side.Dire));
+        // 11.11.2026: на экране стратегии портреты союзников стали неразборчивыми — пики не должны пропадать
+        for (int i = 0; i < 6; i++) tracker.Apply(Frame(i % 2 == 0 ? SlotStatus.Unknown : SlotStatus.Ambiguous));
+        Assert.Single(tracker.Heroes(Side.Dire));
+        tracker.Apply(Frame(SlotStatus.Empty)); tracker.Apply(Frame(SlotStatus.Unknown)); tracker.Apply(Frame(SlotStatus.Empty));
+        Assert.Single(tracker.Heroes(Side.Dire));                        // пустые кадры не подряд — не перевыбор
+        tracker.Apply(Frame(SlotStatus.Empty)); tracker.Apply(Frame(SlotStatus.Empty)); tracker.Apply(Frame(SlotStatus.Empty));
+        Assert.Empty(tracker.Heroes(Side.Dire));                         // слот уверенно пуст — перевыбор
+    }
+
+    [Fact]
+    public void FrameWithoutSlots_DoesNotForgetPicks()
+    {
+        var tracker = new DraftPickTracker();
+        tracker.Apply(Frame(SlotStatus.Recognized)); tracker.Apply(Frame(SlotStatus.Recognized));
+        var none = Frame(SlotStatus.Recognized) with { Slots = Array.Empty<SlotResult>() };
+        tracker.Apply(none);
+        Assert.Single(tracker.Heroes(Side.Dire));
+        // драфт закрылся (показ команд): слоты пустые, но это не перевыбор
+        var hidden = Frame(SlotStatus.Empty) with { DraftUiVisible = false };
+        for (int i = 0; i < 5; i++) tracker.Apply(hidden);
+        Assert.Single(tracker.Heroes(Side.Dire));
     }
 
     [Fact]

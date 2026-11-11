@@ -8,13 +8,16 @@ public sealed class DraftPickTracker
         public string? Candidate;
         public string? Confirmed;
         public int Streak;
-        public int Misses;
+        /// <summary>Сколько кадров подряд слот уверенно пуст (а не просто неразборчив).</summary>
+        public int Empties;
     }
     private readonly Dictionary<(Side, int), SlotState> _slots = new();
     public void Reset() => _slots.Clear();
 
     public void Apply(DraftRecognitionResult result)
     {
+        // драфт скрыт (экран загрузки, показ команд) — кадр ничего не говорит о пиках
+        if (!result.DraftUiVisible) return;
         var seen = new HashSet<(Side, int)>();
         foreach (var slot in result.Slots)
         {
@@ -23,7 +26,7 @@ public sealed class DraftPickTracker
             if (!_slots.TryGetValue(key, out var state)) _slots[key] = state = new();
             if (slot.Match.Status == SlotStatus.Recognized && slot.Match.HeroKey is { } hero)
             {
-                state.Misses = 0;
+                state.Empties = 0;
                 state.Streak = state.Candidate == hero ? state.Streak + 1 : 1;
                 state.Candidate = hero;
                 if (state.Streak >= 2) state.Confirmed = hero;
@@ -31,12 +34,12 @@ public sealed class DraftPickTracker
             else
             {
                 state.Streak = 0; state.Candidate = null;
-                state.Misses++;
-                // A confirmed pick may disappear briefly under a tooltip or animation.
-                if (state.Misses >= 3) state.Confirmed = null;
+                // Пик в Dota не исчезает. Неразборчивый портрет (подсказка, анимация, экран стратегии в конце драфта —
+                // 11.11.2026 так «пропали» 4 союзника) пик не снимает; снимает только уверенно пустой слот (перевыбор).
+                state.Empties = slot.Match.Status == SlotStatus.Empty ? state.Empties + 1 : 0;
+                if (state.Empties >= 3) state.Confirmed = null;
             }
         }
-        foreach (var key in _slots.Keys.Where(k => !seen.Contains(k)).ToList()) _slots.Remove(key);
     }
     public IReadOnlyList<string> Heroes(Side side)
     {
