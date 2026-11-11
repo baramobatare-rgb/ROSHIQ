@@ -20,7 +20,7 @@
             <StackPanel x:Name="ChecksPanel" />
         </ScrollViewer>
         <DockPanel Grid.Row="2" Margin="0,16,0,0">
-            <Button DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close}" Click="Close_Click" IsCancel="True" />
+            <Button DockPanel.Dock="Right" VerticalAlignment="Bottom" Style="{StaticResource PrimaryButton}" Content="{app:T diag_close}" Click="Close_Click" IsCancel="True" />
             <WrapPanel>
                 <Button x:Name="RunButton" Style="{StaticResource GhostButton}" Content="{app:T diag_rerun}" Click="Run_Click" />
                 <Button Style="{StaticResource GhostButton}" Content="{app:T diag_copy}" Click="Copy_Click" />

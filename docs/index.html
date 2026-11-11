@@ -36,7 +36,7 @@ ym(114137127, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLa
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&display=swap" rel="stylesheet">
 <script>try{var a=localStorage.getItem('roshiq-site-acc'),g=localStorage.getItem('roshiq-site-bg');if(a)document.documentElement.dataset.acc=a;if(g)document.documentElement.dataset.bg=g}catch(e){}</script>
 <style>
-:root{--ink:#0A0F0B;--lime:#B5FF4D;--fine:rgba(10,15,11,.72);--grey:#A9B6AA;--soft:#C4CEC5;--line:#1F2A21;--warn:#FFB547;--bad:#FF6B57}
+:root{--ink:#050505;--lime:#FF8A3D;--fine:rgba(5,5,5,.72);--grey:#AAA9A7;--soft:#C8C6C3;--line:#292623;--warn:#FFB547;--bad:#FF6B57}
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth;scroll-padding-top:24px}
 body{background:var(--ink);color:#fff;font:400 18px/1.55 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
@@ -142,7 +142,7 @@ h1{font-weight:900;font-size:clamp(42px,4.5vw,64px);line-height:1.02;letter-spac
 
 
 /* темы — те же акценты и фоны, что в программе */
-html[data-acc=crimson]{--lime:#FF4D5E} html[data-acc=violet]{--lime:#A78BFF} html[data-acc=azure]{--lime:#4DB8FF}
+html[data-acc=lime]{--lime:#B5FF4D} html[data-acc=crimson]{--lime:#FF4D5E} html[data-acc=violet]{--lime:#A78BFF} html[data-acc=azure]{--lime:#4DB8FF}
 html[data-acc=teal]{--lime:#3DF5D0} html[data-acc=gold]{--lime:#FFC93D} html[data-acc=orange]{--lime:#FF8A3D}
 html[data-bg=deep]{--ink:#050606;--line:#1A1E1B} html[data-bg=black]{--ink:#000;--line:#161917}
 .tp{position:relative}
@@ -335,7 +335,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 .screen-panel{margin-top:20px;border:1px solid #354338;border-radius:12px;overflow:hidden;background:var(--ink)}
 .screen-panel[hidden]{display:none}
 .screen-panel a{display:block;text-decoration:none}
-.screen-panel img{display:block;width:100%;height:auto;aspect-ratio:1346/893;object-fit:contain;background:#0a0f0b}
+.screen-panel img{display:block;width:100%;height:auto;aspect-ratio:1660/970;object-fit:contain;background:#050505}
 .screen-panel figcaption{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:20px 24px;border-top:1px solid var(--line);font-size:15px;color:var(--soft)}
 .screen-panel figcaption .screen-zoom{color:var(--lime);font-size:13px;white-space:nowrap}
 .screens-note{margin-top:16px;font-size:13px;color:var(--grey)}
@@ -359,7 +359,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 <body>
 
   <div class="nav site-nav">
-    <img id="logo" src="site/logo-green.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
+    <img id="logo" src="site/logo-orange.png" alt="" width="36" height="36"><a class="logo" href="#top">ROSHIQ</a>
     <div class="top-socials">
       <a class="discord-nav" aria-label="Discord ROSHIQ" href="https://discord.gg/BhZTcTFwuM" data-goal="discord" target="_blank" rel="noopener noreferrer">Discord ↗</a>
       <a aria-label="ВКонтакте" href="https://vk.ru/roshiq" data-goal="vk" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12.785 17.241C6.658 17.241 3.163 13.044 3.017 6.054h3.07c.101 5.13 2.364 7.303 4.157 7.751V6.054h2.89v4.425c1.77-.19 3.63-2.207 4.258-4.425h2.89c-.482 2.733-2.499 4.75-3.933 5.58 1.434.672 3.73 2.431 4.604 5.607H17.77c-.683-2.128-2.386-3.775-4.637-3.999v3.999z"/></svg><span data-i18n="vk">ВКонтакте</span></a>
@@ -420,17 +420,17 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     </div>
     <figure class="screen-panel" role="tabpanel" id="screen-build" aria-labelledby="screenTab-build">
       <a href="site/screens/build.webp" target="_blank" rel="noopener noreferrer">
-        <img src="site/screens/build-480.webp" srcset="site/screens/build-480.webp 480w, site/screens/build-960.webp 960w, site/screens/build.webp 1346w" sizes="(max-width: 640px) calc(100vw - 40px), (max-width: 1240px) calc(100vw - 64px), 1176px" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: сборка Juggernaut, предметы по этапам матча и объяснения выбора.">
+        <img src="site/screens/build-480.webp" srcset="site/screens/build-480.webp 480w, site/screens/build-960.webp 960w, site/screens/build.webp 1660w" sizes="(max-width: 640px) calc(100vw - 40px), (max-width: 1240px) calc(100vw - 64px), 1176px" width="1660" height="970" loading="lazy" decoding="async" alt="Окно ROSHIQ 0.19.4: сборка Juggernaut и предметы по этапам матча.">
       </a>
       <figcaption><span data-i18n="screenBuildCaption">Предметы под героя и роль — с пояснениями и этапами игры.</span><a class="screen-zoom" href="site/screens/build.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
     </figure>
     <figure class="screen-panel" role="tabpanel" id="screen-review" aria-labelledby="screenTab-review" hidden>
       <a href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer">
-        <img src="site/screens/review-mistake-480.webp" srcset="site/screens/review-mistake-480.webp 480w, site/screens/review-mistake-960.webp 960w, site/screens/review-mistake.webp 1346w" sizes="(max-width: 640px) calc(100vw - 40px), (max-width: 1240px) calc(100vw - 64px), 1176px" width="1346" height="893" loading="lazy" decoding="async" alt="Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.">
+        <img src="site/screens/review-mistake-480.webp" srcset="site/screens/review-mistake-480.webp 480w, site/screens/review-mistake-960.webp 960w, site/screens/review-mistake.webp 1660w" sizes="(max-width: 640px) calc(100vw - 40px), (max-width: 1240px) calc(100vw - 64px), 1176px" width="1660" height="970" loading="lazy" decoding="async" alt="Окно ROSHIQ 0.19.4: история матчей Ogre Magi, выводы и цель на следующую игру. ID матча скрыт.">
       </a>
-      <figcaption><span data-i18n="screenReviewCaption">Пример: две смерти с запасом золота → цель покупать компоненты перед дракой.</span><a class="screen-zoom" href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
+      <figcaption><span data-i18n="screenReviewCaption">Пример: подсказку про телепорт пропустили → цель внимательнее реагировать в следующем матче.</span><a class="screen-zoom" href="site/screens/review-mistake.webp" target="_blank" rel="noopener noreferrer" data-i18n="screenZoom">Открыть крупнее ↗</a></figcaption>
     </figure>
-    <p class="screens-note" data-i18n="screensNote">Скриншоты настоящей программы. Матчи и статистика — демонстрационные. Нажми на изображение, чтобы рассмотреть детали.</p>
+    <p class="screens-note" data-i18n="screensNote">Скриншоты ROSHIQ 0.19.4. ID матча скрыт. Нажми на изображение, чтобы рассмотреть детали.</p>
   </div>
 </section>
 
@@ -508,9 +508,9 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
     <div class="steps setup-steps">
       <div class="step"><b data-i18n="s1">Выбери язык и роль</b><span data-i18n="s1p">В мастере первого запуска выбери язык, оформление и свою обычную роль. Всё можно изменить позже.</span><a class="setup-image" href="site/screens/setup-welcome.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-welcome-480.webp" srcset="site/screens/setup-welcome-480.webp 480w, site/screens/setup-welcome.webp 746w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="746" height="593" loading="lazy" decoding="async" alt="Первый запуск ROSHIQ: выбор языка и оформления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
       <div class="step"><b data-i18n="s2">Подключи Dota 2</b><span data-i18n="s2p">На шаге «Связь с игрой» нажми «Настроить связь с игрой». Затем перезапусти Dota 2. Если данные не приходят, проверь параметр запуска <code>-gamestateintegration</code>.</span><a class="setup-image" href="site/screens/setup-connect.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-connect-480.webp" srcset="site/screens/setup-connect-480.webp 480w, site/screens/setup-connect.webp 746w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="746" height="593" loading="lazy" decoding="async" alt="Шаг связи с игрой: кнопка настройки GSI и напоминание о перезапуске Dota 2."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
-      <div class="step"><b data-i18n="s3">Проверь связь</b><span data-i18n="s3p">Открой «Настройки → Диагностика» или «Что не так?» на обзоре. Если связь не работает, здесь будут причины и кнопки исправления. В Dota выбери «Окно без рамки»; панель включается <kbd>F8</kbd>.</span><a class="setup-image" href="site/screens/setup-check.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-check-480.webp" srcset="site/screens/setup-check-480.webp 480w, site/screens/setup-check.webp 706w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="706" height="633" loading="lazy" decoding="async" alt="Пример диагностики ROSHIQ при выключенной связи с игрой: причины и кнопки исправления."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
+      <div class="step"><b data-i18n="s3">Проверь связь</b><span data-i18n="s3p">Открой «Настройки → Диагностика» или «Что не так?» на обзоре. Если связь не работает, здесь будут причины и кнопки исправления. В Dota выбери «Окно без рамки»; панель включается <kbd>F8</kbd>.</span><a class="setup-image" href="site/screens/setup-check.webp" target="_blank" rel="noopener noreferrer"><img src="site/screens/setup-check-480.webp" srcset="site/screens/setup-check-480.webp 480w, site/screens/setup-check.webp 706w" sizes="(max-width: 860px) calc(100vw - 40px), (max-width: 1240px) calc((100vw - 128px) / 3), 370px" width="706" height="633" loading="lazy" decoding="async" alt="Диагностика ROSHIQ 0.19.4: Dota 2 найдена, файл связи на месте, данные принимаются."><span data-i18n="screenZoom">Открыть крупнее ↗</span></a></div>
     </div>
-    <p class="screens-note" data-i18n="setupNote">На третьем изображении — пример диагностики при отсутствии связи. У тебя результаты проверки могут отличаться.</p>
+    <p class="screens-note" data-i18n="setupNote">На третьем изображении — диагностика, когда всё настроено. Если что-то не так, там будут причина и кнопка исправления.</p>
   </div>
 </section>
 
@@ -636,9 +636,9 @@ EN.screensTitle="Here’s what you’ll open.";
 EN.screensIntro="Builds before the match. A clear review after. Explore the app before installing.";
 EN.screenBuild="Hero build";EN.screenReview="Match review";
 EN.screenBuildCaption="Items for your hero and role, with explanations and game stages.";
-EN.screenReviewCaption="Takeaways, a goal for your next game, and comparison with your own matches.";
+EN.screenReviewCaption="A missed teleport reminder becomes a goal for the next match.";
 EN.screenZoom="Open full size ↗";
-EN.screensNote="Screenshots of the real app. Matches and statistics are examples. Click an image to explore the details.";
+EN.screensNote="Screenshots of ROSHIQ 0.19.4. The match ID is hidden. Click an image to see the details.";
 EN.portable="Portable version (.zip) — no installation";
 EN.startLink="First launch guide ↗";
 EN.h2c="First launch.<br>Three simple steps.";
@@ -649,7 +649,7 @@ EN.s2="Connect Dota 2";
 EN.s2p="At the game connection step, click “Set up game connection”. Then restart Dota 2. If data does not arrive, check the <code>-gamestateintegration</code> launch option.";
 EN.s3="Check the connection";
 EN.s3p="Open “Settings → Diagnostics” or “What’s wrong?” on the dashboard. If the connection fails, it shows the causes and fix buttons. Use Borderless window in Dota; <kbd>F8</kbd> toggles the panel.";
-EN.setupNote="The third image shows example diagnostics with no game connection. Your check results may differ.";
+EN.setupNote="The third image shows diagnostics with everything set up. If something is wrong, you will see the cause and a fix button there.";
 EN.screenReviewCaption="Example: two deaths holding lots of gold → a goal to buy components before fighting.";
 EN.supportTitle="Still need help?";
 EN.supportText="In the app, open <b>Settings → Diagnostics → “Create report”</b>. Attach the ZIP to your message and describe what happened. The app removes Steam IDs and keys from the report; it never sends it automatically.";
@@ -672,8 +672,8 @@ function setLang(l){lang=l;const d=l==='en'?EN:RU;
   document.getElementById('siteNav').setAttribute('aria-label',l==='en'?'Sections':'Разделы');
   document.getElementById('mMoments').setAttribute('aria-label',l==='en'?'Match situations':'Ситуации матча');
   document.getElementById('screenTabs').setAttribute('aria-label',l==='en'?'App screens':'Экраны программы');
-  document.querySelector('#screen-build img').alt=l==='en'?'ROSHIQ app: Juggernaut build, items by game stage, and explanations.':'Окно ROSHIQ: сборка Juggernaut, предметы по этапам матча и объяснения выбора.';
-  document.querySelector('#screen-review img').alt=l==='en'?'ROSHIQ app: match history, takeaways, a goal and phase review using example data.':'Окно ROSHIQ: история матчей Juggernaut, выводы, цель и разбор по фазам на демонстрационных данных.';
+  document.querySelector('#screen-build img').alt=l==='en'?'ROSHIQ 0.19.4: Juggernaut build and items by game stage.':'Окно ROSHIQ 0.19.4: сборка Juggernaut и предметы по этапам матча.';
+  document.querySelector('#screen-review img').alt=l==='en'?'ROSHIQ 0.19.4: Ogre Magi match review and a goal for the next game; match ID hidden.':'Окно ROSHIQ 0.19.4: разбор матча Ogre Magi и цель на следующую игру; ID скрыт.';
   try{localStorage.setItem('roshiq-site-lang',l)}catch(e){}}
 document.getElementById('lang').addEventListener('click',()=>{setLang(lang==='ru'?'en':'ru');paintThemes()});
 try{if(localStorage.getItem('roshiq-site-lang')==='en')setLang('en')}catch(e){}
@@ -697,11 +697,11 @@ const BGS=[["standard","Фон: обычный","Background: standard"],["deep",
 const root=document.documentElement;
 function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function paintThemes(){
-  const acc=root.dataset.acc||'lime', bg=root.dataset.bg||'standard', en=lang==='en';
+  const acc=root.dataset.acc||'orange', bg=root.dataset.bg||'standard', en=lang==='en';
   const A=document.getElementById('tpAcc'), B=document.getElementById('tpBg'); A.innerHTML=''; B.innerHTML='';
   ACC.forEach(([k,c,brand,ru,eng])=>{const b=document.createElement('button');b.type='button';b.className='sw';b.style.setProperty('--c',c);
     b.title=en?eng:ru;b.setAttribute('aria-label',b.title);b.setAttribute('aria-pressed',k===acc);
-    b.onclick=()=>{if(k==='lime')delete root.dataset.acc;else root.dataset.acc=k;store('roshiq-site-acc',k);paintThemes()};A.appendChild(b)});
+    b.onclick=()=>{if(k==='orange')delete root.dataset.acc;else root.dataset.acc=k;store('roshiq-site-acc',k);paintThemes()};A.appendChild(b)});
   BGS.forEach(([k,ru,eng],i)=>{const b=document.createElement('button');b.type='button';b.className='bgo';
     b.textContent=(en?['Standard','Deep','Black']:['Обычный','Глубокий','Чёрный'])[i];b.title=en?eng:ru;b.setAttribute('aria-pressed',k===bg);
     b.onclick=()=>{if(k==='standard')delete root.dataset.bg;else root.dataset.bg=k;store('roshiq-site-bg',k);paintThemes()};B.appendChild(b)});
