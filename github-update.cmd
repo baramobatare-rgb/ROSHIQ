@@ -19,14 +19,26 @@ rem Имя и почта для коммитов только в этом реп
 git config user.name >nul 2>&1 || git config user.name "baramobatare-rgb"
 git config user.email >nul 2>&1 || git config user.email "baramobatare-rgb@users.noreply.github.com"
 
-echo Получаю текущее состояние GitHub...
-git fetch origin main >> "%LOG%" 2>&1
-git rev-parse --verify -q origin/main >nul 2>&1 && git reset --soft origin/main >> "%LOG%" 2>&1
-
+rem Сначала сохраняем свои изменения, потом сливаем с GitHub: файлы, которые здесь не менялись (например, сборки,
+rem которые раз в неделю обновляет GitHub), берутся с GitHub, а не затираются старой копией из этой папки.
 git add -A >> "%LOG%" 2>&1
 set MSG=%~1
 if "%MSG%"=="" set MSG=ROSHIQ update %date%
-git commit -m "%MSG%" >> "%LOG%" 2>&1
+git diff --cached --quiet || git commit -m "%MSG%" >> "%LOG%" 2>&1
+
+echo Получаю текущее состояние GitHub...
+git fetch origin main >> "%LOG%" 2>&1
+git rev-parse --verify -q origin/main >nul 2>&1 || goto push
+git merge --no-edit origin/main >> "%LOG%" 2>&1
+if errorlevel 1 (
+  git merge --abort >> "%LOG%" 2>&1
+  echo ОШИБКА: изменения здесь и на GitHub затрагивают одни и те же строки. Подробности в github-update.log
+  echo MERGE CONFLICT >> "%LOG%"
+  pause
+  exit /b 1
+)
+
+:push
 
 echo Загружаю на GitHub (если откроется окно входа — войдите)...
 git push -u origin main >> "%LOG%" 2>&1
