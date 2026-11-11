@@ -7,7 +7,7 @@
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
         FontFamily="Segoe UI Variable Text, Segoe UI" FontSize="14"
-        TextOptions.TextFormattingMode="Display" UseLayoutRounding="True" RenderOptions.BitmapScalingMode="HighQuality"
+        TextOptions.TextFormattingMode="Ideal" TextOptions.TextRenderingMode="ClearType" UseLayoutRounding="True" RenderOptions.BitmapScalingMode="HighQuality"
         Icon="{DynamicResource AppIcon}">
     <Window.Resources>
         <Style x:Key="TabNumber" TargetType="TextBlock">
