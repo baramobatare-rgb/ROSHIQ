@@ -139,3 +139,36 @@ public sealed class RoshanTracker
         return list;
     }
 }
+
+/// <summary>
+/// 0.21.5: таймер глифа врагов по ручной отметке (как Рошан): перезарядка 5 минут.
+/// Глиф обновляется раньше, если команда теряет первую вышку T1/T2 или первый барак ближнего боя — об этом честно говорим в подсказке.
+/// </summary>
+public sealed class GlyphTracker
+{
+    public const int CooldownSec = 300;
+    private bool _announced;
+
+    public int? UsedAt { get; private set; }
+
+    public void MarkUsed(int clock) { UsedAt = clock; _announced = false; }
+
+    public void Clear() { UsedAt = null; _announced = false; }
+
+    /// <summary>Сколько секунд до готовности глифа; null — отметки нет (или она устарела).</summary>
+    public int? ReadyIn(int clock)
+    {
+        if (UsedAt is not int u) return null;
+        int left = u + CooldownSec - clock;
+        if (clock < u - 30 || left < -60) { Clear(); return null; }   // новый матч или давно готов
+        return Math.Max(0, left);
+    }
+
+    /// <summary>true один раз — в момент, когда глиф врагов снова готов.</summary>
+    public bool DueReady(int clock)
+    {
+        if (ReadyIn(clock) is not int left || left > 0 || _announced) return false;
+        _announced = true;
+        return true;
+    }
+}

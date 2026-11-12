@@ -104,6 +104,15 @@ internal static class StringsExtra
         ["rosh_state_aegis"] = ("Аегис ещё {0}", "Aegis {0} left"),
         ["rosh_state_maybe"] = ("Может быть жив · точно к {0}", "May be alive · surely by {0}"),
         ["ov_hotkey_roshan"] = ("Рошан убит", "Roshan killed"),
+        ["ov_hotkey_glyph"] = ("Глиф врага", "Enemy glyph"),
+        ["glyph_header"] = ("Глиф врага", "Enemy glyph"),
+        ["glyph_short"] = ("Глиф врага", "Enemy glyph"),
+        ["glyph_ready_short"] = ("готов", "ready"),
+        ["glyph_marked"] = ("Отмечено: глиф врагов снова будет в {0}. Раньше — если они потеряют первую вышку T1/T2 или первый барак.",
+            "Marked: the enemy glyph is back at {0}. Sooner if they lose their first T1/T2 tower or first barracks."),
+        ["glyph_ready"] = ("Глиф врагов снова готов — пушьте с запасом по времени.", "The enemy glyph is ready again — push with time to spare."),
+        ["glyph_hint"] = ("Увидели, что враги нажали глиф, — нажмите {0}: оверлей покажет, когда он снова будет готов (5 минут).",
+            "Saw the enemy use glyph? Press {0}: the overlay shows when it is ready again (5 minutes)."),
 
         // ---------- ситуативные подсказки
         ["alerts_title"] = ("Ситуативные подсказки", "Situational hints"),

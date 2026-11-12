@@ -27,6 +27,7 @@ public sealed class AppHost : IDisposable
     private string _lastEditHotkey = "";
     private string _lastDetailsHotkey = "";
     private string _lastRoshanHotkey = "";
+    private string _lastGlyphHotkey = "";
     private readonly TimerAnnouncer _timerAnnouncer = new();
     private readonly MatchRecorder _recorder = new();
     private readonly HashSet<int> _notedEnemies = new();
@@ -120,6 +121,7 @@ public sealed class AppHost : IDisposable
         Settings.Changed += (_, _) => ApplySettings();
         Overlay.DraftRoleRequested += (_, _) => SelectPosition((Position)((int)CurrentPosition % 5 + 1));
         Overlay.RoshanKillMarked += (_, _) => _dispatcher.InvokeAsync(ToggleRoshanMark);
+        Overlay.EnemyGlyphMarked += (_, _) => _dispatcher.InvokeAsync(ToggleGlyphMark);
 
         _tick = new DispatcherTimer(DispatcherPriority.Background) { Interval = TimeSpan.FromSeconds(1) };
         _tick.Tick += (_, _) => OnTick();
@@ -295,6 +297,8 @@ public sealed class AppHost : IDisposable
     public DraftTrainer Trainer { get; private set; }
     public MatchAlerts Alerts { get; } = new();
     public RoshanTracker Roshan { get; } = new();
+    /// <summary>0.21.5: глиф врагов по ручной отметке.</summary>
+    public GlyphTracker EnemyGlyph { get; } = new();
     /// <summary>Найденное обновление ROSHIQ на GitHub (если проверка включена).</summary>
     public ReleaseInfo? AvailableUpdate { get; private set; }
     /// <summary>0.17.4: единая проверка обновлений — один запрос на всех, кэш, пауза после лимита GitHub, резервный источник.</summary>
@@ -365,6 +369,7 @@ public sealed class AppHost : IDisposable
         _lastEditHotkey = Settings.Current.Overlay.EditHotkey;
         _lastDetailsHotkey = Settings.Current.Overlay.DetailsHotkey;
         _lastRoshanHotkey = Settings.Current.Overlay.RoshanHotkey;
+        _lastGlyphHotkey = Settings.Current.Overlay.GlyphHotkey;
         RestartGsiIfNeeded(force: true);
         RecomputeBuild();
         _tick.Start();
@@ -478,6 +483,7 @@ public sealed class AppHost : IDisposable
             _alertActive = Array.Empty<string>();
             _timerAnnouncer.Reset();
             Roshan.Clear();
+            EnemyGlyph.Clear();
             _roleDetector.Reset();
             _farmRole.Reset();
             if (_queueRoleApplied && snap.IsHeroSelection) _roleDetector.AcceptAssignedRole();
@@ -720,9 +726,10 @@ public sealed class AppHost : IDisposable
         Reminders.ApplySettings(s.Notifications);
         ApplyPool();
         if (s.Overlay.ToggleHotkey != _lastToggleHotkey || s.Overlay.EditHotkey != _lastEditHotkey || s.Overlay.DetailsHotkey != _lastDetailsHotkey
-            || s.Overlay.RoshanHotkey != _lastRoshanHotkey)
+            || s.Overlay.RoshanHotkey != _lastRoshanHotkey || s.Overlay.GlyphHotkey != _lastGlyphHotkey)
         {
             _lastRoshanHotkey = s.Overlay.RoshanHotkey;
+            _lastGlyphHotkey = s.Overlay.GlyphHotkey;
             _lastDetailsHotkey = s.Overlay.DetailsHotkey;
             _lastToggleHotkey = s.Overlay.ToggleHotkey;
             _lastEditHotkey = s.Overlay.EditHotkey;
@@ -1499,6 +1506,9 @@ public sealed class AppHost : IDisposable
         foreach (var e in _timerAnnouncer.Due(Database.Timers, clock, TimerOn))
             if (t.Toasts) ShowEventToast(L.Get("timer_header").ToUpperInvariant(), L.Format("timer_soon", TimerName(e.Rule), e.InSec),
                 priority: TipPriority.Urgent, kind: "timer", key: "timer:" + TimerName(e.Rule), ttlSec: Math.Max(5, e.InSec), inGame: true, allowWhenDead: true);
+        if (EnemyGlyph.DueReady(clock))
+            ShowEventToast(L.Get("glyph_header").ToUpperInvariant(), L.Get("glyph_ready"), priority: TipPriority.Urgent, kind: "glyph",
+                key: "glyph_ready", ttlSec: 20, inGame: true, allowWhenDead: true);
         foreach (var key in Roshan.Due(clock))
             ShowEventToast(L.Get("rosh_header").ToUpperInvariant(), L.Get(key), priority: TipPriority.Urgent, kind: "rosh", key: "rosh:" + key,
                 ttlSec: 30, inGame: true, allowWhenDead: true);
@@ -1721,6 +1731,31 @@ public sealed class AppHost : IDisposable
         RaiseChanged();
     }
 
+    /// <summary>Горячая клавиша «Враги нажали глиф»: таймер 5 минут; повторное нажатие в течение 10 секунд снимает отметку.</summary>
+    public void ToggleGlyphMark()
+    {
+        var L = Loc.Instance;
+        var header = L.Get("glyph_header").ToUpperInvariant();
+        if (GameClock is not int clock)
+        {
+            ShowEventToast(header, L.Get("rosh_need_clock"), warning: true, priority: TipPriority.Urgent, kind: "glyph_mark", ttlSec: 8);
+            return;
+        }
+        if (EnemyGlyph.UsedAt is int u && clock - u < 10)
+        {
+            EnemyGlyph.Clear();
+            ShowEventToast(header, L.Get("rosh_cleared"), priority: TipPriority.Urgent, kind: "glyph_mark", ttlSec: 8);
+        }
+        else
+        {
+            EnemyGlyph.MarkUsed(clock);
+            ShowEventToast(header, L.Format("glyph_marked", GameTimers.Clock(clock + GlyphTracker.CooldownSec)),
+                priority: TipPriority.Urgent, kind: "glyph_mark", ttlSec: 10);
+        }
+        RefreshOverlay();
+        RaiseChanged();
+    }
+
     public void ClearRoshanMark()
     {
         Roshan.Clear();
@@ -1767,6 +1802,8 @@ public sealed class AppHost : IDisposable
                 : $"{L.Get("rosh_short")} {GameTimers.Clock(r.RespawnMinAt - clock)}–{GameTimers.Clock(r.RespawnMaxAt - clock)}");
         else if (r.Phase == RoshanPhase.MaybeAlive)
             parts.Add($"{L.Get("rosh_short")} ≤{GameTimers.Clock(r.RespawnMaxAt - clock)}");
+        if (EnemyGlyph.ReadyIn(clock) is int glyphIn)
+            parts.Add(glyphIn > 0 ? $"{L.Get("glyph_short")} {GameTimers.Clock(glyphIn)}" : $"{L.Get("glyph_short")} {L.Get("glyph_ready_short")}");
         return string.Join(" · ", parts).ToUpperInvariant();
     }
 

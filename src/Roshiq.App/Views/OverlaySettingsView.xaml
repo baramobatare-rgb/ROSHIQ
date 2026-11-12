@@ -103,7 +103,7 @@
             <Border Style="{StaticResource Card}">
                 <StackPanel>
                     <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T ov_hotkeys, Upper=True}" /></TextBlock>
-                    <UniformGrid Columns="4">
+                    <UniformGrid Columns="5">
                         <StackPanel Margin="0,0,10,0">
                             <TextBlock Text="{app:T ov_hotkey_toggle}" Style="{StaticResource FieldLabel}" />
                             <v:HotkeyBox x:Name="ToggleHotkey" FontFamily="{StaticResource MonoFont}" />
@@ -119,6 +119,10 @@
                         <StackPanel>
                             <TextBlock Text="{app:T ov_hotkey_roshan}" Style="{StaticResource FieldLabel}" />
                             <v:HotkeyBox x:Name="RoshanHotkey" FontFamily="{StaticResource MonoFont}" />
+                        </StackPanel>
+                        <StackPanel Margin="10,0,0,0">
+                            <TextBlock Text="{app:T ov_hotkey_glyph}" Style="{StaticResource FieldLabel}" />
+                            <v:HotkeyBox x:Name="GlyphHotkey" FontFamily="{StaticResource MonoFont}" />
                         </StackPanel>
                     </UniformGrid>
                     <DockPanel Margin="0,10,0,0">

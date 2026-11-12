@@ -38,6 +38,7 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         DetailsHotkey.Text = o.DetailsHotkey;
         EditHotkey.Text = o.EditHotkey;
         RoshanHotkey.Text = o.RoshanHotkey;
+        GlyphHotkey.Text = o.GlyphHotkey;
         BuildProfiles();
         HideUnfocused.IsChecked = o.HideWhenGameNotFocused;
         SnapBox.IsChecked = o.SnapToEdges;
@@ -189,7 +190,7 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
 
     private void SaveHotkeys_Click(object sender, RoutedEventArgs e) => SaveHotkeys(
         HotkeyRules.Normalize(ToggleHotkey.Text), HotkeyRules.Normalize(DetailsHotkey.Text),
-        HotkeyRules.Normalize(EditHotkey.Text), HotkeyRules.Normalize(RoshanHotkey.Text));
+        HotkeyRules.Normalize(EditHotkey.Text), HotkeyRules.Normalize(RoshanHotkey.Text), HotkeyRules.Normalize(GlyphHotkey.Text));
 
     private void ResetHotkeys_Click(object sender, RoutedEventArgs e)
     {
@@ -198,14 +199,15 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         DetailsHotkey.Text = d.DetailsHotkey;
         EditHotkey.Text = d.EditHotkey;
         RoshanHotkey.Text = d.RoshanHotkey;
-        SaveHotkeys(d.ToggleHotkey, d.DetailsHotkey, d.EditHotkey, d.RoshanHotkey);
+        GlyphHotkey.Text = d.GlyphHotkey;
+        SaveHotkeys(d.ToggleHotkey, d.DetailsHotkey, d.EditHotkey, d.RoshanHotkey, d.GlyphHotkey);
     }
 
     /// <summary>Проверка (формат, повторы), сохранение и отчёт: что занято другой программой и что пересекается с Dota.</summary>
-    private void SaveHotkeys(string toggle, string details, string edit, string roshan)
+    private void SaveHotkeys(string toggle, string details, string edit, string roshan, string glyph)
     {
         var L = Loc.Instance;
-        var all = new Dictionary<string, string> { ["toggle"] = toggle, ["details"] = details, ["edit"] = edit, ["roshan"] = roshan };
+        var all = new Dictionary<string, string> { ["toggle"] = toggle, ["details"] = details, ["edit"] = edit, ["roshan"] = roshan, ["glyph"] = glyph };
         if (all.Values.Any(g => !HotkeyManager.TryParse(g, out _, out _)))
         {
             HotkeyStatus.Text = L.Get("ov_hotkey_invalid");
@@ -223,6 +225,7 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
             s.Overlay.DetailsHotkey = details;
             s.Overlay.EditHotkey = edit;
             s.Overlay.RoshanHotkey = roshan;
+            s.Overlay.GlyphHotkey = glyph;
         });
         // перерегистрация идёт через диспетчер — результат смотрим чуть позже
         Dispatcher.InvokeAsync(() =>

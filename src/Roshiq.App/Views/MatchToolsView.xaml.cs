@@ -42,7 +42,7 @@ public partial class MatchToolsView : UserControl, IRefreshable
         var reduced = MatchAlerts.AdaptiveMultipliers(App.Host.History.All());
         AdaptiveInfo.Text = reduced.Count == 0 ? Loc.T("alert_adaptive_none")
             : Loc.Instance.Format("alert_adaptive_list", string.Join(", ", reduced.Select(x => Loc.T(x.Key + "_name") + " ×" + x.Value.ToString("0"))));
-        RoshanHint.Text = Loc.Instance.Format("rosh_hint", s.Overlay.RoshanHotkey);
+        RoshanHint.Text = Loc.Instance.Format("rosh_hint", s.Overlay.RoshanHotkey) + "\n" + Loc.Instance.Format("glyph_hint", s.Overlay.GlyphHotkey);
 
         TimerKinds.Children.Clear();
         foreach (var rule in App.Host.Database.Timers)

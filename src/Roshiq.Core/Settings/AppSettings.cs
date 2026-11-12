@@ -121,6 +121,8 @@ public sealed class OverlaySettings
     public bool AutoScale { get; set; } = true;
     /// <summary>Отметить убийство Рошана (запускает таймер возрождения и Аегиса).</summary>
     public string RoshanHotkey { get; set; } = "Ctrl+Shift+K";
+    /// <summary>0.21.5: отметить, что враги нажали глиф (таймер перезарядки 5 минут).</summary>
+    public string GlyphHotkey { get; set; } = "Ctrl+Shift+G";
     public string TargetProcess { get; set; } = "dota2";
     public bool HideWhenGameNotFocused { get; set; } = false;
     /// <summary>Положение панели для каждого разрешения окна игры ("2560x1440" → прямоугольник).</summary>
@@ -138,6 +140,7 @@ public sealed class OverlaySettings
         if (string.IsNullOrWhiteSpace(EditHotkey)) EditHotkey = "Ctrl+Shift+F8";
         if (string.IsNullOrWhiteSpace(DetailsHotkey)) DetailsHotkey = "Ctrl+F8";
         if (string.IsNullOrWhiteSpace(RoshanHotkey)) RoshanHotkey = "Ctrl+Shift+K";
+        if (string.IsNullOrWhiteSpace(GlyphHotkey)) GlyphHotkey = "Ctrl+Shift+G";
         Scale = Math.Clamp(double.IsFinite(Scale) ? Scale : 1.0, 0.8, 2.0);
         if (string.IsNullOrWhiteSpace(TargetProcess)) TargetProcess = "dota2";
         if (!Enum.IsDefined(Mode)) Mode = OverlayMode.Minimal;

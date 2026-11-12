@@ -51,6 +51,7 @@ public sealed class OverlayController : IDisposable
     }
     public bool ToggleHotkeyOk { get; private set; }
     public bool RoshanHotkeyOk { get; private set; }
+    public bool GlyphHotkeyOk { get; private set; }
     /// <summary>Сочетания, которые не удалось зарегистрировать (заняты другой программой или не распознаны).</summary>
     public IReadOnlyList<string> FailedHotkeys { get; private set; } = Array.Empty<string>();
     /// <summary>Горячие клавиши уже регистрировались (после Start).</summary>
@@ -58,6 +59,8 @@ public sealed class OverlayController : IDisposable
 
     /// <summary>Нажата клавиша «Рошан убит» — приложение запускает таймер возрождения.</summary>
     public event EventHandler? RoshanKillMarked;
+    /// <summary>Нажата клавиша «Враги нажали глиф».</summary>
+    public event EventHandler? EnemyGlyphMarked;
 
     public event EventHandler? StateChanged;
     public event EventHandler? DraftRoleRequested;
@@ -86,6 +89,8 @@ public sealed class OverlayController : IDisposable
             if (!_hotkeys.Register(o.DetailsHotkey, ToggleDetails)) failed.Add(o.DetailsHotkey);
             RoshanHotkeyOk = _hotkeys.Register(o.RoshanHotkey, () => RoshanKillMarked?.Invoke(this, EventArgs.Empty));
             if (!RoshanHotkeyOk) failed.Add(o.RoshanHotkey);
+            GlyphHotkeyOk = _hotkeys.Register(o.GlyphHotkey, () => EnemyGlyphMarked?.Invoke(this, EventArgs.Empty));
+            if (!GlyphHotkeyOk) failed.Add(o.GlyphHotkey);
             FailedHotkeys = failed;
         }
         catch (Exception ex)
