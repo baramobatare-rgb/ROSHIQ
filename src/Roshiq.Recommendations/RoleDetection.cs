@@ -151,6 +151,75 @@ public sealed class LaneRoleDetector
 }
 
 /// <summary>
+/// Проверка роли по фарму на 10:00: в поиске можно получить поз. 5, а играть кором (Radiance и 35+ добиваний к 10 минуте),
+/// и наоборот. Пороги те же, что у разбора после игры (<see cref="MatchStory.PlaysCore"/>), чтобы подсказки в матче
+/// и итог говорили об одной и той же роли. Срабатывает один раз за матч; ручной выбор роли не трогает.
+/// </summary>
+public sealed class FarmRoleCheck
+{
+    public const int AtSec = 600;
+    public const int CoreLastHits = 35;
+    public const int SupportLastHits = 15;
+    private const int LaneFromSec = 420;
+    private readonly List<Lane> _lanes = new();
+    private int _lastSample = int.MinValue;
+
+    public bool Done { get; private set; }
+
+    public void Reset() { _lanes.Clear(); _lastSample = int.MinValue; Done = false; }
+
+    /// <summary>Где герой стоит с 7:00 до 10:00 — по этому выбирается позиция внутри кора или саппорта.</summary>
+    public void Observe(int clock, int? x, int? y)
+    {
+        if (Done || clock < LaneFromSec || clock > AtSec || x is not int px || y is not int py) return;
+        if (_lastSample != int.MinValue && clock - _lastSample < 5) return;
+        _lastSample = clock;
+        _lanes.Add(MapLanes.Classify(px, py));
+    }
+
+    /// <summary>Новая позиция, если фарм к 10:00 явно не совпадает с текущей ролью; иначе null. Решение принимается один раз.</summary>
+    public RoleGuess? TryDecide(int clock, int? lastHits, Position current, string? team, Hero? hero)
+    {
+        if (Done || clock < AtSec || lastHits is not int lh) return null;
+        Done = true;
+        if (clock > AtSec + 120) return null;   // ROSHIQ подключился поздно: к 20-й минуте у саппорта бывает и 35 добиваний
+        bool core = current is Position.Carry or Position.Mid or Position.Offlane;
+        var lane = MainLane();
+        if (!core && lh >= CoreLastHits)
+        {
+            var p = lane == Lane.Mid ? Position.Mid
+                : team is "radiant" or "dire" && lane == MapLanes.SafeLane(team) ? Position.Carry
+                : team is "radiant" or "dire" && lane == MapLanes.OffLane(team) ? Position.Offlane
+                : FirstOf(hero, Position.Carry, Position.Mid, Position.Offlane) ?? Position.Carry;
+            return new RoleGuess(p, 0.8, lane, $"{lh} добиваний к 10:00 — это фарм кора", $"{lh} last hits by 10:00 is core farm");
+        }
+        if (core && lh < SupportLastHits)
+        {
+            var p = team is "radiant" or "dire" && lane == MapLanes.SafeLane(team) ? Position.HardSupport
+                : team is "radiant" or "dire" && lane == MapLanes.OffLane(team) ? Position.SoftSupport
+                : FirstOf(hero, Position.SoftSupport, Position.HardSupport) ?? Position.SoftSupport;
+            return new RoleGuess(p, 0.8, lane, $"всего {lh} добиваний к 10:00 — это игра саппорта", $"only {lh} last hits by 10:00 is support play");
+        }
+        return null;
+    }
+
+    private static Position? FirstOf(Hero? hero, params Position[] set)
+    {
+        if (hero == null) return null;
+        foreach (var p in hero.Positions) if (set.Contains(p)) return p;
+        return null;
+    }
+
+    private Lane MainLane()
+    {
+        var known = _lanes.Where(l => l != Lane.Unknown).ToList();
+        if (known.Count < 6) return Lane.Unknown;
+        var top = known.GroupBy(l => l).OrderByDescending(g => g.Count()).First();
+        return top.Count() * 2 >= known.Count ? top.Key : Lane.Unknown;
+    }
+}
+
+/// <summary>
 /// Следит, запущена ли Dota 2: решение принимается после нескольких одинаковых проверок подряд, чтобы не мигать.
 /// Первое устоявшееся состояние (игра уже была открыта при запуске ROSHIQ) событием не считается.
 /// </summary>

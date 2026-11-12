@@ -110,6 +110,7 @@ public static class DiagnosticsRunner
             MatchRoleSource.Queue => "diag_role_queue",
             MatchRoleSource.Screen => "diag_role_screen",
             MatchRoleSource.Lane => "diag_role_lane",
+            MatchRoleSource.Farm => "diag_role_farm",
             MatchRoleSource.Manual => "diag_role_manual",
             _ => host.QueueHasMultiple ? "diag_role_multiple" : "diag_role_wait"
         };

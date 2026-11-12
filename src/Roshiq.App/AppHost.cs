@@ -45,6 +45,7 @@ public sealed class AppHost : IDisposable
     private string? _lastMatchId;
     private readonly DraftPickTracker _autoPicks = new();
     private readonly LaneRoleDetector _roleDetector = new();
+    private readonly FarmRoleCheck _farmRole = new();
     private bool _queueRoleApplied;
     private bool _queueHasMultiple;
     private bool _rolePromptShown;
@@ -305,6 +306,7 @@ public sealed class AppHost : IDisposable
             _roleSessionStartedUtc = DateTime.UtcNow;
             _queueRoleLastCheckUtc = DateTime.MinValue;
             _roleDetector.Reset();
+            _farmRole.Reset();
             OnEffectiveRoleChanged();
         }
         if (snap.GameState != _lastGameState)
@@ -339,6 +341,7 @@ public sealed class AppHost : IDisposable
             _timerAnnouncer.Reset();
             Roshan.Clear();
             _roleDetector.Reset();
+            _farmRole.Reset();
             if (_queueRoleApplied && snap.IsHeroSelection) _roleDetector.AcceptAssignedRole();
             _spikesShown.Clear();
             _spikeItems.Clear();
@@ -354,6 +357,7 @@ public sealed class AppHost : IDisposable
         TryLinkFromGsi(snap);
         TickRankedRoleSelection(snap);
         TickRoleDetection(snap);
+        TickFarmRole(snap);
         TickGameInsights(snap);
         RaiseChanged();
     }
@@ -974,6 +978,26 @@ public sealed class AppHost : IDisposable
         var L = Loc.Instance;
         ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
             L.Format("role_auto_changed", L.PositionName(guess.Position), guess.Reason(L.Language)), kind: "role", ttlSec: 60);
+    }
+
+    /// <summary>
+    /// На 10:00 сверить роль с фармом: поз. 5 из поиска с 35+ добиваниями — это кор, кор без добиваний — саппорт.
+    /// 11.11.2026 так игрались Omniknight «поз. 5» с Radiance и Invoker «поз. 1» с 43 добиваниями за игру,
+    /// и все подсказки матча шли для чужой роли.
+    /// </summary>
+    private void TickFarmRole(GameStateSnapshot snap)
+    {
+        if (!Settings.Current.Automation.AutoRole || !Roles.Active || Roles.Source == MatchRoleSource.Manual
+            || !snap.IsInProgress || snap.ClockTime is not int clock) return;
+        _farmRole.Observe(clock, snap.HeroX, snap.HeroY);
+        var guess = _farmRole.TryDecide(clock, snap.LastHits, CurrentPosition, snap.TeamName, CurrentHero);
+        if (guess == null) return;
+        Log.Info($"Роль по фарму на 10:00: {CurrentPosition} → {guess.Position} ({guess.ReasonRu})");
+        if (!Roles.ApplyAutomatic(guess.Position, MatchRoleSource.Farm, guess.ReasonRu)) return;
+        OnEffectiveRoleChanged();
+        var L = Loc.Instance;
+        ShowEventToast(L.Get("role_auto_header").ToUpperInvariant(),
+            L.Format("role_farm_changed", L.PositionName(guess.Position), guess.Reason(L.Language)), kind: "role", ttlSec: 60);
     }
 
     private async Task StartupImportAsync()

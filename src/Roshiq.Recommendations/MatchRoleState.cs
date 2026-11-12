@@ -2,7 +2,7 @@ using Roshiq.Core.Models;
 
 namespace Roshiq.Recommendations;
 
-public enum MatchRoleSource { Default, Lane, Queue, Screen, Manual }
+public enum MatchRoleSource { Default, Lane, Queue, Screen, Farm, Manual }
 
 /// <summary>Separates the saved usual role from the role for one live match.</summary>
 public sealed class MatchRoleState
@@ -50,7 +50,9 @@ public sealed class MatchRoleState
         return true;
     }
 
-    /// <summary>Manual wins; screen beats queue, queue beats lane. A lower-priority guess cannot replace a known role.</summary>
+    /// <summary>
+    /// Manual wins; farm by 10:00 beats screen, screen beats queue, queue beats lane. A lower-priority guess cannot replace a known role.
+    /// </summary>
     public bool ApplyAutomatic(Position position, MatchRoleSource source, string? reason = null)
     {
         if (!Active || source is MatchRoleSource.Default or MatchRoleSource.Manual || source < Source) return false;
