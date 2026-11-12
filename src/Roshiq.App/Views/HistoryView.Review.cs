@@ -20,6 +20,10 @@ public partial class HistoryView
     {
         var L = Loc.Instance;
         OdReviewPanel.Children.Clear();
+        // 0.21.1: сравнение с игроками на герое по записи матча (без Steam и без разбора OpenDota);
+        // если разбор OpenDota есть и в нём своё сравнение — показывается оно, а это не дублируем
+        var odReview = m.MatchId != null && m.MatchId.All(char.IsDigit) ? App.Host.Reviews.Get(m.MatchId) : null;
+        if (odReview == null || odReview.Benchmarks.Count == 0) _ = ShowHeroComparisonAsync(m);
         if (m.MatchId == null || !m.MatchId.All(char.IsDigit)) return;
 
         OdReviewPanel.Children.Add(new TextBlock
@@ -146,6 +150,21 @@ public partial class HistoryView
         return panel;
     }
 
+    private async Task ShowHeroComparisonAsync(MatchRecord m)
+    {
+        var bench = await App.Host.BenchmarksForAsync(m.HeroId);
+        var rows = HeroComparison.Build(m, bench);
+        if (rows.Count == 0 || !ReferenceEquals(_selected, m)) return;
+        var L = Loc.Instance;
+        var panel = new StackPanel();
+        var title = new StackPanel { Orientation = Orientation.Horizontal };
+        title.Children.Add(SubTitle(L.Get("review_bench")));
+        title.Children.Add(new HelpTip { Text = L.Get("bench_note"), Margin = new Thickness(6, 8, 0, 0) });
+        panel.Children.Add(title);
+        foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) panel.Children.Add(BenchmarkBar(b, L));
+        OdReviewPanel.Children.Insert(0, panel);
+    }
+
     private TextBlock SubTitle(string text) => new()
     {
         Text = text, Style = (Style)FindResource("MutedText"), FontWeight = FontWeights.SemiBold,
@@ -168,7 +187,7 @@ public partial class HistoryView
     }
 
     /// <summary>Полоска «лучше, чем у N% игроков на этом герое».</summary>
-    private FrameworkElement BenchmarkBar(Roshiq.Data.Benchmark b, Loc L)
+    internal static FrameworkElement BenchmarkBar(Roshiq.Data.Benchmark b, Loc L)
     {
         var (ru, en) = MatchReviewBuilder.BenchmarkNames[b.Key];
         int pct = (int)Math.Round(b.Pct * 100);

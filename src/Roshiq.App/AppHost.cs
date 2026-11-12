@@ -82,6 +82,7 @@ public sealed class AppHost : IDisposable
 
         Database = GameDatabase.Load(AppPaths.DataOverrides, Settings.Current.Data.AutoUpdateData ? RemoteData.UsableRemoteDir(AppPaths.DataRemote) : null);
         Stats = new MatchupStatsCache(Path.Combine(AppPaths.Cache, "matchups.json"));
+        Benchmarks = new HeroBenchmarksCache(Path.Combine(AppPaths.Cache, "benchmarks.json"));
         Analyzer = new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats);
         Builds = new ItemBuildEngine(Database);
         Advisor = new RoleAdvisor(Database);
@@ -129,6 +130,29 @@ public sealed class AppHost : IDisposable
     public bool QueueHasMultiple => _queueHasMultiple;
     public GameDatabase Database { get; private set; }
     public MatchupStatsCache Stats { get; }
+    /// <summary>0.21.1: перцентили OpenDota по героям для сравнения матча с другими игроками.</summary>
+    public HeroBenchmarksCache Benchmarks { get; }
+
+    /// <summary>
+    /// Перцентили по герою: из кэша, если им меньше недели; иначе один запрос к OpenDota (если онлайн-статистика разрешена).
+    /// Сеть недоступна — отдаём что есть в кэше, даже старое.
+    /// </summary>
+    public async Task<HeroBenchmarks?> BenchmarksForAsync(int heroId)
+    {
+        if (heroId <= 0) return null;
+        var now = DateTime.UtcNow;
+        if (Benchmarks.IsFresh(heroId, now)) return Benchmarks.Get(heroId);
+        var d = Settings.Current.Data;
+        if (!d.AllowOnlineStats) return Benchmarks.Get(heroId);
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var b = await client.GetBenchmarksAsync(heroId, CancellationToken.None);
+            if (b != null) { Benchmarks.Put(b); return b; }
+        }
+        catch (Exception ex) { Log.Warn($"Сравнение с игроками: OpenDota недоступен ({ex.Message})"); }
+        return Benchmarks.Get(heroId);
+    }
     public DraftAnalyzer Analyzer { get; private set; }
     public ItemBuildEngine Builds { get; private set; }
     public RoleAdvisor Advisor { get; private set; }

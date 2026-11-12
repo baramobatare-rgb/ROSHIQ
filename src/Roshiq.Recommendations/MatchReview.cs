@@ -70,6 +70,7 @@ public static class MatchReviewBuilder
         ["hero_healing_per_min"] = ("Лечение в минуту", "Healing per minute"),
         ["tower_damage"] = ("Урон по строениям", "Building damage"),
         ["kills_per_min"] = ("Убийства в минуту", "Kills per minute"),
+        ["deaths_per_min"] = ("Смертей за 10 минут", "Deaths per 10 minutes"),
     };
 
     /// <summary>Крупные предметы для сравнения таймингов: первые покупки дороже minCost (без расходников).</summary>

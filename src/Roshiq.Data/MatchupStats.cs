@@ -148,6 +148,15 @@ public sealed class OpenDotaClient : IDisposable
         }
     }
 
+    /// <summary>Перцентили по герою (GPM, XPM, добивания…) среди всех публичных матчей на нём.</summary>
+    public async Task<HeroBenchmarks?> GetBenchmarksAsync(int heroId, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync($"/benchmarks?hero_id={heroId}", ct).ConfigureAwait(false);
+        var b = HeroBenchmarks.Parse(doc.RootElement, DateTime.UtcNow);
+        if (b != null && b.HeroId == 0) b.HeroId = heroId;
+        return b;
+    }
+
     /// <summary>Пауза после ответа «слишком много запросов» (бесплатный лимит OpenDota — около 60 в минуту).</summary>
     public TimeSpan RateLimitPause { get; set; } = TimeSpan.FromSeconds(60);
 

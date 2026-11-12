@@ -60,6 +60,13 @@ public partial class PostMatchWindow : Window
         if (fb.Deferred.Count == 0) DeferredBlock.Visibility = Visibility.Collapsed;
 
         NextGoalText.Text = PostMatch.NextGoal(summary).Text(L.Language);
+        Loaded += async (_, _) =>
+        {
+            // сравнение с игроками на герое: перцентили OpenDota из кэша или одним запросом
+            var rows = HeroComparison.Build(m, await App.Host.BenchmarksForAsync(m.HeroId));
+            foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) BenchPanel.Children.Add(HistoryView.BenchmarkBar(b, L));
+            if (rows.Count > 0) BenchBlock.Visibility = Visibility.Visible;
+        };
         BasisText.Text = (summary.Compared >= PostMatch.MinValues && summary.Basis is string basis
             ? L.Format("pm_basis2", L.Get(basis), summary.Compared) : L.Get("pm_basis_few"))
             + (summary.RoleMismatch && m.Position is Position rp ? " " + L.Format("pm_role_mismatch", L.PositionName(rp)) : "");

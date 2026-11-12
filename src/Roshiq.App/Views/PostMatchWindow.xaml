@@ -33,6 +33,12 @@
             <StackPanel x:Name="StoryPanel" />
         </StackPanel>
 
+        <StackPanel x:Name="BenchBlock" Margin="0,16,0,0" Visibility="Collapsed">
+            <TextBlock Text="{app:T review_bench, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
+            <StackPanel x:Name="BenchPanel" />
+            <TextBlock Text="{app:T bench_note}" Style="{StaticResource MutedText}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
+        </StackPanel>
+
         <StackPanel x:Name="FeedbackBlock" Margin="0,16,0,0">
             <TextBlock Text="{app:T pm_feedback_title, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
             <StackPanel x:Name="FeedbackPanel" />
