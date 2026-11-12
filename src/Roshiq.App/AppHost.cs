@@ -320,6 +320,7 @@ public sealed class AppHost : IDisposable
             var completed = _recorder.Observe(ToTick(snap));
             if (completed != null) SaveMatch(completed);
             if (_recorder.Current is MatchRecord cur && cur.Id != _paceMatchId) OnMatchStarted(cur);
+            if (_recorder.Current is MatchRecord withDeaths) TickDeathCard(withDeaths);
             if (_deferredEarly.Count > 0 && _recorder.Current is MatchRecord rec) FlushDeferred(rec);
             if (_recorder.Current is MatchRecord live && DateTime.UtcNow - _lastCheckpointUtc >= CheckpointEvery)
             {
@@ -1854,9 +1855,32 @@ public sealed class AppHost : IDisposable
     // ------------------------------------------------------------------ личный темп и цели
 
     /// <summary>Начался новый матч: подготовить сравнение с обычным темпом и напомнить цель.</summary>
+    private int _deathCardsSeen;
+
+    /// <summary>
+    /// 0.21: карточка после смерти — пока ждёшь возрождения. Показываем только для смертей с известным временем
+    /// (записанных в этом сеансе), по одной на смерть.
+    /// </summary>
+    private void TickDeathCard(MatchRecord match)
+    {
+        int count = match.DeathEvents.Count;
+        if (count <= _deathCardsSeen) { _deathCardsSeen = count; return; }
+        var d = match.DeathEvents[^1];
+        var earlier = match.DeathEvents.Take(count - 1).ToList();
+        _deathCardsSeen = count;
+        if (!Settings.Current.Alerts.Enabled || !Settings.Current.Alerts.DeathCard) return;
+        var (facts, tip) = DeathCard.Build(d, earlier, match.Team);
+        var L = Loc.Instance;
+        var text = facts.Text(L.Language) + (tip != null ? "\n" + tip.Text(L.Language) : "");
+        Log.Info($"Карточка смерти: {facts.Ru}" + (tip != null ? $" — {tip.Kind}" : ""));
+        ShowEventToast(L.Get("death_card_header").ToUpperInvariant(), text, warning: tip != null, kind: "death",
+            ttlSec: 25, inGame: true, allowWhenDead: true, key: "death_card");
+    }
+
     private void OnMatchStarted(MatchRecord current)
     {
         _paceMatchId = current.Id;
+        _deathCardsSeen = current.DeathEvents.Count;
         _paceItemsSeen.Clear();
         var history = History.All();
         _pace = new PaceAdvisor(history, current.HeroId, current.Position ?? CurrentPosition, current.Id);

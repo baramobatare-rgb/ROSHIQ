@@ -300,6 +300,8 @@ public sealed class AlertSettings
     public bool Adaptive { get; set; } = true;
     /// <summary>Сравнивать текущий матч с вашим обычным темпом (добивания, тайминги).</summary>
     public bool Pace { get; set; } = true;
+    /// <summary>После смерти показывать карточку: где, сколько золота, был ли ТП и выкуп, и один совет.</summary>
+    public bool DeathCard { get; set; } = true;
 
     public void Normalize()
     {
