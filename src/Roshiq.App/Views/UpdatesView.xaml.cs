@@ -166,7 +166,7 @@ public partial class UpdatesView : UserControl, IRefreshable
             var hero = h.Database.FindHero(key);
             if (hero == null || !notes.Heroes.TryGetValue(hero.Key, out var list) || list.Count == 0) continue;
             shown++;
-            PatchNotesPanel.Children.Add(Ui.Text(Ui.Up(hero.DisplayName(L.Language)), "Eyebrow", shown == 1 ? 0 : 10));
+            PatchNotesPanel.Children.Add(Ui.Text(hero.DisplayName(L.Language), "Eyebrow", shown == 1 ? 0 : 10));
             foreach (var line in list.Take(6)) PatchNotesPanel.Children.Add(Ui.Text("• " + line, "MutedText", 2));
         }
         PatchNotesInfo.Text = shown == 0 ? L.Format("pn_untouched", notes.Patch, keys.Count) : L.Format("pn_info", notes.Patch, shown, keys.Count);

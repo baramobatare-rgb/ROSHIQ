@@ -140,6 +140,8 @@ public partial class HistoryView : UserControl, IRefreshable
                 Subtitle = $"{date} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OpenDota")}",
                 Note = m.Partial ? Loc.T("hist_partial") : null,
                 Icon = Roshiq.App.Services.HeroArt.Portrait(hero?.Key),
+                // итог читается с одного взгляда: полоска в цвете победы / поражения
+                Stripe = m.Result switch { MatchResult.Win => Ui.Res("Accent"), MatchResult.Loss => Ui.Res("Red"), _ => null },
                 Group = null
             });
         }
@@ -213,7 +215,7 @@ public partial class HistoryView : UserControl, IRefreshable
 
         var (recent, previous) = Trends.WinRate(all);
         var wr = new StackPanel { Margin = new Thickness(0, 0, 12, 12) };
-        wr.Children.Add(Ui.Text(Ui.Up(L.Get("trend_wr")), "Eyebrow"));
+        wr.Children.Add(Ui.Text(L.Get("trend_wr"), "Eyebrow"));
         var wrValue = Ui.Text("—", "BigValue");
         if (recent is double r) Motion.CountUp(wrValue, r * 100, "0", "%");
         wr.Children.Add(wrValue);
@@ -229,7 +231,7 @@ public partial class HistoryView : UserControl, IRefreshable
     {
         var L = Loc.Instance;
         var panel = new StackPanel { Margin = new Thickness(0, 0, 12, 12) };
-        panel.Children.Add(Ui.Text(Ui.Up(title), "Eyebrow"));
+        panel.Children.Add(Ui.Text(title, "Eyebrow"));
         var canvas = new Canvas { Height = 56, ClipToBounds = true };
         panel.Children.Add(new Border
         {
@@ -303,7 +305,8 @@ public partial class HistoryView : UserControl, IRefreshable
         MatchPortrait.Content = matchHero != null ? Ui.Portrait(matchHero, 96) : null;
         Motion.Enter(ReviewPanel, 0, 8);
         var role = m.Position is Position p ? L.PositionName(p) : L.Get("hist_role_unknown");
-        MatchMeta.Text = $"{m.StartedUtc.ToLocalTime():g} · {role} · {(m.Team ?? "?").ToUpperInvariant()} · {L.Get(m.FromGsi ? "hist_source_gsi" : "hist_source_od")}" +
+        MatchMeta.Text = $"{m.StartedUtc.ToLocalTime():g} · {role} · " + (m.Team is string team ? char.ToUpperInvariant(team[0]) + team[1..] + " · " : "") +
+                         L.Get(m.FromGsi ? "hist_source_gsi" : "hist_source_od") +
                          (m.MatchId != null ? $" · ID {m.MatchId}" : "") +
                          (m.Partial ? " · " + L.Get("hist_partial") : "");
         MatchMeta.ToolTip = m.Partial ? L.Get("hist_partial_tip") : null;
@@ -319,8 +322,10 @@ public partial class HistoryView : UserControl, IRefreshable
             m.Result == MatchResult.Win ? "Accent" : m.Result == MatchResult.Loss ? "Red" : "Muted"));
         SummaryChips.Children.Add(Ui.Chip(L.Format("hist_duration", GameTimers.Clock(m.DurationSec))));
         SummaryChips.Children.Add(Ui.Chip($"K/D/A {m.Kills}/{m.Deaths}/{m.Assists}"));
-        SummaryChips.Children.Add(Ui.Chip($"GPM {m.Gpm} · XPM {m.Xpm}"));
-        SummaryChips.Children.Add(Ui.Chip($"LH {m.LastHits}" + (m.Denies > 0 ? $" / DN {m.Denies}" : "")));
+        // ноль здесь значит «нет данных» (запись без графика), а не «0 золота» — показываем прочерк
+        static string N(int v) => v > 0 ? v.ToString() : "—";
+        SummaryChips.Children.Add(Ui.Chip($"GPM {N(m.Gpm)} · XPM {N(m.Xpm)}"));
+        SummaryChips.Children.Add(Ui.Chip($"LH {N(m.LastHits)}" + (m.Denies > 0 ? $" / DN {m.Denies}" : "")));
         if (m.Level > 0) SummaryChips.Children.Add(Ui.Chip(L.Format("hist_level", m.Level)));
         ShowOdReview(m);
         ShowBreakdown(m);

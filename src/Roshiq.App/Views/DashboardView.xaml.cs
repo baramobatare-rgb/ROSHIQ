@@ -231,7 +231,7 @@ public partial class DashboardView : UserControl, IRefreshable
 
         // --- главный заголовок: что происходит прямо сейчас
         HeroEyebrow.Inlines.Clear();
-        HeroEyebrow.Inlines.Add(new System.Windows.Documents.Run(Ui.Up(L.Get("dash_now"))));
+        HeroEyebrow.Inlines.Add(new System.Windows.Documents.Run(L.Get("dash_now")));
         if (gsiFresh && gsi!.IsHeroSelection)
         {
             Headline.Text = L.Get("dash_head_draft");
@@ -492,17 +492,19 @@ public partial class DashboardView : UserControl, IRefreshable
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(52) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var clock = new TextBlock { Text = GameTimers.Clock(e.Clock), Style = (Style)FindResource("Num"), Foreground = Ui.Res("Muted") };
+            var clock = new TextBlock { Text = GameTimers.Clock(e.Clock), Style = (Style)FindResource("Num"), Foreground = Ui.Res("Muted"), VerticalAlignment = VerticalAlignment.Top };
+            // до двух строк: совет читается целиком, а не «Нет свитка телепорта — купит…»
             var text = new TextBlock
             {
-                Text = e.Text, Style = (Style)FindResource("Value"), TextWrapping = TextWrapping.NoWrap, TextTrimming = TextTrimming.CharacterEllipsis,
-                VerticalAlignment = VerticalAlignment.Center, ToolTip = e.Text, Margin = new Thickness(0, 0, 10, 0)
+                Text = e.Text, Style = (Style)FindResource("Value"), TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.WordEllipsis,
+                LineHeight = 19, LineStackingStrategy = LineStackingStrategy.BlockLineHeight, MaxHeight = 38,
+                VerticalAlignment = VerticalAlignment.Top, ToolTip = e.Text, Margin = new Thickness(0, 0, 10, 0)
             };
             bool strong = e.Status is TipFeedStatus.Helped or TipFeedStatus.Missed;
             var badge = new Border
             {
                 Background = Ui.Res(e.Status switch { TipFeedStatus.Helped => "Accent", TipFeedStatus.Missed => "Warning", _ => "Panel3" }),
-                Padding = new Thickness(8, 2, 8, 3), VerticalAlignment = VerticalAlignment.Center,
+                Padding = new Thickness(8, 2, 8, 3), VerticalAlignment = VerticalAlignment.Top,
                 Child = new TextBlock
                 {
                     Text = L.Get("feed_" + e.Status.ToString().ToLowerInvariant()), FontFamily = (System.Windows.Media.FontFamily)FindResource("DisplayFont"),

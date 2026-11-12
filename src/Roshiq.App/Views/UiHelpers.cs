@@ -24,6 +24,8 @@ public sealed class Choice<T>
     public string? Note { get; init; }
     /// <summary>Картинка слева (портрет героя). null — без картинки.</summary>
     public ImageSource? Icon { get; init; }
+    /// <summary>Цветная полоска слева (итог матча). null — без полоски.</summary>
+    public Brush? Stripe { get; init; }
     /// <summary>Заголовок группы (СИЛА, ЛОВКОСТЬ…) — не выбирается, только разделяет список.</summary>
     public bool IsHeader { get; init; }
     /// <summary>Сколько героев в группе (для заголовка).</summary>
@@ -249,9 +251,19 @@ internal static class Ui
     /// <summary>Нумерованная строка «01  Заголовок / пояснение» в редакционном стиле.</summary>
     /// <param name="image">Картинка между номером и текстом (например <see cref="ItemIcon"/>).</param>
     public static FrameworkElement Numbered(int index, string title, string detail, string? badge = null, FrameworkElement? image = null)
+        => ListRow(index, title, detail, badge, image);
+
+    /// <summary>
+    /// Строка списка без номера — для советов и справки, где порядок ничего не значит
+    /// (номера 01–06 читались как шаги). Маркер — квадратик в цвете темы.
+    /// </summary>
+    public static FrameworkElement Bulleted(string title, string detail, string? badge = null, FrameworkElement? image = null)
+        => ListRow(0, title, detail, badge, image);
+
+    private static FrameworkElement ListRow(int index, string title, string detail, string? badge, FrameworkElement? image)
     {
         var grid = new Grid { Margin = new Thickness(0, 6, 0, 10) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(42) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(index > 0 ? 42 : 22) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         if (image != null)
@@ -259,15 +271,22 @@ internal static class Ui
             Grid.SetColumn(image, 1);
             grid.Children.Add(image);
         }
-        grid.Children.Add(new TextBlock
-        {
-            Text = index.ToString("00"),
-            FontFamily = DisplayFont,
-            FontSize = 18,
-            FontWeight = FontWeights.SemiBold,
-            Foreground = Res("Accent"),
-            Margin = new Thickness(0, 1, 0, 0)
-        });
+        if (index > 0)
+            grid.Children.Add(new TextBlock
+            {
+                Text = index.ToString("00"),
+                FontFamily = DisplayFont,
+                FontSize = 18,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Res("Accent"),
+                Margin = new Thickness(0, 1, 0, 0)
+            });
+        else
+            grid.Children.Add(new Border
+            {
+                Width = 7, Height = 7, Background = Res("Accent"), VerticalAlignment = VerticalAlignment.Top,
+                HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(1, 7, 0, 0)
+            });
         var row = Row(title, detail, badge);
         row.Margin = new Thickness(0);
         Grid.SetColumn(row, 2);
@@ -275,12 +294,12 @@ internal static class Ui
         return grid;
     }
 
-    /// <summary>Заголовок секции «01 / НАЗВАНИЕ».</summary>
+    /// <summary>Заголовок секции «01 / Название» — только для настоящей последовательности (стадии сборки).</summary>
     public static TextBlock Eyebrow(int index, string label)
     {
         var tb = new TextBlock { Style = (Style)Application.Current.FindResource("Eyebrow") };
         tb.Inlines.Add(new System.Windows.Documents.Run(index.ToString("00") + " / ") { Foreground = Res("Accent") });
-        tb.Inlines.Add(new System.Windows.Documents.Run(Up(label)));
+        tb.Inlines.Add(new System.Windows.Documents.Run(label));
         return tb;
     }
 

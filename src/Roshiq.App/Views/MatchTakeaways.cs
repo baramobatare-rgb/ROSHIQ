@@ -10,9 +10,22 @@ public sealed class MatchTakeaways : StackPanel
     public MatchTakeaways(PostMatchSummary summary)
     {
         var L = Loc.Instance;
-        Add(L.Get("pm_good"), summary.Good.Count > 0 ? string.Join("\n", summary.Good.Select(g => g.Text(L.Language))) : L.Get("pm_good_none"), "Success");
-        Add(L.Get("pm_fix"), summary.MainMistake?.Text(L.Language) ?? L.Get("pm_no_issue"), "Warning");
-        Add(L.Get("pm_next_goal"), PostMatch.NextGoal(summary).Text(L.Language), "Accent");
+        // пустые выводы («ошибка не выявлена», общая цель «выберите одну цель») не выглядят так же весомо, как настоящие:
+        // настоящие — цветными блоками, пустое — одной бледной строкой
+        if (summary.Good.Count > 0)
+            Add(L.Get("pm_good"), string.Join("\n", summary.Good.Select(g => g.Text(L.Language))), "Success");
+        var goal = PostMatch.NextGoal(summary);
+        bool genericGoal = goal.En.StartsWith("Choose one goal before the game", StringComparison.Ordinal);
+        if (summary.MainMistake != null)
+            Add(L.Get("pm_fix"), summary.MainMistake.Text(L.Language), "Warning");
+        else
+        {
+            var none = Ui.Text(L.Get("pm_no_issue"), "MutedText");
+            none.Margin = new Thickness(0, 0, 0, 12);
+            Children.Add(none);
+        }
+        if (!genericGoal)
+            Add(L.Get("pm_next_goal"), goal.Text(L.Language), "Accent");
         if (summary.Timeline.Count > 0)
         {
             // весь разбор по ходу матча, по времени

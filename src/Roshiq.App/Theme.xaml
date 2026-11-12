@@ -779,9 +779,12 @@
             <Grid x:Name="HeroRow" Margin="0,1,0,1">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Border x:Name="Pic" Width="44" Height="25" CornerRadius="4" Margin="0,0,10,0" BorderThickness="0,0,0,2"
+                <!-- цветная полоска слева (итог матча в истории: победа / поражение) -->
+                <Rectangle x:Name="StripeMark" Width="3" Margin="0,0,8,0" Fill="{Binding Stripe}" />
+                <Border x:Name="Pic" Grid.Column="1" Width="44" Height="25" CornerRadius="4" Margin="0,0,10,0" BorderThickness="0,0,0,2"
                         BorderBrush="{Binding Group.Brush}" RenderTransformOrigin="0.5,0.5" SnapsToDevicePixels="True">
                     <Border.Background>
                         <ImageBrush ImageSource="{Binding Icon}" Stretch="UniformToFill" />
@@ -790,7 +793,7 @@
                         <ScaleTransform ScaleX="1" ScaleY="1" />
                     </Border.RenderTransform>
                 </Border>
-                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
                     <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
                     <!-- вторая строка (карточка матча): дата · длительность и короткая видимая пометка, например «неполная запись» -->
                     <DockPanel x:Name="SubRow" Margin="0,1,0,0">
@@ -821,6 +824,9 @@
             </DataTrigger>
             <DataTrigger Binding="{Binding Subtitle}" Value="{x:Null}">
                 <Setter TargetName="SubRow" Property="Visibility" Value="Collapsed" />
+            </DataTrigger>
+            <DataTrigger Binding="{Binding Stripe}" Value="{x:Null}">
+                <Setter TargetName="StripeMark" Property="Visibility" Value="Collapsed" />
             </DataTrigger>
             <DataTrigger Binding="{Binding Note}" Value="{x:Null}">
                 <Setter TargetName="NoteText" Property="Visibility" Value="Collapsed" />

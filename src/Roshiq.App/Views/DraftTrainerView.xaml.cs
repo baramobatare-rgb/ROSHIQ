@@ -109,7 +109,7 @@ public partial class DraftTrainerView : UserControl, IRefreshable
         foreach (var r in grade.PickEvaluation.Risks.Take(3))
             ResultPanel.Children.Add(Ui.Text("− " + r.Text(L.Language), "MutedText", 2));
 
-        ResultPanel.Children.Add(Ui.Text(Ui.Up(L.Get("trainer_best")), "Eyebrow", 12));
+        ResultPanel.Children.Add(Ui.Text(L.Get("trainer_best"), "Eyebrow", 12));
         int i = 1;
         foreach (var best in grade.Best)
         {

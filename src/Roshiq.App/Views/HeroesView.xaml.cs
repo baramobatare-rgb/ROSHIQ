@@ -125,8 +125,12 @@ public partial class HeroesView : UserControl, IRefreshable
             PortraitHost.Content = portrait;
             Motion.Enter(portrait, -10, 0);
         }
-        HeroMeta.Text = Ui.Up($"{hero.Name} · {L.Get("attr_" + hero.Attribute.ToString().ToLowerInvariant())} · " +
-                        string.Join(" / ", hero.Positions.Select(p => "POS " + (int)p)));
+        // одна роль на экране: в шапке — где героем обычно играют, и пометка, если выбранная роль для него нетипична
+        // (раньше «POS 1» в шапке стояло рядом с «Pos 3 — Оффлейн» в выборе и читалось как противоречие)
+        var usual = string.Join(" / ", hero.Positions.Select(p => ((int)p).ToString()));
+        var role = SelectedPosition;
+        HeroMeta.Text = $"{hero.Name} · {L.Get("attr_" + hero.Attribute.ToString().ToLowerInvariant())} · " + L.Format("build_usual_pos", usual) +
+                        (hero.Positions.Count > 0 && !hero.Positions.Contains(role) ? " · " + L.Format("build_atypical_pos", (int)role) : "");
         TraitPanel.Children.Clear();
         // все признаки целиком: если не помещаются в строку — переносятся, ничего не обрезается
         foreach (var t in hero.Traits.OrderBy(t => t)) TraitPanel.Children.Add(Ui.Chip(db.TraitText(t, L.Language)));
@@ -196,11 +200,10 @@ public partial class HeroesView : UserControl, IRefreshable
             CounterPanel.Children.Add(Ui.State(UiState.Empty, L.Get("heroes_no_counters"), ""));
 
         TipsPanel.Children.Clear();
-        int ti = 1;
         foreach (var tip in App.Host.Advisor.HeroTips(hero, position))
-            TipsPanel.Children.Add(Ui.Numbered(ti++, tip.Text(L.Language), "", tip.Kind == ReasonKind.Risk ? L.Get("tip_warning") : null));
+            TipsPanel.Children.Add(Ui.Bulleted(tip.Text(L.Language), "", tip.Kind == ReasonKind.Risk ? L.Get("tip_warning") : null));
         foreach (var tip in App.Host.Advisor.TipsFor(position).Take(3))
-            TipsPanel.Children.Add(Ui.Numbered(ti++, tip.Text(L.Language), "", L.Get("tipcat_" + tip.Category)));
+            TipsPanel.Children.Add(Ui.Bulleted(tip.Text(L.Language), "", L.Get("tipcat_" + tip.Category)));
     }
 
     private List<Hero>? _previewEnemies;
@@ -287,7 +290,7 @@ public partial class HeroesView : UserControl, IRefreshable
     }
 
     /// <summary>
-    /// Плитка предмета — одинаковая для всех: иконка в пропорциях Valve, название, одна строка назначения,
+    /// Плитка предмета — одинаковая для всех: иконка в пропорциях Valve, название, до двух строк назначения,
     /// цена и тайминг всегда в нижней строке на одних и тех же местах. Полное «почему» — в подсказке.
     /// </summary>
     private FrameworkElement ItemTile(string key, string name, string why, bool curated, bool now, int? timing, bool mine)
@@ -304,7 +307,9 @@ public partial class HeroesView : UserControl, IRefreshable
         text.Children.Add(new TextBlock { Text = name, FontWeight = FontWeights.SemiBold, FontSize = 14, Foreground = Ui.Res("Text"), TextTrimming = TextTrimming.CharacterEllipsis });
         var line = new TextBlock
         {
-            Text = purpose ?? "", FontSize = 12.5, Foreground = Ui.Res("Muted"), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0, 2, 0, 0)
+            // назначение — до двух строк: «Дешёвые характеристики…» обрезалось на полуслове
+            Text = purpose ?? "", FontSize = 12.5, Foreground = Ui.Res("Muted"), TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.WordEllipsis,
+            LineHeight = 16, LineStackingStrategy = LineStackingStrategy.BlockLineHeight, MaxHeight = 32, Margin = new Thickness(0, 2, 0, 0)
         };
         Grid.SetRow(line, 1);
         text.Children.Add(line);
@@ -340,7 +345,7 @@ public partial class HeroesView : UserControl, IRefreshable
         row.Children.Add(text);
         var card = new Border
         {
-            Style = (Style)FindResource("InnerCard"), Width = 268, Height = 76, Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(12, 8, 12, 8),
+            Style = (Style)FindResource("InnerCard"), Width = 268, Height = 92, Margin = new Thickness(0, 0, 12, 12), Padding = new Thickness(12, 8, 12, 8),
             BorderBrush = Ui.Res(now ? "Accent" : curated ? "LineStrong" : "Line"), Child = row,
             ToolTip = new ToolTip { Content = new TextBlock { Text = why + (curated ? "\n\n" + L.Get("build_base") : ""), TextWrapping = TextWrapping.Wrap, MaxWidth = 320 } }
         };
@@ -447,7 +452,7 @@ public partial class HeroesView : UserControl, IRefreshable
             {
                 MetaPanel.Children.Add(new TextBlock
                 {
-                    Text = L.PhaseName(phase).ToUpperInvariant(), Style = (Style)FindResource("Eyebrow"), Margin = new Thickness(0, 8, 0, 4)
+                    Text = L.PhaseName(phase), Style = (Style)FindResource("Eyebrow"), Margin = new Thickness(0, 8, 0, 4)
                 });
                 var wrap = new WrapPanel();
                 foreach (var it in items)

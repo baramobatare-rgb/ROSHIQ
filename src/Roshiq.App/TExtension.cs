@@ -18,12 +18,13 @@ public sealed class TExtension : MarkupExtension
     [ConstructorArgument("key")]
     public string Key { get; set; } = "";
 
-    public bool Upper { get; set; }
+    public bool Upper { get; set; }   // больше не меняет регистр (см. ProvideValue)
 
     public override object ProvideValue(IServiceProvider serviceProvider)
     {
         var binding = new Binding($"[{Key}]") { Source = Loc.Instance, Mode = BindingMode.OneWay };
-        if (Upper) binding.Converter = UpperConverter.Instance;
+        // 0.20.4: подписи разделов больше не капсом — обычный жирный текст читается легче.
+        // Upper оставлен, чтобы не трогать разметку; заглавными остаются только значки и кнопки, где это задано в коде.
         return binding.ProvideValue(serviceProvider);
     }
 }

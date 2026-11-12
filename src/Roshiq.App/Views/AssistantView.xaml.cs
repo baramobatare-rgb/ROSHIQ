@@ -66,13 +66,12 @@ public partial class AssistantView : UserControl, IRefreshable
         var pos = App.Host.CurrentPosition;
         RoleTitle.Text = L.PositionName(pos);
         RoleTips.Children.Clear();
-        int i = 1;
         var hero = App.Host.CurrentHero;
         if (hero != null)
             foreach (var t in App.Host.Advisor.HeroTips(hero, pos))
-                RoleTips.Children.Add(Ui.Numbered(i++, t.Text(L.Language), "", hero.DisplayName(L.Language)));
+                RoleTips.Children.Add(Ui.Bulleted(t.Text(L.Language), "", hero.DisplayName(L.Language)));
         foreach (var t in App.Host.Advisor.TipsFor(pos))
-            RoleTips.Children.Add(Ui.Numbered(i++, t.Text(L.Language), "", L.Get("tipcat_" + t.Category)));
+            RoleTips.Children.Add(Ui.Bulleted(t.Text(L.Language), "", L.Get("tipcat_" + t.Category)));
     }
 
     /// <summary>Ситуационные предметы текущего героя: «если у противника …» (или реальные враги в тренировке).</summary>
@@ -92,9 +91,8 @@ public partial class AssistantView : UserControl, IRefreshable
         SituationTitle.Text = hero.DisplayName(L.Language);
         bool enemyAware = ComplianceGate.IsAllowed(Feature.EnemyAwareItemAdvice, App.Host.Settings.Current.UsageContext) && build.EnemyAware;
         SituationNote.Text = L.Get(enemyAware ? "asst_situations_live" : "asst_situations_ref");
-        int i = 1;
         foreach (var p in build[BuildPhase.Situational])
-            Situations.Children.Add(Ui.Numbered(i++, p.Item.DisplayName(L.Language), p.Explain(L.Language), image: Ui.ItemIcon(p.Item.Key)));
-        if (i == 1) Situations.Children.Add(Ui.State(UiState.Empty, L.Get("state_build_empty_title"), ""));
+            Situations.Children.Add(Ui.Bulleted(p.Item.DisplayName(L.Language), p.Explain(L.Language), image: Ui.ItemIcon(p.Item.Key)));
+        if (Situations.Children.Count == 0) Situations.Children.Add(Ui.State(UiState.Empty, L.Get("state_build_empty_title"), ""));
     }
 }

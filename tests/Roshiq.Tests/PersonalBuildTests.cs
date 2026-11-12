@@ -67,7 +67,7 @@ public class PersonalBuildTests
         var resolved = PersonalBuildResolver.Resolve(build, TestData.Hero("antimage"), Position.Carry, TestData.Db)!;
         Assert.Equal(new[] { "item_tango", "item_branches" }, resolved[BuildPhase.Start].Select(x => x.Item.Key));
         Assert.Contains("Моя заметка", resolved[BuildPhase.Start][0].Explain(Language.Russian));
-        Assert.Contains("alternative:", resolved[BuildPhase.Start][0].Explain(Language.English));
+        Assert.Contains("alternative:", resolved[BuildPhase.Start][0].Explain(Language.English), StringComparison.OrdinalIgnoreCase);
         Assert.Equal("item_branches", resolved.NextItem(new[] { "item_tango" })?.Item.Key);
         Assert.False(resolved.EnemyAware);
     }

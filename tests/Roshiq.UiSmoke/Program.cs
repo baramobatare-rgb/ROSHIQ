@@ -148,7 +148,8 @@ class Program
         Check(Control<TextBlock>(win, "NextGoalText").Text == Roshiq.Recommendations.PostMatch.NextGoal(sum).Text(L.Language)
               && Control<TextBlock>(win, "NextGoalText").Text.Length > 0, "Post-match window keeps one goal for the next game");
         win.Close();
-        Check(new MatchTakeaways(sum).Children.Count == 6, "History summary adds tip feedback and saved advice");
+        // 0.20.4: без «Получилось» и «Главное исправить», когда сказать нечего, — одна бледная строка; цель, отзыв, отложенные, основа
+        Check(new MatchTakeaways(sum).Children.Count == 5, "History summary adds tip feedback and saved advice");
         var plain = new PostMatchWindow(new Roshiq.Recommendations.PostMatchSummary(new Roshiq.Recommendations.MatchRecord { HeroId = 1, DurationSec = 1800 },
             Array.Empty<Roshiq.Recommendations.Insight>(), new Roshiq.Recommendations.Insight("no_tp", -2, "Нет ТП", "No TP"), 3));
         Check(Control<FrameworkElement>(plain, "FeedbackBlock").Visibility == Visibility.Collapsed
@@ -282,7 +283,7 @@ class Program
             Check(Control<TextBlock>(resultWindow, "NextGoalText").Text.Length > 0, "Post-match window shows next-game action");
             resultWindow.Close();
             var takeaways = new MatchTakeaways(summary);
-            Check(takeaways.Children.Count == 4, "History summary includes three takeaways and comparison basis");
+            Check(takeaways.Children.Count == 3, "History summary shows the main mistake, the goal and the comparison basis (no empty «good» block)");
             QuietTipsChecks(host);
             var view = new HeroesView(); view.Refresh();
             var favorites = Control<CheckBox>(view, "FavoritesOnly");

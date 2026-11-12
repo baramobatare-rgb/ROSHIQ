@@ -47,7 +47,7 @@
             </Border>
 
             <!-- ===== Главный блок: крупный заголовок слева, лента подсказок матча на наклонной полосе справа ===== -->
-            <Grid Margin="0,4,0,30">
+            <Grid Margin="0,0,0,24">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="320" />
                     <ColumnDefinition Width="430" />
@@ -94,7 +94,8 @@
                                 <TextBlock x:Name="GameValue" Style="{StaticResource PillValue}" />
                             </StackPanel>
                         </Border>
-                        <Border Style="{StaticResource StatusPill}" ToolTip="{Binding Text, ElementName=GsiStatus}">
+                        <!-- GSI отдельно не показываем: связь с Dota уже видна вверху справа и в ячейке «Связь с Dota 2» ниже -->
+                        <Border Style="{StaticResource StatusPill}" Visibility="Collapsed" ToolTip="{Binding Text, ElementName=GsiStatus}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBlock Text="GSI" Style="{StaticResource PillLabel}" />
                                 <TextBlock x:Name="GsiValue" Style="{StaticResource PillValue}" />
@@ -146,7 +147,7 @@
             <Border BorderBrush="{DynamicResource Text}" BorderThickness="0,2,0,0" Margin="0,0,0,26">
                 <UniformGrid Rows="1">
                     <!-- Always-visible connection state with a concrete reason and one path to fix it. -->
-                    <Border x:Name="ConnectionCard" Style="{StaticResource Cell}" Padding="0,18,20,22">
+                    <Border x:Name="ConnectionCard" Style="{StaticResource Cell}" Padding="0,18,20,22" ToolTip="{Binding Text, ElementName=GsiStatus}">
                         <StackPanel>
                             <TextBlock Text="{app:T conn_header}" Style="{StaticResource CellTitle}" />
                             <DockPanel>

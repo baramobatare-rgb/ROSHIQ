@@ -6,7 +6,10 @@ namespace Roshiq.Recommendations;
 public sealed record ItemPick(Item Item, double Score, IReadOnlyList<Reason> Reasons, bool Curated)
 {
     public string Explain(Language lang) =>
-        Item.Purpose(lang) + (Reasons.Count > 0 ? ". " + string.Join("; ", Reasons.Select(r => r.Text(lang))) : "");
+        Item.Purpose(lang) + (Reasons.Count > 0 ? ". " + Capitalize(string.Join("; ", Reasons.Select(r => r.Text(lang)))) : "");
+
+    /// <summary>После точки — с заглавной: «…урон. Если у противника: …», а не «…урон. если у противника».</summary>
+    private static string Capitalize(string s) => s.Length == 0 ? s : char.ToUpper(s[0], System.Globalization.CultureInfo.InvariantCulture) + s[1..];
 }
 
 public sealed record ItemAdaptation(ItemPick Pick, Item? Replace, bool AlreadyIncluded);

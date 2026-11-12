@@ -134,6 +134,8 @@ internal static class Strings
         ["draft_team_full"] = ("Все ключевые роли закрыты.", "All key roles are covered."),
         ["draft_team_missing"] = ("Не хватает: {0}. Кандидаты с этими качествами получают бонус.", "Missing: {0}. Candidates with these traits get a bonus."),
         ["build_now"] = ("Сейчас", "Now"),
+        ["build_usual_pos"] = ("обычно поз. {0}", "usually pos {0}"),
+        ["build_atypical_pos"] = ("на поз. {0} играют редко", "rarely played at pos {0}"),
         ["build_base"] = ("База", "Core"),
         ["tip_warning"] = ("Важно", "Note"),
         ["asst_role_tips"] = ("Подсказки для роли", "Role tips"),

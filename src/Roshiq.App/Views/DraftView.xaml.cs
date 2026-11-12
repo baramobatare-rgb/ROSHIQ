@@ -80,7 +80,7 @@ public partial class DraftView : UserControl, IRefreshable
             };
             var plus = new TextBlock
             {
-                Text = "+", FontSize = 26, FontWeight = FontWeights.Light, Foreground = Ui.Res("Faint"),
+                Text = "+", FontSize = 22, FontWeight = FontWeights.Light, Foreground = Ui.Res("Faint"),
                 HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center
             };
             var clear = new Button
@@ -118,6 +118,10 @@ public partial class DraftView : UserControl, IRefreshable
                 clear.Visibility = hero == null ? Visibility.Collapsed : Visibility.Visible;
                 name.Text = hero == null ? Loc.T("picker_empty") : hero.DisplayName(Loc.Instance.Language);
                 name.Foreground = Ui.Res(hero == null ? "Faint" : "Text");
+                // пустой слот — низкая плитка с «+» без подписи: пока драфта нет, рекомендации видны без прокрутки
+                portrait.Height = hero == null ? 46 : 74;
+                name.Visibility = hero == null ? Visibility.Collapsed : Visibility.Visible;
+                face.ToolTip = hero == null ? Loc.T("picker_empty") : null;
             }
             box.SelectionChanged += (_, _) =>
             {

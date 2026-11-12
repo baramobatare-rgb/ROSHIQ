@@ -48,7 +48,7 @@ public sealed class HeroPicker : Window
         }
         header.Children.Add(new TextBlock
         {
-            Text = Ui.Up(title), Style = (Style)Application.Current.FindResource("Eyebrow"), Margin = new Thickness(0),
+            Text = title, Style = (Style)Application.Current.FindResource("Eyebrow"), Margin = new Thickness(0),
             VerticalAlignment = VerticalAlignment.Center
         });
 
@@ -121,7 +121,7 @@ public sealed class HeroPicker : Window
             if (title != null)
                 _groups.Children.Add(new TextBlock
                 {
-                    Text = Ui.Up(title), Style = (Style)Application.Current.FindResource("Eyebrow"), Margin = new Thickness(2, 10, 0, 6)
+                    Text = title, Style = (Style)Application.Current.FindResource("Eyebrow"), Margin = new Thickness(2, 10, 0, 6)
                 });
             var wrap = new WrapPanel();
             foreach (var h in heroes) wrap.Children.Add(Tile(h));

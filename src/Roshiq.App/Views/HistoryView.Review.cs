@@ -25,7 +25,7 @@ public partial class HistoryView
         OdReviewPanel.Children.Add(new TextBlock
         {
             Style = (Style)FindResource("Eyebrow"),
-            Text = L.Get("review_title").ToUpperInvariant(),
+            Text = L.Get("review_title"),
             Margin = new Thickness(0, 4, 0, 6)
         });
         var review = App.Host.Reviews.Get(m.MatchId);
