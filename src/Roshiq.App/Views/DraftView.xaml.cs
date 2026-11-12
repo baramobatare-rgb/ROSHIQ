@@ -292,6 +292,12 @@ public partial class DraftView : UserControl, IRefreshable
         TeamNote.Text = allies.Count == 0
             ? L.Get("draft_team_empty")
             : missing.Count == 0 ? L.Get("draft_team_full") : L.Format("draft_team_missing", string.Join(", ", missing));
+
+        // 0.21.3: оценка составов целиком — план на игру, перекос урона, чего не хватает врагам
+        CompositionPanel.Children.Clear();
+        foreach (var line in DraftComposition.Assess(allies, Selected(_enemies)))
+            CompositionPanel.Children.Add(ReasonLine(line.Severity < 0 ? "I.Alert" : line.Severity > 0 ? "I.Check" : "I.Spark",
+                line.Severity < 0 ? "Warning" : "Accent", line.Text(L.Language)));
     }
 
     private void UpdateMode()

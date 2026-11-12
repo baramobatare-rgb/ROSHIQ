@@ -106,6 +106,7 @@
                         <TextBlock Style="{StaticResource Eyebrow}"><Run Text="{app:T draft_team, Upper=True}" /></TextBlock>
                         <WrapPanel x:Name="TeamPanel" />
                         <TextBlock x:Name="TeamNote" Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                        <StackPanel x:Name="CompositionPanel" Margin="0,8,0,0" />
                     </StackPanel>
                 </Border>
             </Grid>
