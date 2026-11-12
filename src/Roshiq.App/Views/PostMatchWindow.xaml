@@ -35,6 +35,11 @@
 
         <StackPanel x:Name="BenchBlock" Margin="0,16,0,0" Visibility="Collapsed">
             <TextBlock Text="{app:T review_bench, Upper=True}" Style="{StaticResource Eyebrow}" Foreground="{DynamicResource Accent}" Margin="0,0,0,6" />
+            <StackPanel x:Name="ScoreRow" Orientation="Horizontal" Margin="0,0,0,8" Visibility="Collapsed">
+                <TextBlock x:Name="ScoreValue" Style="{StaticResource BigValue}" FontSize="34" VerticalAlignment="Bottom" />
+                <TextBlock Text="{app:T score_of100}" Style="{StaticResource MutedText}" VerticalAlignment="Bottom" Margin="4,0,12,6" />
+                <TextBlock x:Name="ScoreVerdict" Style="{StaticResource MutedText}" Foreground="{DynamicResource Text}" FontWeight="SemiBold" VerticalAlignment="Bottom" Margin="0,0,0,6" />
+            </StackPanel>
             <StackPanel x:Name="BenchPanel" />
             <TextBlock Text="{app:T bench_note}" Style="{StaticResource MutedText}" FontSize="12" TextWrapping="Wrap" Margin="0,4,0,0" />
         </StackPanel>

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using Roshiq.App.Services;
@@ -63,7 +64,13 @@ public partial class PostMatchWindow : Window
         Loaded += async (_, _) =>
         {
             // сравнение с игроками на герое: перцентили OpenDota из кэша или одним запросом
-            var rows = HeroComparison.Build(m, await App.Host.BenchmarksForAsync(m.HeroId));
+            var (rows, score) = await App.Host.CompareMatchAsync(m);
+            if (score is int s)
+            {
+                ScoreValue.Text = s.ToString(CultureInfo.InvariantCulture);
+                ScoreVerdict.Text = L.Get(HeroComparison.ScoreVerdictKey(s));
+                ScoreRow.Visibility = Visibility.Visible;
+            }
             foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) BenchPanel.Children.Add(HistoryView.BenchmarkBar(b, L));
             if (rows.Count > 0) BenchBlock.Visibility = Visibility.Visible;
         };

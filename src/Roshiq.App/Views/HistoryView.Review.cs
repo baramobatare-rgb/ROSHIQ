@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -152,8 +153,7 @@ public partial class HistoryView
 
     private async Task ShowHeroComparisonAsync(MatchRecord m)
     {
-        var bench = await App.Host.BenchmarksForAsync(m.HeroId);
-        var rows = HeroComparison.Build(m, bench);
+        var (rows, score) = await App.Host.CompareMatchAsync(m);
         if (rows.Count == 0 || !ReferenceEquals(_selected, m)) return;
         var L = Loc.Instance;
         var panel = new StackPanel();
@@ -161,8 +161,20 @@ public partial class HistoryView
         title.Children.Add(SubTitle(L.Get("review_bench")));
         title.Children.Add(new HelpTip { Text = L.Get("bench_note"), Margin = new Thickness(6, 8, 0, 0) });
         panel.Children.Add(title);
+        if (score is int s) panel.Children.Add(ScoreLine(s, L));
         foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) panel.Children.Add(BenchmarkBar(b, L));
         OdReviewPanel.Children.Insert(0, panel);
+    }
+
+    /// <summary>Оценка матча крупной цифрой: «64 из 100 · средний матч» и как она считается.</summary>
+    internal static FrameworkElement ScoreLine(int score, Loc L)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+        row.Children.Add(new TextBlock { Text = score.ToString(CultureInfo.InvariantCulture), Style = (Style)Application.Current.FindResource("BigValue"), FontSize = 30, VerticalAlignment = VerticalAlignment.Bottom });
+        row.Children.Add(new TextBlock { Text = L.Get("score_of100"), Style = (Style)Application.Current.FindResource("MutedText"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(4, 0, 12, 5) });
+        row.Children.Add(new TextBlock { Text = L.Get(HeroComparison.ScoreVerdictKey(score)), Style = (Style)Application.Current.FindResource("MutedText"), Foreground = Ui.Res("Text"), FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 5) });
+        row.Children.Add(new HelpTip { Text = L.Get("score_help"), Margin = new Thickness(6, 0, 0, 7), VerticalAlignment = VerticalAlignment.Bottom });
+        return row;
     }
 
     private TextBlock SubTitle(string text) => new()

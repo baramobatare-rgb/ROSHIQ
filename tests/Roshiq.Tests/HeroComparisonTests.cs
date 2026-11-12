@@ -65,4 +65,41 @@ public class HeroComparisonTests
         }
         finally { File.Delete(path); }
     }
+    [Fact]
+    public void Score_IsWeightedShareOfPlayersBeaten()
+    {
+        var rows = new[]
+        {
+            new ComparisonRow("gold_per_min", "", "", "", 80),
+            new ComparisonRow("xp_per_min", "", "", "", 60),
+            new ComparisonRow("last_hits_per_min", "", "", "", 40),
+            new ComparisonRow("deaths_per_min", "", "", "", 20),
+        };
+        // 0,3·80 + 0,2·60 + 0,2·40 + 0,3·20 = 50
+        Assert.Equal(50, HeroComparison.Score(rows));
+        Assert.Equal("score_mid", HeroComparison.ScoreVerdictKey(50));
+        Assert.Equal("score_strong", HeroComparison.ScoreVerdictKey(70));
+        Assert.Equal("score_weak", HeroComparison.ScoreVerdictKey(39));
+    }
+
+    [Fact]
+    public void Score_NeedsAtLeastThreeMetrics()
+    {
+        Assert.Null(HeroComparison.Score(new[] { new ComparisonRow("gold_per_min", "", "", "", 80), new ComparisonRow("xp_per_min", "", "", "", 60) }));
+        var m = new MatchRecord { HeroId = 1, DurationSec = 2400, Gpm = 663, Xpm = 927, LastHits = 377, Deaths = 5, Ended = true };
+        Assert.InRange(HeroComparison.Score(HeroComparison.Build(m, B()))!.Value, 30, 70);
+    }
+
+    [Fact]
+    public void Score_SurvivesSaveAndLoad()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "roshiq-score-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new MatchHistoryStore(dir);
+            store.Save(new MatchRecord { Id = "s1", HeroId = 1, DurationSec = 2400, Score = 64 });
+            Assert.Equal(64, new MatchHistoryStore(dir).Find("s1")!.Score);
+        }
+        finally { try { Directory.Delete(dir, true); } catch { } }
+    }
 }

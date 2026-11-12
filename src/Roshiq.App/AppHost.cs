@@ -153,6 +153,42 @@ public sealed class AppHost : IDisposable
         catch (Exception ex) { Log.Warn($"Сравнение с игроками: OpenDota недоступен ({ex.Message})"); }
         return Benchmarks.Get(heroId);
     }
+
+    /// <summary>
+    /// 0.21.2: сравнение матча с игроками на герое и оценка 0…100. Новая оценка сохраняется в историю,
+    /// чтобы график на вкладке «Прогресс» не требовал повторных запросов.
+    /// </summary>
+    public async Task<(IReadOnlyList<ComparisonRow> Rows, int? Score)> CompareMatchAsync(MatchRecord m)
+    {
+        var rows = HeroComparison.Build(m, await BenchmarksForAsync(m.HeroId));
+        var score = HeroComparison.Score(rows);
+        if (score != null && score != m.Score)
+        {
+            m.Score = score;
+            if (History.Find(m.Id) is { } saved) { saved.Score = score; History.Save(saved); }
+        }
+        return (rows, score);
+    }
+
+    private bool _scoreBackfillDone;
+    /// <summary>
+    /// Досчитать оценки последних матчей без оценки: не больше maxHeroes разных героев за запуск программы
+    /// (по запросу на героя, дальше кэш на 7 дней). Без разрешения на онлайн-статистику — только по кэшу.
+    /// </summary>
+    public async Task BackfillScoresAsync(int last = 30, int maxHeroes = 6)
+    {
+        if (_scoreBackfillDone) return;
+        _scoreBackfillDone = true;
+        try
+        {
+            var todo = History.All().OrderByDescending(m => m.StartedUtc).Take(last)
+                .Where(m => m.Score == null && m.HeroId > 0 && m.DurationSec >= HeroComparison.MinDurationSec).ToList();
+            var heroes = todo.Select(m => m.HeroId).Distinct().Take(maxHeroes).ToHashSet();
+            foreach (var m in todo.Where(m => heroes.Contains(m.HeroId)))
+                await CompareMatchAsync(m);
+        }
+        catch (Exception ex) { Log.Warn($"Оценки матчей: {ex.Message}"); }
+    }
     public DraftAnalyzer Analyzer { get; private set; }
     public ItemBuildEngine Builds { get; private set; }
     public RoleAdvisor Advisor { get; private set; }

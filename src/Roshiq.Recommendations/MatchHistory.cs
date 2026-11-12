@@ -112,6 +112,8 @@ public sealed class MatchRecord
     public bool? Ended { get; set; }
     /// <summary>Запись продолжена после перезапуска программы (из контрольной записи).</summary>
     public bool Resumed { get; set; }
+    /// <summary>0.21.2: оценка матча 0…100 против игроков на этом герое (<see cref="HeroComparison.Score"/>). null — ещё не считали или нет данных.</summary>
+    public int? Score { get; set; }
 
     /// <summary>Доля отрезка [from, to) игрового времени, покрытая данными (0…1). Конец ограничен длительностью матча.</summary>
     public double CoverageOf(int from, int to)

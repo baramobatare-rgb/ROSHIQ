@@ -137,7 +137,8 @@ public partial class HistoryView : UserControl, IRefreshable
             // карточка в две строки: «герой · итог» и «дата · длительность»; неполнота — видимой пометкой
             MatchList.Items.Add(new Choice<MatchRecord>(m, $"{HeroName(m)} · {ResultText(m.Result)}")
             {
-                Subtitle = $"{date} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OpenDota")}",
+                Subtitle = $"{date} · {GameTimers.Clock(m.DurationSec)}{(m.FromGsi ? "" : " · OpenDota")}"
+                           + (m.Score is int sc ? " · " + L.Format("score_short", sc) : ""),
                 Note = m.Partial ? Loc.T("hist_partial") : null,
                 Icon = Roshiq.App.Services.HeroArt.Portrait(hero?.Key),
                 // итог читается с одного взгляда: полоска в цвете победы / поражения
@@ -210,6 +211,7 @@ public partial class HistoryView : UserControl, IRefreshable
             (Trends.Build("gpm", all, m => m.Gpm > 0 ? m.Gpm : null), L.Get("trend_gpm"), true),
             (Trends.Build("deaths", all, m => m.DurationSec > 0 ? m.Deaths : null), L.Get("trend_deaths"), false),
             (Trends.Build("lh10", all, m => m.LastHitsAt(600)), L.Get("trend_lh10"), true),
+            (Trends.Build("score", all, m => m.Score), L.Get("trend_score"), true),
         };
         foreach (var (s, title, higherIsBetter) in series) TrendGrid.Children.Add(TrendCard(s, title, higherIsBetter));
 
@@ -223,6 +225,8 @@ public partial class HistoryView : UserControl, IRefreshable
             ? L.Format("trend_wr_change", p.ToString("P0", CultureInfo.InvariantCulture), Signed((r2 - p) * 100, "0") + " п.п.")
             : L.Get("trend_wr_few"), "MutedText"));
         TrendGrid.Children.Add(wr);
+        // оценки матчей без оценки досчитываются в фоне один раз за запуск; сохранение само обновит вкладку
+        _ = App.Host.BackfillScoresAsync();
     }
 
     private static string Signed(double v, string format) => (v > 0 ? "+" : "") + v.ToString(format, CultureInfo.InvariantCulture);

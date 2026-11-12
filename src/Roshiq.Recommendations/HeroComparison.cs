@@ -50,6 +50,31 @@ public static class HeroComparison
         rows.Select(r => new Benchmark(r.Metric, double.TryParse(r.Value, System.Globalization.NumberStyles.Float,
             System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0, r.BetterThan / 100.0)).ToList();
 
+    /// <summary>Вес показателя в оценке матча: золото и смерти решают больше, чем опыт и добивания.</summary>
+    public static double Weight(string metric) => metric switch
+    {
+        "gold_per_min" => 0.3,
+        "deaths_per_min" => 0.3,
+        "xp_per_min" => 0.2,
+        "last_hits_per_min" => 0.2,
+        _ => 0
+    };
+
+    /// <summary>
+    /// 0.21.2: оценка матча 0…100 — взвешенная доля игроков на герое, которых вы обошли.
+    /// null, если показателей меньше трёх (короткий матч, нет данных OpenDota).
+    /// </summary>
+    public static int? Score(IReadOnlyList<ComparisonRow> rows)
+    {
+        var used = rows.Where(r => Weight(r.Metric) > 0).ToList();
+        if (used.Count < 3) return null;
+        double w = used.Sum(r => Weight(r.Metric));
+        return (int)Math.Round(used.Sum(r => r.BetterThan * Weight(r.Metric)) / w);
+    }
+
+    /// <summary>Словесная оценка: ключ строки для 0…100.</summary>
+    public static string ScoreVerdictKey(int score) => score >= 70 ? "score_strong" : score >= 40 ? "score_mid" : "score_weak";
+
     /// <summary>Самый слабый показатель матча (меньше всех обошли), если он ниже трети игроков.</summary>
     public static ComparisonRow? Weakest(IReadOnlyList<ComparisonRow> rows) =>
         rows.Where(r => r.BetterThan < 33).OrderBy(r => r.BetterThan).FirstOrDefault();
