@@ -302,6 +302,8 @@ public sealed class AlertSettings
     public bool Pace { get; set; } = true;
     /// <summary>После смерти показывать карточку: где, сколько золота, был ли ТП и выкуп, и один совет.</summary>
     public bool DeathCard { get; set; } = true;
+    /// <summary>0.21.4: при повышении уровня подсказывать, что качают про-игроки на этом уровне (до 16-го).</summary>
+    public bool SkillHint { get; set; } = true;
 
     public void Normalize()
     {

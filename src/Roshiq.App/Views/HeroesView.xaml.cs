@@ -113,6 +113,7 @@ public partial class HeroesView : UserControl, IRefreshable
         Details.Visibility = hero == null ? Visibility.Collapsed : Visibility.Visible;
         if (hero == null) return;
         ShowMeta(hero, autoLoad: true);
+        ShowSkills(hero, autoLoad: true);
 
         FavoriteButton.Content = L.Get(App.Host.Settings.Current.FavoriteHeroKeys.Contains(hero.Key) ? "my_favorite_remove" : "my_favorite_add");
         FavoriteButton.Foreground = Ui.Res(App.Host.Settings.Current.FavoriteHeroKeys.Contains(hero.Key) ? "Accent" : "Text");
@@ -490,6 +491,68 @@ public partial class HeroesView : UserControl, IRefreshable
         if (_selected?.Id != hero.Id) return;
         ShowMeta(hero, autoLoad: false);
         if (message != null) MetaStatus.Text = message;
+    }
+
+    // ------------------------------------------------------------------ 0.21.4: прокачка из про-матчей
+
+    private int _skillsLoadingHero = -1;
+    private readonly HashSet<int> _skillsTried = new();
+
+    private void ShowSkills(Hero hero, bool autoLoad)
+    {
+        var L = Loc.Instance;
+        var build = App.Host.SkillBuilds.Get(hero.Id);
+        bool online = App.Host.Settings.Current.Data.AllowOnlineStats;
+        SkillsRefreshButton.IsEnabled = online && _skillsLoadingHero != hero.Id;
+        SkillsPanel.Children.Clear();
+        TalentsPanel.Children.Clear();
+        if (build == null)
+            SkillsStatus.Text = _skillsLoadingHero == hero.Id ? L.Get("skills_loading") : online ? L.Get("skills_none") : L.Get("steam_need_network");
+        else
+        {
+            SkillsStatus.Text = L.Format("skills_updated", build.Matches, build.FetchedUtc.ToLocalTime().ToString("dd.MM HH:mm"));
+            for (int i = 0; i < build.Order.Count; i++)
+            {
+                var step = build.Order[i];
+                var cell = new Border
+                {
+                    CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 4, 10, 4), Margin = new Thickness(0, 0, 6, 6),
+                    BorderThickness = new Thickness(1), BorderBrush = Ui.Res(step.Talent ? "Accent" : "Line"),
+                    Background = Ui.Res(step.Talent ? "AccentSoft" : "Panel2")
+                };
+                var sp = new StackPanel { Orientation = Orientation.Horizontal };
+                sp.Children.Add(new TextBlock { Text = (i + 1).ToString(), Foreground = Ui.Res("Accent"), FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+                sp.Children.Add(new TextBlock { Text = AppHost.SkillName(step), Foreground = Ui.Res("Text"), FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center });
+                cell.Child = sp;
+                SkillsPanel.Children.Add(cell);
+            }
+            if (build.Talents.Count > 0)
+            {
+                TalentsPanel.Children.Add(new TextBlock { Text = L.Get("skills_talents"), Style = (Style)FindResource("Eyebrow"), Margin = new Thickness(0, 6, 0, 4) });
+                foreach (var t in build.Talents)
+                    TalentsPanel.Children.Add(Ui.Text(L.Format("skills_talent_line", t.Level, t.Name, t.Count, t.Of), "Value", 2));
+            }
+        }
+        if (autoLoad && online && !App.Host.SkillBuilds.IsFresh(hero.Id, DateTime.UtcNow) && _skillsLoadingHero != hero.Id && _skillsTried.Add(hero.Id))
+            _ = LoadSkillsAsync(hero, force: false);
+    }
+
+    private async Task LoadSkillsAsync(Hero hero, bool force)
+    {
+        _skillsLoadingHero = hero.Id;
+        SkillsRefreshButton.IsEnabled = false;
+        SkillsStatus.Text = Loc.T("skills_loading");
+        string? message;
+        try { (_, message) = await App.Host.LoadSkillBuildAsync(hero, force); }
+        finally { _skillsLoadingHero = -1; }
+        if (_selected?.Id != hero.Id) return;
+        ShowSkills(hero, autoLoad: false);
+        if (message != null) SkillsStatus.Text = message;
+    }
+
+    private void SkillsRefresh_Click(object sender, RoutedEventArgs e)
+    {
+        if (_selected != null) _ = LoadSkillsAsync(_selected, force: true);
     }
 
     private void MetaRefresh_Click(object sender, RoutedEventArgs e)

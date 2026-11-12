@@ -36,6 +36,7 @@ public partial class MatchToolsView : UserControl, IRefreshable
         BuybackMinute.Text = s.Alerts.BuybackFromMinute.ToString();
         AlertPace.IsChecked = s.Alerts.Pace;
         AlertDeathCard.IsChecked = s.Alerts.DeathCard;
+        AlertSkillHint.IsChecked = s.Alerts.SkillHint;
         AlertAdaptive.IsChecked = s.Alerts.Adaptive;
         AlertsStatus.Text = "";
         var reduced = MatchAlerts.AdaptiveMultipliers(App.Host.History.All());
@@ -107,6 +108,7 @@ public partial class MatchToolsView : UserControl, IRefreshable
             if (int.TryParse(BuybackMinute.Text.Trim(), out var bm)) s.Alerts.BuybackFromMinute = bm;
             s.Alerts.Pace = AlertPace.IsChecked == true;
             s.Alerts.DeathCard = AlertDeathCard.IsChecked == true;
+            s.Alerts.SkillHint = AlertSkillHint.IsChecked == true;
             s.Alerts.Adaptive = AlertAdaptive.IsChecked == true;
         });
         _ready = false;

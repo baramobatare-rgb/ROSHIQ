@@ -144,6 +144,22 @@
                     </StackPanel>
                 </Border>
 
+                <!-- 0.21.4: прокачка навыков и талантов из про-матчей (OpenDota) -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <DockPanel>
+                            <Button x:Name="SkillsRefreshButton" DockPanel.Dock="Right" VerticalAlignment="Top" Style="{StaticResource GhostButton}" Content="{app:T meta_refresh}" Click="SkillsRefresh_Click" />
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource H2}" Text="{app:T skills_title}" />
+                                <TextBlock Text="{app:T skills_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,8" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </DockPanel>
+                        <TextBlock x:Name="SkillsStatus" Style="{StaticResource MutedText}" Margin="0,0,0,6" TextWrapping="Wrap" />
+                        <WrapPanel x:Name="SkillsPanel" />
+                        <StackPanel x:Name="TalentsPanel" Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Личные заметки к герою -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>

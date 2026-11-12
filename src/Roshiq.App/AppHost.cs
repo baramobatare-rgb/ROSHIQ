@@ -83,6 +83,7 @@ public sealed class AppHost : IDisposable
         Database = GameDatabase.Load(AppPaths.DataOverrides, Settings.Current.Data.AutoUpdateData ? RemoteData.UsableRemoteDir(AppPaths.DataRemote) : null);
         Stats = new MatchupStatsCache(Path.Combine(AppPaths.Cache, "matchups.json"));
         Benchmarks = new HeroBenchmarksCache(Path.Combine(AppPaths.Cache, "benchmarks.json"));
+        SkillBuilds = new SkillBuildCache(Path.Combine(AppPaths.Cache, "skill_builds.json"));
         Analyzer = new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats);
         Builds = new ItemBuildEngine(Database);
         Advisor = new RoleAdvisor(Database);
@@ -132,6 +133,82 @@ public sealed class AppHost : IDisposable
     public MatchupStatsCache Stats { get; }
     /// <summary>0.21.1: перцентили OpenDota по героям для сравнения матча с другими игроками.</summary>
     public HeroBenchmarksCache Benchmarks { get; }
+    /// <summary>0.21.4: порядок прокачки из про-матчей (cache\skill_builds.json, раз в неделю на героя).</summary>
+    public SkillBuildCache SkillBuilds { get; }
+    private IReadOnlyDictionary<int, string>? _abilityIds;
+    private readonly HashSet<int> _skillLoading = new();
+    private readonly HashSet<int> _skillTried = new();
+
+    /// <summary>
+    /// Порядок прокачки героя по 8 недавним про-матчам (OpenDota). Около 12 запросов на героя — поэтому кэш на неделю
+    /// и не больше одной попытки за запуск на героя без явного «Обновить».
+    /// </summary>
+    public async Task<(SkillBuild? Build, string? Message)> LoadSkillBuildAsync(Hero hero, bool force)
+    {
+        var now = DateTime.UtcNow;
+        if (!force && SkillBuilds.IsFresh(hero.Id, now)) return (SkillBuilds.Get(hero.Id), null);
+        var d = Settings.Current.Data;
+        if (!d.AllowOnlineStats) return (SkillBuilds.Get(hero.Id), Loc.T("steam_need_network"));
+        lock (_skillLoading) if (!_skillLoading.Add(hero.Id)) return (SkillBuilds.Get(hero.Id), Loc.T("skills_loading"));
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var ct = CancellationToken.None;
+            _abilityIds ??= await client.GetAbilityIdsAsync(ct);
+            var ids = _abilityIds;
+            var matches = (await client.GetHeroProMatchesAsync(hero.Id, ct)).Where(m => m.DurationSec >= 1200).Take(12).ToList();
+            var seqs = new List<IReadOnlyList<string>>();
+            foreach (var (matchId, _) in matches)
+            {
+                try
+                {
+                    if (await client.GetAbilityUpgradesAsync(matchId, hero.Id, ct) is { Count: > 0 } ups)
+                        seqs.Add(ups.Select(u => ids.TryGetValue(u, out var k) ? k : u.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToList());
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException) { Log.Warn($"Прокачка {hero.Key}: матч {matchId} — {ex.Message}"); }
+                if (seqs.Count >= 8) break;
+            }
+            var talents = await client.GetHeroTalentsAsync(hero.InternalName, ct);
+            var keys = seqs.SelectMany(s => s).Concat(talents.Keys).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var names = await client.GetAbilityNamesAsync(keys, ct);
+            var build = SkillBuildBuilder.Build(hero.Id, seqs, talents,
+                k => SkillBuildBuilder.CleanName(k, names.TryGetValue(k, out var n) ? n : null), now);
+            if (build == null) return (SkillBuilds.Get(hero.Id), Loc.T("skills_empty"));
+            SkillBuilds.Put(build);
+            return (build, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Прокачка {hero.Key}: {ex.Message}");
+            return (SkillBuilds.Get(hero.Id), Loc.T("meta_failed") + " " + ex.Message);
+        }
+        finally { lock (_skillLoading) _skillLoading.Remove(hero.Id); }
+    }
+
+    /// <summary>Название шага прокачки на языке интерфейса (бонус атрибутов переводим, остальное — игровые названия).</summary>
+    public static string SkillName(SkillStep step) =>
+        step.Key == SkillBuildBuilder.AttributesKey ? Loc.T("skills_attributes") : step.Name;
+
+    private int _skillLevelSeen;
+    /// <summary>
+    /// 0.21.4: при повышении уровня (1…16) — короткая подсказка, что качают про-игроки на этом уровне.
+    /// Порядок героя подгружается один раз за запуск в фоне, если его нет в кэше.
+    /// </summary>
+    private void TickSkillHint(GameStateSnapshot snap)
+    {
+        if (CurrentHero is not { } hero || snap.HeroLevel is not int level) return;
+        if (!snap.IsInProgress) { _skillLevelSeen = level; return; }
+        if (!SkillBuilds.IsFresh(hero.Id, DateTime.UtcNow) && _skillTried.Add(hero.Id) && Settings.Current.Data.AllowOnlineStats)
+            _ = LoadSkillBuildAsync(hero, force: false);
+        if (level <= _skillLevelSeen) { _skillLevelSeen = level; return; }
+        bool single = level == _skillLevelSeen + 1;
+        _skillLevelSeen = level;
+        if (!single || !Settings.Current.Alerts.Enabled || !Settings.Current.Alerts.SkillHint) return;
+        if (SkillBuilds.Get(hero.Id)?.AtLevel(level) is not { } step) return;
+        var L = Loc.Instance;
+        var text = L.Format(step.Talent ? "skill_toast_talent" : "skill_toast", level, SkillName(step));
+        ShowEventToast(L.Get("skill_header").ToUpperInvariant(), text, kind: "skill", ttlSec: 12, inGame: true, key: "skill_hint");
+    }
 
     /// <summary>
     /// Перцентили по герою: из кэша, если им меньше недели; иначе один запрос к OpenDota (если онлайн-статистика разрешена).
@@ -418,6 +495,7 @@ public sealed class AppHost : IDisposable
         TryLinkFromGsi(snap);
         TickRankedRoleSelection(snap);
         TickRoleDetection(snap);
+        try { TickSkillHint(snap); } catch (Exception ex) { Log.Warn("Подсказка прокачки: " + ex.Message); }
         TickFarmRole(snap);
         TickGameInsights(snap);
         RaiseChanged();

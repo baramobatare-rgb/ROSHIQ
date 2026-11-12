@@ -403,6 +403,73 @@ public sealed class OpenDotaClient : IDisposable
         return map;
     }
 
+    /// <summary>0.21.4: недавние про-матчи на герое (id матча и длительность), новые первыми.</summary>
+    public async Task<IReadOnlyList<(long MatchId, int DurationSec)>> GetHeroProMatchesAsync(int heroId, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync($"/heroes/{heroId}/matches", ct).ConfigureAwait(false);
+        var list = new List<(long, int)>();
+        if (doc.RootElement.ValueKind != JsonValueKind.Array) return list;
+        foreach (var m in doc.RootElement.EnumerateArray())
+            if (m.TryGetProperty("match_id", out var id) && id.TryGetInt64(out var mid))
+                list.Add((mid, m.TryGetProperty("duration", out var d) && d.TryGetInt32(out var sec) ? sec : 0));
+        return list;
+    }
+
+    /// <summary>Порядок прокачки героя heroId в матче (ability_upgrades_arr) — id способностей; null, если запись не разобрана.</summary>
+    public async Task<IReadOnlyList<int>?> GetAbilityUpgradesAsync(long matchId, int heroId, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync($"/matches/{matchId}", ct).ConfigureAwait(false);
+        if (!doc.RootElement.TryGetProperty("players", out var players) || players.ValueKind != JsonValueKind.Array) return null;
+        foreach (var p in players.EnumerateArray())
+        {
+            if (!p.TryGetProperty("hero_id", out var h) || !h.TryGetInt32(out var hid) || hid != heroId) continue;
+            if (!p.TryGetProperty("ability_upgrades_arr", out var arr) || arr.ValueKind != JsonValueKind.Array) return null;
+            var ids = new List<int>();
+            foreach (var x in arr.EnumerateArray()) if (x.TryGetInt32(out var v)) ids.Add(v);
+            return ids;
+        }
+        return null;
+    }
+
+    /// <summary>constants/ability_ids: числовой id способности → ключ (antimage_blink, special_bonus_…).</summary>
+    public async Task<IReadOnlyDictionary<int, string>> GetAbilityIdsAsync(CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync("/constants/ability_ids", ct).ConfigureAwait(false);
+        var map = new Dictionary<int, string>();
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) return map;
+        foreach (var p in doc.RootElement.EnumerateObject())
+            if (int.TryParse(p.Name, out var id) && p.Value.ValueKind == JsonValueKind.String && p.Value.GetString() is { Length: > 0 } key)
+                map[id] = key;
+        return map;
+    }
+
+    /// <summary>constants/abilities: названия (dname) только для нужных ключей — весь справочник большой.</summary>
+    public async Task<IReadOnlyDictionary<string, string>> GetAbilityNamesAsync(IReadOnlySet<string> keys, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync("/constants/abilities", ct).ConfigureAwait(false);
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (doc.RootElement.ValueKind != JsonValueKind.Object) return map;
+        foreach (var p in doc.RootElement.EnumerateObject())
+            if (keys.Contains(p.Name) && p.Value.ValueKind == JsonValueKind.Object
+                && p.Value.TryGetProperty("dname", out var dn) && dn.ValueKind == JsonValueKind.String)
+                map[p.Name] = dn.GetString() ?? p.Name;
+        return map;
+    }
+
+    /// <summary>constants/hero_abilities: таланты героя (npc_dota_hero_…) → ярус 1…4.</summary>
+    public async Task<IReadOnlyDictionary<string, int>> GetHeroTalentsAsync(string heroNpc, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync("/constants/hero_abilities", ct).ConfigureAwait(false);
+        var map = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (!doc.RootElement.TryGetProperty(heroNpc, out var hero) || !hero.TryGetProperty("talents", out var talents)
+            || talents.ValueKind != JsonValueKind.Array) return map;
+        foreach (var t in talents.EnumerateArray())
+            if (t.TryGetProperty("name", out var n) && n.GetString() is { Length: > 0 } key
+                && t.TryGetProperty("level", out var l) && l.TryGetInt32(out var tier))
+                map[key] = tier;
+        return map;
+    }
+
     /// <summary>Популярность предметов на герое по фазам игры: фаза (start/early/mid/late) → id предмета → число покупок.</summary>
     public async Task<IReadOnlyDictionary<string, IReadOnlyDictionary<int, int>>> GetItemPopularityAsync(int heroId, CancellationToken ct)
     {
