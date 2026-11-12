@@ -356,7 +356,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
 @media(max-width:640px){.hero .stickers .s2,.hero .stickers .s4{display:none}.hero .stripe{height:350px}.hero .main{gap:48px}.project-extra{padding:0 18px}}
 @media(max-width:640px){.screen-panel{border-radius:8px}.screen-panel figcaption{padding:16px;font-size:14px}.screen-tabs button{padding:12px 14px;font-size:14px}}
 </style>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "ROSHIQ", "description": "Бесплатный помощник для Dota 2 с открытым кодом: подсказки во время игры, автодрафт, сборки и разбор матча.", "applicationCategory": "GameApplication", "operatingSystem": "Windows 10, Windows 11", "softwareVersion": "0.20.1", "url": "https://baramobatare-rgb.github.io/ROSHIQ/", "downloadUrl": "https://github.com/baramobatare-rgb/ROSHIQ/releases/latest", "image": "https://baramobatare-rgb.github.io/ROSHIQ/site/og.png", "inLanguage": ["ru", "en"], "isAccessibleForFree": true, "license": "https://github.com/baramobatare-rgb/ROSHIQ", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "RUB"}, "sameAs": ["https://github.com/baramobatare-rgb/ROSHIQ", "https://vk.ru/roshiq", "https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ", "https://www.tiktok.com/@baramobatare", "https://discord.gg/BhZTcTFwuM"]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "ROSHIQ", "description": "Бесплатный помощник для Dota 2 с открытым кодом: подсказки во время игры, автодрафт, сборки и разбор матча.", "applicationCategory": "GameApplication", "operatingSystem": "Windows 10, Windows 11", "softwareVersion": "0.21.5", "url": "https://baramobatare-rgb.github.io/ROSHIQ/", "downloadUrl": "https://github.com/baramobatare-rgb/ROSHIQ/releases/latest", "image": "https://baramobatare-rgb.github.io/ROSHIQ/site/og.png", "inLanguage": ["ru", "en"], "isAccessibleForFree": true, "license": "https://github.com/baramobatare-rgb/ROSHIQ", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "RUB"}, "sameAs": ["https://github.com/baramobatare-rgb/ROSHIQ", "https://vk.ru/roshiq", "https://www.youtube.com/channel/UC3xilUrjDyh56-WjvLwdOFQ", "https://www.tiktok.com/@baramobatare", "https://discord.gg/BhZTcTFwuM"]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Нужен ли интернет?", "acceptedAnswer": {"@type": "Answer", "text": "Нет. Без интернета работают драфт, сборки, таймеры, подсказки и итог матча. Интернет нужен для статистики OpenDota и обновлений, его можно выключить одной галочкой."}}, {"@type": "Question", "name": "Могут ли забанить?", "acceptedAnswer": {"@type": "Answer", "text": "Гарантий не даст никто: Valve программу не проверяла. ROSHIQ получает данные через Game State Integration — интерфейс самой Dota 2 — и смотрит на экран драфта. Он не читает память игры, не внедряет код и не нажимает клавиши."}}, {"@type": "Question", "name": "Сколько стоит?", "acceptedAnswer": {"@type": "Answer", "text": "Нисколько. Ни подписок, ни рекламы, ни платных функций. Код открыт — любой может посмотреть, что внутри."}}, {"@type": "Question", "name": "Нашёл ошибку или есть идея", "acceptedAnswer": {"@type": "Answer", "text": "Напиши в комментариях под роликами, в сообществе ВКонтакте или открой issue на GitHub."}}]}</script>
 </head>
 <body>
@@ -391,7 +391,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
         <a class="btn-secondary" href="https://discord.gg/BhZTcTFwuM" data-goal="discord" data-i18n="discordJoin" target="_blank" rel="noopener noreferrer">Вступить в Discord</a>
       </div>
       <small class="download-meta" data-i18n="dls">Windows 10 и 11.<br>Права администратора не нужны.</small>
-      <div class="portable-choice"><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/download/v0.20.1/Roshiq-Portable-0.20.1.zip" data-portable data-goal="portable" data-i18n="portable">Портативная версия (.zip) — без установки</a></div>
+      <div class="portable-choice"><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-portable data-goal="portable" data-i18n="portable">Портативная версия (.zip) — без установки</a></div>
       <a class="start-link" href="#start" data-i18n="startLink">Как запустить в первый раз ↗</a>
       <div class="proof"><span data-i18n="free">Бесплатно, без подписки</span><span data-i18n="local">История хранится на ПК</span></div>
       <div class="mobile-share"><button type="button" class="copy-link" id="copyLink" data-i18n="copy">Скопировать ссылку для ПК</button><span class="copy-status" id="copyStatus" role="status"></span></div>
@@ -531,9 +531,9 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
   <div class="w">
     <h2 data-i18n="h2d">Что нового</h2>
     <ul class="news">
-      <li><span class="v">0.20.0</span><div><b data-i18n="v1">Разбор по ходу матча</b><span data-i18n="v1d">После игры — где упал доход, когда был простой без фарма, сколько золота лежало без покупок, где и как случались смерти. Главная ошибка не повторяется игра за игрой, цель на игру выполнима.</span></div></li>
-      <li><span class="v">0.19.4</span><div><b data-i18n="v2">Чёткий шрифт</b><span data-i18n="v2d">Текст в окне программы сглажен и не прилипает к пиксельной сетке — заголовки и подписи ровные, как на сайте.</span></div></li>
-      <li><span class="v">0.19.3</span><div><b data-i18n="v3">Сборки из про-матчей</b><span data-i18n="v3d">Сборки с ★ — что чаще всего покупают на герое в профессиональных матчах (открытые данные OpenDota). Обновляются раз в неделю сами, без новой версии программы.</span></div></li>
+      <li><span class="v">0.21.4</span><div><b data-i18n="v1">Прокачка как у про-игроков</b><span data-i18n="v1d">Какой навык брать на каждом уровне до 16-го и какие таланты выбирают про-игроки на твоём герое. В игре при новом уровне — короткая подсказка.</span></div></li>
+      <li><span class="v">0.21.2</span><div><b data-i18n="v2">Оценка матча от 0 до 100</b><span data-i18n="v2d">Насколько ты сыграл лучше других игроков на этом герое по золоту, опыту, добиваниям и смертям — и график, растёт ли оценка.</span></div></li>
+      <li><span class="v">0.21.0</span><div><b data-i18n="v3">Карточка после смерти</b><span data-i18n="v3d">Пока ждёшь возрождения: где умер, сколько золота было при себе, был ли ТП и выкуп — и один совет.</span></div></li>
     </ul>
     <a class="all" href="https://github.com/baramobatare-rgb/ROSHIQ/blob/main/CHANGELOG.md" data-goal="github" data-i18n="all">Вся история изменений</a>
   </div>
@@ -577,7 +577,7 @@ html{scroll-padding-top:calc(var(--nav-height,76px) + 24px)}
   <div class="w">
     <h2 data-i18n="h2f">Следующий матч — уже с ним.</h2>
     <a class="btn" href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-goal="download" data-i18n="dl">Скачать для Windows</a>
-    <div class="portable-choice"><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/download/v0.20.1/Roshiq-Portable-0.20.1.zip" data-portable data-goal="portable" data-i18n="portable">Портативная версия (.zip) — без установки</a></div>
+    <div class="portable-choice"><a href="https://github.com/baramobatare-rgb/ROSHIQ/releases/latest" data-portable data-goal="portable" data-i18n="portable">Портативная версия (.zip) — без установки</a></div>
   </div>
 </section>
 </main>
@@ -621,9 +621,9 @@ nh:"Doesn’t",x1:"no memory reading, no code injection",x2:"no key presses, no 
 bf:"ROSHIQ is an independent open-source project. Valve hasn’t reviewed or approved it. You can inspect how the app works in the source code.",
 h2c:"Three minutes and you’re in",s1:"Download",s1p:"the installer and run it. No separate .NET install needed.",s2:"Set up",s2p:"language, role and game connection — the connection is one button.",
 s3:"Play",s3p:"restart Dota 2. <kbd>F8</kbd> toggles the panel.",
-h2d:"What’s new",v1:"A timeline review of the match",v1d:"After the game: where income dropped, when you stood without farm, how long gold sat unspent, where and how you died. The main mistake no longer repeats game after game, and the match goal is achievable.",
-v2:"Sharper text",v2d:"Text in the app window is smooth and no longer snaps to the pixel grid — headings and labels look as even as on the website.",
-v3:"Builds from pro matches",v3d:"★ builds show what pro players buy most on each hero (OpenDota open data). They refresh weekly on their own, no app update needed.",all:"Full changelog",
+h2d:"What’s new",v1:"Skill build like the pros",v1d:"Which skill to take at each level up to 16 and which talents pro players pick on your hero. In game, a short hint on every new level.",
+v2:"A match score from 0 to 100",v2d:"How you did against other players on this hero in gold, XP, last hits and deaths — plus a chart of whether your score is going up.",
+v3:"Death card",v3d:"While you wait to respawn: where you died, how much gold you had, whether you had a TP and buyback — and one tip.",all:"Full changelog",
 h2e:"Questions",q1:"Do I need internet?",a1:"No. Draft, builds, timers, tips and the match summary work offline. Internet is for OpenDota stats and updates — one checkbox turns it off.",
 q2:"I can’t see the panel over the game",a2:"Switch Dota 2 to “Borderless window” (Settings → Video). Transparent windows can’t be drawn over exclusive fullscreen.",
 q3:"Windows says it protected my PC",a3:"Click “More info” → “Run anyway”. The app doesn’t have a paid code signature yet. You can check the file with SHA256SUMS.txt on the release page.",
@@ -729,17 +729,27 @@ document.addEventListener('click',event=>{
   const place=link.closest('.site-nav')?'header':link.closest('section')?.id||(link.closest('.hero')?'hero':link.closest('.final')?'final':'footer');
   trackGoal(link.dataset.goal,{place,language:lang});
 });
-// «Скачать» сразу отдаёт установщик последней версии. Если GitHub не ответил — кнопка ведёт на страницу релиза.
-fetch('https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest').then(r=>r.ok?r.json():null).then(j=>{
-  const assets=j&&(j.assets||[]),portable=assets&&assets.find(x=>/^Roshiq-Portable-.*\.zip$/i.test(x.name));
-  if(portable)document.querySelectorAll('a[data-portable]').forEach(link=>{link.href=portable.browser_download_url;link.setAttribute('download','')});
-  const a=assets&&assets.find(x=>/^Roshiq-Setup-.*\.exe$/i.test(x.name));if(!a)return;
-  document.querySelectorAll('a[data-goal="download"]').forEach(l=>{l.href=a.browser_download_url;l.setAttribute('download','');});
-  const mb=Math.round(a.size/1048576),v=(j.tag_name||'').replace(/^v/i,'');
-  RU.dls=`Windows 10 и 11, ${mb} МБ, версия ${v}.<br>Права администратора не нужны.`;
-  EN.dls=`Windows 10 and 11, ${mb} MB, version ${v}.<br>No admin rights needed.`;
+// «Скачать» и «Портативная» сразу отдают файлы последней версии — номер версии берём у GitHub, вручную ничего не правим.
+// Последний удачный ответ запоминаем: если GitHub не ответил (лимит запросов, сбой сети), берём его; если и его нет —
+// ссылки в разметке ведут на страницу последнего релиза, там всегда актуальные файлы.
+function relApply(rel){
+  if(!rel||!rel.setup)return;
+  document.querySelectorAll('a[data-goal="download"]').forEach(l=>{l.href=rel.setup;l.setAttribute('download','')});
+  if(rel.portable)document.querySelectorAll('a[data-portable]').forEach(l=>{l.href=rel.portable;l.setAttribute('download','')});
+  RU.dls=`Windows 10 и 11, ${rel.mb} МБ, версия ${rel.v}.<br>Права администратора не нужны.`;
+  EN.dls=`Windows 10 and 11, ${rel.mb} MB, version ${rel.v}.<br>No admin rights needed.`;
   document.querySelectorAll('[data-i18n="dls"]').forEach(e=>e.innerHTML=(lang==='en'?EN:RU).dls);
-}).catch(()=>{});
+}
+let relCached=null;try{relCached=JSON.parse(localStorage.getItem('roshiq-site-rel')||'null')}catch(e){}
+fetch('https://api.github.com/repos/baramobatare-rgb/ROSHIQ/releases/latest').then(r=>r.ok?r.json():null).then(j=>{
+  const assets=(j&&j.assets)||[];
+  const setup=assets.find(x=>/^Roshiq-Setup-.*\.exe$/i.test(x.name)),portable=assets.find(x=>/^Roshiq-Portable-.*\.zip$/i.test(x.name));
+  if(!setup){relApply(relCached);return}
+  const rel={setup:setup.browser_download_url,portable:portable?portable.browser_download_url:null,
+    mb:Math.round(setup.size/1048576),v:(j.tag_name||'').replace(/^v/i,'')};
+  try{localStorage.setItem('roshiq-site-rel',JSON.stringify(rel))}catch(e){}
+  relApply(rel);
+}).catch(()=>relApply(relCached));
 // Счётчик скачиваний: сумма загрузок установщика и портативной версии по всем релизам (GitHub считает сам,
 // сюда входят и обновления из программы). Обновляется раз в 5 минут, пока страница открыта; без ответа GitHub плашка скрыта.
 const dlc=document.getElementById('dlc'),dlcN=document.getElementById('dlcN');let dlShown=0;
