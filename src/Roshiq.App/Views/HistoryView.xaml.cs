@@ -271,6 +271,8 @@ public partial class HistoryView : UserControl, IRefreshable
             line.Points.Add(new Point(x, y));
         }
         canvas.Children.Add(line);
+        // 0.23.1: линия тренда «рисуется» при первом показе (повторная отрисовка при смене размера — без анимации)
+        if (canvas.Tag is not true) { canvas.Tag = true; Motion.DrawOn(line, 120, 900); }
     }
 
     private void OpenDota_Click(object sender, RoutedEventArgs e)
@@ -569,6 +571,8 @@ public partial class HistoryView : UserControl, IRefreshable
     }
 
     private void Chart_SizeChanged(object sender, SizeChangedEventArgs e) => DrawChart();
+    /// <summary>Для какого матча график GPM/XPM уже «нарисован» анимацией — при смене размера окна линии не перерисовываются заново.</summary>
+    private string? _chartAnimatedFor;
 
     /// <summary>Линии GPM и XPM по точкам, записанным раз в 30 секунд.</summary>
     private void DrawChart()
@@ -611,12 +615,15 @@ public partial class HistoryView : UserControl, IRefreshable
             Chart.Children.Add(label);
         }
 
+        bool animate = _chartAnimatedFor != m.Id;
+        _chartAnimatedFor = m.Id;
         void Series(Func<MatchSample, int?> value, string brush, double thickness)
         {
             var line = new Polyline { Stroke = Ui.Res(brush), StrokeThickness = thickness, StrokeLineJoin = PenLineJoin.Round };
             foreach (var s in pts)
                 if (value(s) is int v) line.Points.Add(new Point(X(s.Clock), Y(v)));
             if (line.Points.Count >= 2) Chart.Children.Add(line);
+            if (animate) Motion.DrawOn(line, brush == "Accent" ? 0 : 200, 1000);
         }
         Series(s => s.Xpm, "Muted", 1.6);
         Series(s => s.Gpm, "Accent", 2.2);

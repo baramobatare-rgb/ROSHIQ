@@ -307,6 +307,8 @@ public sealed class AlertSettings
     public bool DeathCard { get; set; } = true;
     /// <summary>0.21.4: при повышении уровня подсказывать, что качают про-игроки на этом уровне (до 16-го).</summary>
     public bool SkillHint { get; set; } = true;
+    /// <summary>0.23.1: подсказки «что делать сейчас» после выигранной или проигранной драки и с наступлением ночи.</summary>
+    public bool MacroTips { get; set; } = true;
 
     public void Normalize()
     {

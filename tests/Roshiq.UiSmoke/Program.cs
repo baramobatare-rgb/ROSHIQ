@@ -82,7 +82,7 @@ class Program
         host.Settings.Current.ReduceMotion = true;
         var root = (FrameworkElement)main.Content;
         var size = new Size(1280, 820);
-        foreach (var key in new[] { "dashboard", "draft", "build", "assistant", "history", "settings" })
+        foreach (var key in new[] { "dashboard", "draft", "tierlist", "build", "assistant", "history", "settings" })
         {
             try
             {

@@ -85,6 +85,7 @@ public sealed class AppHost : IDisposable
         Stats = new MatchupStatsCache(Path.Combine(AppPaths.Cache, "matchups.json"));
         Benchmarks = new HeroBenchmarksCache(Path.Combine(AppPaths.Cache, "benchmarks.json"));
         SkillBuilds = new SkillBuildCache(Path.Combine(AppPaths.Cache, "skill_builds.json"));
+        TierStats = new HeroTierStatsCache(Path.Combine(AppPaths.Cache, "herostats.json"));
         Analyzer = new DraftAnalyzer(Database, Stats.HeroesCached > 0 ? Stats : NoStatsProvider.Instance, Settings.Current.Data.MinGamesForStats);
         Builds = new ItemBuildEngine(Database);
         Advisor = new RoleAdvisor(Database);
@@ -137,6 +138,29 @@ public sealed class AppHost : IDisposable
     public HeroBenchmarksCache Benchmarks { get; }
     /// <summary>0.21.4: порядок прокачки из про-матчей (cache\skill_builds.json, раз в неделю на героя).</summary>
     public SkillBuildCache SkillBuilds { get; }
+    /// <summary>0.23.0: статистика героев по рангам для тир-листа (cache\herostats.json, раз в сутки).</summary>
+    public HeroTierStatsCache TierStats { get; }
+
+    /// <summary>Тир-лист: свежий кэш или один запрос к OpenDota. Без разрешения сети — только кэш.</summary>
+    public async Task<(HeroTierStats? Stats, string? Message)> LoadTierStatsAsync(bool force)
+    {
+        if (!force && TierStats.IsFresh(DateTime.UtcNow)) return (TierStats.Get(), null);
+        var d = Settings.Current.Data;
+        if (!d.AllowOnlineStats) return (TierStats.Get(), Loc.T("steam_need_network"));
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var s = await client.GetHeroStatsAsync(CancellationToken.None);
+            if (s.Rows.Count == 0) return (TierStats.Get(), Loc.T("tier_empty"));
+            TierStats.Put(s);
+            return (s, null);
+        }
+        catch (Exception ex)
+        {
+            Log.Warn("Тир-лист: " + ex.Message);
+            return (TierStats.Get(), Loc.T("meta_failed") + " " + ex.Message);
+        }
+    }
     private IReadOnlyDictionary<int, string>? _abilityIds;
     private readonly HashSet<int> _skillLoading = new();
     private readonly HashSet<int> _skillTried = new();
@@ -196,6 +220,23 @@ public sealed class AppHost : IDisposable
     /// 0.21.4: при повышении уровня (1…16) — короткая подсказка, что качают про-игроки на этом уровне.
     /// Порядок героя подгружается один раз за запуск в фоне, если его нет в кэше.
     /// </summary>
+    private readonly MacroAdvisor _macro = new();
+
+    /// <summary>0.23.1: «что делать сейчас» — по исходу драки (счёт убийств сторон) и смене дня на ночь.</summary>
+    private void TickMacro(GameStateSnapshot snap)
+    {
+        if (!snap.IsInProgress || snap.ClockTime is not int clock || clock < 0) return;
+        bool radiant = snap.TeamName == "radiant";
+        int? ours = radiant ? snap.RadiantScore : snap.DireScore;
+        int? theirs = radiant ? snap.DireScore : snap.RadiantScore;
+        if (snap.TeamName is not ("radiant" or "dire")) ours = theirs = null;
+        var tip = _macro.Observe(clock, ours, theirs, snap.Daytime, snap.HeroAlive ?? true);
+        if (tip == null || !Settings.Current.Alerts.Enabled || !Settings.Current.Alerts.MacroTips) return;
+        var L = Loc.Instance;
+        ShowEventToast(L.Get("macro_header").ToUpperInvariant(), tip.Text(L.Language), kind: "macro", ttlSec: 14, inGame: true,
+            allowWhenDead: true, key: "macro_" + tip.Key);
+    }
+
     private void TickSkillHint(GameStateSnapshot snap)
     {
         if (CurrentHero is not { } hero || snap.HeroLevel is not int level) return;
@@ -484,6 +525,7 @@ public sealed class AppHost : IDisposable
             _timerAnnouncer.Reset();
             Roshan.Clear();
             EnemyGlyph.Clear();
+            _macro.Reset();
             _roleDetector.Reset();
             _farmRole.Reset();
             if (_queueRoleApplied && snap.IsHeroSelection) _roleDetector.AcceptAssignedRole();
@@ -502,6 +544,7 @@ public sealed class AppHost : IDisposable
         TickRankedRoleSelection(snap);
         TickRoleDetection(snap);
         try { TickSkillHint(snap); } catch (Exception ex) { Log.Warn("Подсказка прокачки: " + ex.Message); }
+        try { TickMacro(snap); } catch (Exception ex) { Log.Warn("Подсказка по макроигре: " + ex.Message); }
         TickFarmRole(snap);
         TickGameInsights(snap);
         RaiseChanged();

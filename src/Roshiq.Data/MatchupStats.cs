@@ -435,6 +435,13 @@ public sealed class OpenDotaClient : IDisposable
         return map;
     }
 
+    /// <summary>0.23.0: выборы и победы всех героев по рангам (/heroStats) — для тир-листа.</summary>
+    public async Task<HeroTierStats> GetHeroStatsAsync(CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync("/heroStats", ct).ConfigureAwait(false);
+        return HeroTierStats.Parse(doc.RootElement, DateTime.UtcNow);
+    }
+
     /// <summary>0.21.4: недавние про-матчи на герое (id матча и длительность), новые первыми.</summary>
     public async Task<IReadOnlyList<(long MatchId, int DurationSec)>> GetHeroProMatchesAsync(int heroId, CancellationToken ct)
     {

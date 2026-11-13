@@ -23,6 +23,9 @@ public sealed record GameStateSnapshot
     public string? CustomGameName { get; init; }
     /// <summary>Победившая сторона после игры: radiant / dire / none.</summary>
     public string? WinTeam { get; init; }
+    /// <summary>0.23.1: счёт убийств сторон (map.radiant_score / map.dire_score).</summary>
+    public int? RadiantScore { get; init; }
+    public int? DireScore { get; init; }
 
     // player
     public string? PlayerName { get; init; }
@@ -115,6 +118,8 @@ public static class GsiParser
             Daytime = Bool(map, "daytime"),
             CustomGameName = Str(map, "customgamename"),
             WinTeam = Str(map, "win_team")?.Trim().ToLowerInvariant(),
+            RadiantScore = Int(map, "radiant_score"),
+            DireScore = Int(map, "dire_score"),
             PlayerName = Str(player, "name"),
             SteamId = Str(player, "steamid") ?? Str(player, "accountid"),
             Activity = Str(player, "activity"),

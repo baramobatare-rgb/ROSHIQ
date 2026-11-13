@@ -92,6 +92,70 @@ public static class Motion
         CompositionTarget.Rendering += tick;
     }
 
+    // ------------------------------------------------------------------ 0.23.1: анимации графиков
+
+    /// <summary>
+    /// Линия графика «рисуется» слева направо (~0,9 с). Линии с собственным пунктиром не трогаем — им только плавное появление.
+    /// </summary>
+    public static void DrawOn(System.Windows.Shapes.Polyline line, int delay = 0, int ms = 900)
+    {
+        if (!Enabled || line.Points.Count < 2) return;
+        if (line.StrokeDashArray is { Count: > 0 }) { FadeIn(line, delay + ms / 3, ms / 2); return; }
+        double length = 0;
+        for (int i = 1; i < line.Points.Count; i++) length += (line.Points[i] - line.Points[i - 1]).Length;
+        double units = length / Math.Max(0.5, line.StrokeThickness) + 2;   // пунктир задаётся в толщинах линии
+        line.StrokeDashArray = new DoubleCollection { units, units };
+        var animation = new DoubleAnimation(units, 0, TimeSpan.FromMilliseconds(ms))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(delay), EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        };
+        animation.Completed += (_, _) =>
+        {
+            line.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, null);
+            line.StrokeDashArray = null;
+            line.StrokeDashOffset = 0;
+        };
+        line.StrokeDashOffset = units;
+        line.BeginAnimation(System.Windows.Shapes.Shape.StrokeDashOffsetProperty, animation);
+    }
+
+    /// <summary>Плавное появление (заливки графиков, отметки).</summary>
+    public static void FadeIn(UIElement element, int delay = 0, int ms = 450)
+    {
+        if (!Enabled) return;
+        double to = element.Opacity;
+        Animate(element, UIElement.OpacityProperty, to, ms, 0, delay);
+    }
+
+    /// <summary>График целиком открывается слева направо, как шторка (клип-прямоугольник растёт по ширине).</summary>
+    public static void Wipe(FrameworkElement element, double width, double height, int delay = 0, int ms = 1000)
+    {
+        if (!Enabled) return;
+        var clip = new RectangleGeometry(new Rect(0, 0, 0, height));
+        element.Clip = clip;
+        var animation = new RectAnimation(new Rect(0, 0, 0, height), new Rect(0, 0, width, height), TimeSpan.FromMilliseconds(ms))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(delay), EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+        };
+        animation.Completed += (_, _) => element.Clip = null;
+        clip.BeginAnimation(RectangleGeometry.RectProperty, animation);
+    }
+
+    /// <summary>Полоска растёт от левого края до своей длины.</summary>
+    public static void Grow(FrameworkElement element, int delay = 0, int ms = 700)
+    {
+        if (!Enabled) return;
+        var scale = new ScaleTransform(0, 1);
+        element.RenderTransformOrigin = new Point(0, 0.5);
+        element.RenderTransform = scale;
+        var animation = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(ms))
+        {
+            BeginTime = TimeSpan.FromMilliseconds(delay), EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        animation.Completed += (_, _) => { scale.BeginAnimation(ScaleTransform.ScaleXProperty, null); scale.ScaleX = 1; };
+        scale.BeginAnimation(ScaleTransform.ScaleXProperty, animation);
+    }
+
     public static void Enter(FrameworkElement element, double x, double y, int delay = 0)
     {
         Reset(element);

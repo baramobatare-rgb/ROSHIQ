@@ -54,8 +54,9 @@ public partial class HistoryView
             benchTitle.Children.Add(SubTitle(L.Get("review_bench")));
             benchTitle.Children.Add(new HelpTip { Text = L.Get("help_bench"), Margin = new Thickness(6, 8, 0, 0) });
             OdReviewPanel.Children.Add(benchTitle);
+            int bars = 0;
             foreach (var b in review.Benchmarks.OrderBy(b => b.Pct))
-                OdReviewPanel.Children.Add(BenchmarkBar(b, L));
+                OdReviewPanel.Children.Add(BenchmarkBar(b, L, bars++));
         }
 
         // линия
@@ -216,6 +217,8 @@ public partial class HistoryView
                 Stroke = e.Severity < 0 ? Ui.Res("Red") : Ui.Res("Muted"), StrokeThickness = 2
             });
         }
+        // 0.23.1: график открывается слева направо — как будто матч проигрывается заново
+        Motion.Wipe(canvas, W, H, 100, 1200);
         var legend = new TextBlock { Text = L.Get("review_chart_legend"), Style = (Style)Application.Current.FindResource("MutedText"), FontSize = 11.5, Margin = new Thickness(0, 2, 0, 8), TextWrapping = TextWrapping.Wrap };
         var box = new StackPanel { HorizontalAlignment = HorizontalAlignment.Left, MaxWidth = W };
         box.Children.Add(new Viewbox { Child = canvas, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly });
@@ -280,7 +283,8 @@ public partial class HistoryView
         title.Children.Add(new HelpTip { Text = L.Get("bench_note"), Margin = new Thickness(6, 8, 0, 0) });
         panel.Children.Add(title);
         if (score is int s) panel.Children.Add(ScoreLine(s, L));
-        foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) panel.Children.Add(BenchmarkBar(b, L));
+        int n = 0;
+        foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) panel.Children.Add(BenchmarkBar(b, L, n++));
         OdReviewPanel.Children.Insert(0, panel);
     }
 
@@ -288,7 +292,9 @@ public partial class HistoryView
     internal static FrameworkElement ScoreLine(int score, Loc L)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
-        row.Children.Add(new TextBlock { Text = score.ToString(CultureInfo.InvariantCulture), Style = (Style)Application.Current.FindResource("BigValue"), FontSize = 30, VerticalAlignment = VerticalAlignment.Bottom });
+        var value = new TextBlock { Text = score.ToString(CultureInfo.InvariantCulture), Style = (Style)Application.Current.FindResource("BigValue"), FontSize = 30, VerticalAlignment = VerticalAlignment.Bottom };
+        row.Children.Add(value);
+        Motion.CountUp(value, score, "0", "", 800);
         row.Children.Add(new TextBlock { Text = L.Get("score_of100"), Style = (Style)Application.Current.FindResource("MutedText"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(4, 0, 12, 5) });
         row.Children.Add(new TextBlock { Text = L.Get(HeroComparison.ScoreVerdictKey(score)), Style = (Style)Application.Current.FindResource("MutedText"), Foreground = Ui.Res("Text"), FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 0, 5) });
         row.Children.Add(new HelpTip { Text = L.Get("score_help"), Margin = new Thickness(6, 0, 0, 7), VerticalAlignment = VerticalAlignment.Bottom });
@@ -317,7 +323,8 @@ public partial class HistoryView
     }
 
     /// <summary>Полоска «лучше, чем у N% игроков на этом герое».</summary>
-    internal static FrameworkElement BenchmarkBar(Roshiq.Data.Benchmark b, Loc L)
+    /// <param name="index">Порядковый номер полоски: полоски вырастают по очереди (0.23.1).</param>
+    internal static FrameworkElement BenchmarkBar(Roshiq.Data.Benchmark b, Loc L, int index = 0)
     {
         var (ru, en) = MatchReviewBuilder.BenchmarkNames[b.Key];
         int pct = (int)Math.Round(b.Pct * 100);
@@ -334,6 +341,7 @@ public partial class HistoryView
         };
         track.Child = fill;
         track.SizeChanged += (_, e) => fill.Width = Math.Max(4, e.NewSize.Width * b.Pct);
+        Motion.Grow(fill, 150 + index * 90, 750);
         Grid.SetColumn(track, 1);
         grid.Children.Add(track);
         var label = new TextBlock

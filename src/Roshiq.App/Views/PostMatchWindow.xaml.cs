@@ -68,10 +68,12 @@ public partial class PostMatchWindow : Window
             if (score is int s)
             {
                 ScoreValue.Text = s.ToString(CultureInfo.InvariantCulture);
+                Motion.CountUp(ScoreValue, s, "0", "", 800);
                 ScoreVerdict.Text = L.Get(HeroComparison.ScoreVerdictKey(s));
                 ScoreRow.Visibility = Visibility.Visible;
             }
-            foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) BenchPanel.Children.Add(HistoryView.BenchmarkBar(b, L));
+            int n = 0;
+            foreach (var b in HeroComparison.ToBenchmarks(rows).OrderBy(b => b.Pct)) BenchPanel.Children.Add(HistoryView.BenchmarkBar(b, L, n++));
             if (rows.Count > 0) BenchBlock.Visibility = Visibility.Visible;
         };
         BasisText.Text = (summary.Compared >= PostMatch.MinValues && summary.Basis is string basis

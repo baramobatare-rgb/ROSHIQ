@@ -19,7 +19,7 @@ namespace Roshiq.App;
 
 public partial class MainWindow : Window
 {
-    private static readonly string[] Order = { "dashboard", "draft", "build", "assistant", "history", "settings" };
+    private static readonly string[] Order = { "dashboard", "draft", "tierlist", "build", "assistant", "history", "settings" };
     private readonly Dictionary<string, Func<UserControl>> _factories;
     private readonly Dictionary<string, UserControl> _cache = new();
     private readonly DispatcherTimer _statusTimer = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -33,6 +33,7 @@ public partial class MainWindow : Window
         {
             ["dashboard"] = () => new DashboardView(),
             ["draft"] = () => new DraftView(),
+            ["tierlist"] = () => new TierListView(),
             ["build"] = () => new HeroesView(),
             ["assistant"] = () => new AssistantView(),
             ["history"] = () => new HistoryView(),

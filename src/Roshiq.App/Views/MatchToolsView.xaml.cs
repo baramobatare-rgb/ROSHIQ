@@ -37,6 +37,7 @@ public partial class MatchToolsView : UserControl, IRefreshable
         AlertPace.IsChecked = s.Alerts.Pace;
         AlertDeathCard.IsChecked = s.Alerts.DeathCard;
         AlertSkillHint.IsChecked = s.Alerts.SkillHint;
+        AlertMacro.IsChecked = s.Alerts.MacroTips;
         AlertAdaptive.IsChecked = s.Alerts.Adaptive;
         AlertsStatus.Text = "";
         var reduced = MatchAlerts.AdaptiveMultipliers(App.Host.History.All());
@@ -109,6 +110,7 @@ public partial class MatchToolsView : UserControl, IRefreshable
             s.Alerts.Pace = AlertPace.IsChecked == true;
             s.Alerts.DeathCard = AlertDeathCard.IsChecked == true;
             s.Alerts.SkillHint = AlertSkillHint.IsChecked == true;
+            s.Alerts.MacroTips = AlertMacro.IsChecked == true;
             s.Alerts.Adaptive = AlertAdaptive.IsChecked == true;
         });
         _ready = false;

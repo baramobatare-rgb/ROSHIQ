@@ -68,6 +68,8 @@ internal static class Strings
         // ===== редизайн: разделы, верхняя панель, состояния =====
         ["sec_dashboard"] = ("Обзор", "Overview"),
         ["sec_draft"] = ("Драфт", "Draft"),
+        ["sec_tierlist"] = ("Тир-лист", "Tier list"),
+        ["sec_tierlist_sub"] = ("Сильные сейчас герои для каждой позиции и чем их контрить — по рангам, данные OpenDota.", "Strong heroes right now for each position and how to counter them — by rank, OpenDota data."),
         ["sec_build"] = ("Сборка", "Build"),
         ["sec_assistant"] = ("Помощник", "Assistant"),
         ["sec_settings"] = ("Настройки", "Settings"),

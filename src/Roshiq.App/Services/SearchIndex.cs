@@ -22,7 +22,7 @@ public static class SearchIndex
         var list = new List<SearchEntry>();
 
         // --- разделы
-        foreach (var key in new[] { "dashboard", "draft", "build", "assistant", "history", "settings" })
+        foreach (var key in new[] { "dashboard", "draft", "tierlist", "build", "assistant", "history", "settings" })
             list.Add(new(L.Get("sec_" + key), L.Get("sec_" + key + "_sub"), "srch_kind_section",
                 new[] { L.Get("sec_" + key), key }, () => MainWindow.Navigate(key), Boost: 40));
 

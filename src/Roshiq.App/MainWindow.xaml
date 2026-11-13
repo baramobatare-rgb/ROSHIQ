@@ -70,7 +70,7 @@
                 </StackPanel>
 
                 <!-- Нумерованная навигация -->
-                <!-- 6 разделов. При узком окне сначала прячутся подписи справа (ApplyTopBarDensity), и только в крайнем случае
+                <!-- 7 разделов. При узком окне сначала прячутся подписи справа (ApplyTopBarDensity), и только в крайнем случае
                      навигация уменьшается — так текст меню не мельчает в окне не на весь экран -->
                 <Viewbox Grid.Column="1" StretchDirection="DownOnly" Stretch="Uniform" HorizontalAlignment="Center" Margin="20,0">
                 <ListBox x:Name="Nav" VerticalAlignment="Stretch"
@@ -86,6 +86,9 @@
                     </ListBoxItem>
                     <ListBoxItem Tag="draft" Height="66">
                         <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_draft}" /></StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem Tag="tierlist" Height="66">
+                        <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_tierlist}" /></StackPanel>
                     </ListBoxItem>
                     <ListBoxItem Tag="build" Height="66">
                         <StackPanel Orientation="Horizontal"><TextBlock Style="{StaticResource TabLabel}" Text="{app:T sec_build}" /></StackPanel>
