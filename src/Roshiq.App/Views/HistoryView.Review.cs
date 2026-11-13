@@ -104,6 +104,40 @@ public partial class HistoryView
             OdReviewPanel.Children.Add(wrap);
         }
 
+        // 0.22.0: ход матча — перевес по золоту и опыту + эпизоды по записи
+        if (review.GoldAdv.Count > 2)
+        {
+            var title = new StackPanel { Orientation = Orientation.Horizontal };
+            title.Children.Add(SubTitle(L.Get("review_timeline")));
+            title.Children.Add(new HelpTip { Text = L.Get("review_timeline_help"), Margin = new Thickness(6, 8, 0, 0) });
+            OdReviewPanel.Children.Add(title);
+            OdReviewPanel.Children.Add(AdvantageChart(review, L));
+            // сначала ключевые эпизоды (до 12), остальное — по кнопке: стена из 40 строк не читается
+            var key = MatchTimeline.Key(review.Timeline);
+            var list = new StackPanel();
+            foreach (var e in key) list.Children.Add(TimelineLine(e, L));
+            OdReviewPanel.Children.Add(list);
+            if (review.Timeline.Count > key.Count)
+            {
+                var more = new Button
+                {
+                    Content = L.Format("review_timeline_all", review.Timeline.Count), Style = (Style)FindResource("GhostButton"),
+                    HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0)
+                };
+                more.Click += (_, _) =>
+                {
+                    list.Children.Clear();
+                    foreach (var e in review.Timeline) list.Children.Add(TimelineLine(e, L));
+                    more.Visibility = Visibility.Collapsed;
+                };
+                OdReviewPanel.Children.Add(more);
+            }
+            if (review.Timeline.Count == 0)
+                OdReviewPanel.Children.Add(Ui.Text(L.Get("review_timeline_empty"), "MutedText"));
+        }
+        else if (review.Parsed)
+            OdReviewPanel.Children.Add(Ui.Text(L.Get("review_timeline_old"), "MutedText", 6));
+
         // варды
         if (review.Observers.Count > 0)
         {
@@ -118,6 +152,90 @@ public partial class HistoryView
         }
 
         OdReviewPanel.Children.Add(ReviewButton(m, L.Get("review_refresh")));
+    }
+
+    /// <summary>
+    /// График перевеса вашей команды: золото — заливка (выше нуля — цвет акцента, ниже — красный), опыт — тонкая линия.
+    /// Отметки снизу — ваши смерти (красные — без размена).
+    /// </summary>
+    internal static FrameworkElement AdvantageChart(MatchReview r, Loc L)
+    {
+        const double W = 560, H = 140, padL = 44, padB = 18, padT = 8;
+        double plotW = W - padL - 6, plotH = H - padB - padT;
+        var gold = r.GoldAdv;
+        var xp = r.XpAdv;
+        int n = gold.Count;
+        double max = Math.Max(1000, Math.Max(gold.Select(Math.Abs).DefaultIfEmpty(0).Max(), xp.Select(Math.Abs).DefaultIfEmpty(0).Max()));
+        max = Math.Ceiling(max / 5000.0) * 5000;
+        double X(double minute) => padL + plotW * minute / Math.Max(1, n - 1);
+        double Y(double v) => padT + plotH / 2 - v / max * (plotH / 2);
+        var canvas = new Canvas { Width = W, Height = H };
+
+        Polygon Area(Func<int, double> clamp, Brush brush)
+        {
+            var poly = new Polygon { Fill = brush, Opacity = 0.35 };
+            poly.Points.Add(new Point(X(0), Y(0)));
+            for (int i = 0; i < n; i++) poly.Points.Add(new Point(X(i), Y(clamp(gold[i]))));
+            poly.Points.Add(new Point(X(n - 1), Y(0)));
+            return poly;
+        }
+        canvas.Children.Add(Area(v => Math.Max(0, v), Ui.Res("Accent")));
+        canvas.Children.Add(Area(v => Math.Min(0, v), Ui.Res("Red")));
+        var goldLine = new Polyline { Stroke = Ui.Res("Text"), StrokeThickness = 1.6 };
+        for (int i = 0; i < n; i++) goldLine.Points.Add(new Point(X(i), Y(gold[i])));
+        canvas.Children.Add(goldLine);
+        if (xp.Count == n)
+        {
+            var xpLine = new Polyline { Stroke = Ui.Res("Muted"), StrokeThickness = 1, StrokeDashArray = new DoubleCollection { 3, 2 } };
+            for (int i = 0; i < n; i++) xpLine.Points.Add(new Point(X(i), Y(xp[i])));
+            canvas.Children.Add(xpLine);
+        }
+        // ось нуля и подписи
+        canvas.Children.Add(new Line { X1 = padL, X2 = W - 6, Y1 = Y(0), Y2 = Y(0), Stroke = Ui.Res("Line"), StrokeThickness = 1 });
+        void AddLabel(string text, double x, double y, bool right = false)
+        {
+            var tb = new TextBlock { Text = text, FontSize = 10.5, Foreground = Ui.Res("Muted") };
+            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(tb, right ? x - tb.DesiredSize.Width : x);
+            Canvas.SetTop(tb, y - tb.DesiredSize.Height / 2);
+            canvas.Children.Add(tb);
+        }
+        string K(double v) => (v > 0 ? "+" : v < 0 ? "−" : "") + (Math.Abs(v) / 1000).ToString("0.#", CultureInfo.InvariantCulture) + "k";
+        AddLabel(K(max), padL - 6, Y(max), right: true);
+        AddLabel("0", padL - 6, Y(0), right: true);
+        AddLabel(K(-max), padL - 6, Y(-max), right: true);
+        for (int m = 0; m < n; m += 10)
+            AddLabel(m + ":00", X(m) - 10, H - padB / 2);
+        // смерти
+        foreach (var e in r.Timeline.Where(e => e.Kind == "death"))
+        {
+            double x = X(e.Time / 60.0);
+            canvas.Children.Add(new Line
+            {
+                X1 = x, X2 = x, Y1 = H - padB - 8, Y2 = H - padB,
+                Stroke = e.Severity < 0 ? Ui.Res("Red") : Ui.Res("Muted"), StrokeThickness = 2
+            });
+        }
+        var legend = new TextBlock { Text = L.Get("review_chart_legend"), Style = (Style)Application.Current.FindResource("MutedText"), FontSize = 11.5, Margin = new Thickness(0, 2, 0, 8), TextWrapping = TextWrapping.Wrap };
+        var box = new StackPanel { HorizontalAlignment = HorizontalAlignment.Left, MaxWidth = W };
+        box.Children.Add(new Viewbox { Child = canvas, Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly });
+        box.Children.Add(legend);
+        return box;
+    }
+
+    /// <summary>Строка хода матча: «13:40 · Смерть от Lion — без размена».</summary>
+    private static FrameworkElement TimelineLine(TimelineEvent e, Loc L)
+    {
+        var row = new DockPanel { Margin = new Thickness(0, 0, 0, 4) };
+        var time = new TextBlock
+        {
+            Text = GameTimers.Clock(e.Time), Width = 48, FontFamily = (FontFamily)Application.Current.FindResource("MonoFont"),
+            Foreground = e.Severity < 0 ? Ui.Res("Red") : e.Severity > 0 ? Ui.Res("Accent") : Ui.Res("Muted"), FontSize = 12.5
+        };
+        DockPanel.SetDock(time, Dock.Left);
+        row.Children.Add(time);
+        row.Children.Add(new TextBlock { Text = e.Text(L.Language), Foreground = Ui.Res("Text"), FontSize = 12.5, TextWrapping = TextWrapping.Wrap });
+        return row;
     }
 
     private FrameworkElement ReviewButton(MatchRecord m, string text)

@@ -38,6 +38,10 @@ public sealed class MatchReview
     public List<WardRecord> Observers { get; set; } = new();
     public int Sentries { get; set; }
     public List<Insight> Insights { get; set; } = new();
+    /// <summary>0.22.0: перевес команды по золоту/опыту по минутам и ход матча. Пусто у разборов из старых версий — «Обновить».</summary>
+    public List<int> GoldAdv { get; set; } = new();
+    public List<int> XpAdv { get; set; } = new();
+    public List<TimelineEvent> Timeline { get; set; } = new();
 
     [JsonIgnore] public IEnumerable<Insight> Problems => Insights.Where(i => i.Severity < 0).OrderBy(i => i.Severity);
     [JsonIgnore] public IEnumerable<Insight> Good => Insights.Where(i => i.Severity > 0).OrderByDescending(i => i.Severity);
@@ -97,7 +101,10 @@ public static class MatchReviewBuilder
             LaneEfficiency = d.LaneEfficiency,
             Observers = d.Observers.ToList(),
             Sentries = d.Sentries.Count,
+            GoldAdv = d.TeamGoldAdv.ToList(),
+            XpAdv = d.TeamXpAdv.ToList(),
         };
+        r.Timeline = MatchTimeline.Build(d, heroName);
         r.Items = KeyPurchases(d, cost).Select(p => new ItemTimingRow(p.ItemKey, p.Time, norms.TryGetValue(p.ItemKey, out var n) ? n : null)).ToList();
         r.Killers = d.DeathsBy.Where(x => x.KillerHeroId > 0).GroupBy(x => x.KillerHeroId)
             .Select(g => new KillerRow(g.Key, g.Count())).OrderByDescending(k => k.Count).ToList();
@@ -155,6 +162,13 @@ public static class MatchReviewBuilder
             var (ru, en) = heroName(top.HeroId);
             ins.Add(new Insight("deaths", -1, $"Чаще всего вас убивал {ru} — {top.Count} раза", $"{en} killed you the most — {top.Count} times"));
         }
+        // 4б. 0.22.0: смерти без размена — из хода матча по записи
+        int untraded = MatchTimeline.UntradedDeaths(r.Timeline);
+        int deathsKnown = r.Timeline.Count(e => e.Kind == "death");
+        if (d.Parsed && untraded >= 4 && untraded * 2 >= deathsKnown)
+            ins.Add(new Insight("deaths", -2,
+                $"{untraded} из {deathsKnown} смертей без размена — команда в это время никого не убила и ничего не взяла",
+                $"{untraded} of {deathsKnown} deaths were not traded — your team got no kill or objective for them"));
 
         // 5. Варды (саппорты) — только у разобранной записи: без разбора OpenDota варды неизвестны, а не «ноль»
         if (d.Parsed && position is Position.SoftSupport or Position.HardSupport && r.Observers.Count >= 3)

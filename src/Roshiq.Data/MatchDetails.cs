@@ -16,6 +16,12 @@ public sealed record DeathBy(int Time, int KillerHeroId);
 /// <summary>Вард: где поставлен (0…1 по ширине/высоте карты, 0,0 — левый нижний угол), когда, сколько прожил, снят ли врагом.</summary>
 public sealed record WardRecord(double X, double Y, int Placed, int? Lifetime, bool Dewarded);
 
+/// <summary>0.22.0: убийство героя из журналов всех игроков: время, убил ли ваш союзник, жертва — ваш союзник.</summary>
+public sealed record HeroKill(int Time, bool ByYourTeam, bool VictimYourTeam);
+
+/// <summary>0.22.0: событие матча: вышка, барак, трон (Kind = tower/rax/fort, Tier, Lane) или Рошан (Kind = roshan). Ours — здание вашей команды / Рошана убили вы.</summary>
+public sealed record MatchObjective(int Time, string Kind, bool Ours, int Tier, string Lane);
+
 /// <summary>Разобранный OpenDota матч — только данные одного игрока (вас).</summary>
 public sealed class MatchDetails
 {
@@ -40,6 +46,11 @@ public sealed class MatchDetails
     /// <summary>Эффективность линии 0…100 (доля от максимально возможного золота с линии к 10:00).</summary>
     public double? LaneEfficiency { get; init; }
     public int? CampsStacked { get; init; }
+    /// <summary>0.22.0: перевес вашей команды по золоту и опыту по минутам (минус — отстаёте).</summary>
+    public IReadOnlyList<int> TeamGoldAdv { get; init; } = Array.Empty<int>();
+    public IReadOnlyList<int> TeamXpAdv { get; init; } = Array.Empty<int>();
+    public IReadOnlyList<HeroKill> HeroKills { get; init; } = Array.Empty<HeroKill>();
+    public IReadOnlyList<MatchObjective> Objectives { get; init; } = Array.Empty<MatchObjective>();
 
     public int? LastHitsAt(int minute) => minute < LastHitsByMinute.Count ? LastHitsByMinute[minute] : null;
     public int? DeniesAt(int minute) => minute < DeniesByMinute.Count ? DeniesByMinute[minute] : null;
@@ -88,6 +99,18 @@ public sealed class MatchDetails
                     if (Str(k, "key") == myNpc && Int(k, "time") is int t) deaths.Add(new DeathBy(t, killer));
             }
 
+        // 0.22.0: все убийства героев — чтобы понять, была ли ваша смерть разменом
+        var heroKills = new List<HeroKill>();
+        foreach (var p in players.EnumerateArray())
+        {
+            if (!p.TryGetProperty("kills_log", out var kl) || kl.ValueKind != JsonValueKind.Array) continue;
+            bool killerRadiant = (Int(p, "player_slot") ?? 0) < 128;
+            foreach (var k in kl.EnumerateArray())
+                if (Int(k, "time") is int t && Str(k, "key") is string victim && victim.StartsWith("npc_dota_hero_", StringComparison.Ordinal))
+                    heroKills.Add(new HeroKill(t, killerRadiant == radiant, killerRadiant != radiant));
+        }
+        int sign = radiant ? 1 : -1;
+
         return new MatchDetails
         {
             MatchId = Long(root, "match_id") ?? 0,
@@ -108,7 +131,39 @@ public sealed class MatchDetails
             Sentries = Wards(m, "sen_log", "sen_left_log"),
             LaneEfficiency = Dbl(m, "lane_efficiency_pct"),
             CampsStacked = Int(m, "camps_stacked"),
+            TeamGoldAdv = IntArray(root, "radiant_gold_adv").Select(x => x * sign).ToList(),
+            TeamXpAdv = IntArray(root, "radiant_xp_adv").Select(x => x * sign).ToList(),
+            HeroKills = heroKills.OrderBy(k => k.Time).ToList(),
+            Objectives = ParseObjectives(root, radiant),
         };
+    }
+
+    /// <summary>Вышки, бараки, трон и Рошан из objectives. Ключ здания: npc_dota_goodguys_tower2_mid, npc_dota_badguys_melee_rax_bot, …_fort.</summary>
+    public static IReadOnlyList<MatchObjective> ParseObjectives(JsonElement root, bool radiant)
+    {
+        var list = new List<MatchObjective>();
+        if (!root.TryGetProperty("objectives", out var objs) || objs.ValueKind != JsonValueKind.Array) return list;
+        foreach (var o in objs.EnumerateArray())
+        {
+            if (Int(o, "time") is not int t) continue;
+            var type = Str(o, "type");
+            if (type == "CHAT_MESSAGE_ROSHAN_KILL" && Int(o, "team") is int team)
+                list.Add(new MatchObjective(t, "roshan", (team == 2) == radiant, 0, ""));
+            else if (type == "building_kill" && Str(o, "key") is string key)
+            {
+                bool good = key.Contains("goodguys", StringComparison.Ordinal);
+                if (!good && !key.Contains("badguys", StringComparison.Ordinal)) continue;
+                bool ours = good == radiant;
+                var m = System.Text.RegularExpressions.Regex.Match(key, @"tower(\d)_?(top|mid|bot)?");
+                if (m.Success)
+                    list.Add(new MatchObjective(t, "tower", ours, int.Parse(m.Groups[1].Value, CultureInfo.InvariantCulture), m.Groups[2].Value));
+                else if (System.Text.RegularExpressions.Regex.Match(key, @"(melee|range)_rax_(top|mid|bot)") is { Success: true } rax)
+                    list.Add(new MatchObjective(t, rax.Groups[1].Value == "melee" ? "rax_melee" : "rax_range", ours, 0, rax.Groups[2].Value));
+                else if (key.EndsWith("_fort", StringComparison.Ordinal))
+                    list.Add(new MatchObjective(t, "fort", ours, 0, ""));
+            }
+        }
+        return list.OrderBy(o => o.Time).ToList();
     }
 
     /// <summary>Варды: координаты OpenDota в клетках 64…192 → 0…1; время жизни — по ehandle из журнала снятых.</summary>
