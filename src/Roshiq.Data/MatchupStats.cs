@@ -372,6 +372,38 @@ public sealed class OpenDotaClient : IDisposable
         }
     }
 
+    /// <summary>0.22.1: строка истории для игрока accountId из полного матча (как в recentMatches). null — его нет в матче.</summary>
+    public async Task<RecentMatchRow?> GetMatchRowAsync(long matchId, long accountId, CancellationToken ct)
+    {
+        using var doc = await GetDocumentAsync($"/matches/{matchId}", ct).ConfigureAwait(false);
+        return MatchRowFor(doc.RootElement, accountId);
+    }
+
+    public static RecentMatchRow? MatchRowFor(JsonElement root, long accountId)
+    {
+        if (!root.TryGetProperty("players", out var players) || players.ValueKind != JsonValueKind.Array) return null;
+        foreach (var p in players.EnumerateArray())
+        {
+            if (MatchDetails.Long(p, "account_id") != accountId) continue;
+            return new RecentMatchRow
+            {
+                MatchId = MatchDetails.Long(root, "match_id") ?? 0,
+                PlayerSlot = MatchDetails.Int(p, "player_slot") ?? 0,
+                RadiantWin = root.TryGetProperty("radiant_win", out var rw) && rw.ValueKind is JsonValueKind.True or JsonValueKind.False ? rw.GetBoolean() : null,
+                Duration = MatchDetails.Int(root, "duration") ?? 0,
+                HeroId = MatchDetails.Int(p, "hero_id") ?? 0,
+                StartTime = MatchDetails.Long(root, "start_time") ?? 0,
+                Kills = MatchDetails.Int(p, "kills") ?? 0,
+                Deaths = MatchDetails.Int(p, "deaths") ?? 0,
+                Assists = MatchDetails.Int(p, "assists") ?? 0,
+                XpPerMin = MatchDetails.Int(p, "xp_per_min") ?? 0,
+                GoldPerMin = MatchDetails.Int(p, "gold_per_min") ?? 0,
+                LastHits = MatchDetails.Int(p, "last_hits") ?? 0,
+            };
+        }
+        return null;
+    }
+
     /// <summary>Матч с данными вашего игрока. null — матч не найден или вас в нём нет.</summary>
     public async Task<MatchDetails?> GetMatchAsync(long matchId, long accountId, Func<int, string?> heroNpc, CancellationToken ct)
     {

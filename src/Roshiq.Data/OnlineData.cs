@@ -196,6 +196,20 @@ public sealed class RecentMatchRow
     public bool? Won => RadiantWin == null ? null : RadiantWin.Value == IsRadiant;
 }
 
+/// <summary>0.22.1: ID матча из текста: число или ссылка Dotabuff / OpenDota / STRATZ (…/matches/123…).</summary>
+public static class MatchIds
+{
+    public static long? Parse(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var t = text.Trim();
+        var m = System.Text.RegularExpressions.Regex.Match(t, @"match(?:es)?/(\d{6,})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var digits = m.Success ? m.Groups[1].Value : t.All(char.IsDigit) ? t : null;
+        return digits != null && digits.Length is >= 6 and <= 19
+               && long.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var id) && id > 0 ? id : null;
+    }
+}
+
 public static class SteamIds
 {
     private const long Steam64Base = 76561197960265728L;

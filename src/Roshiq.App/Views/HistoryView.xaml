@@ -196,6 +196,19 @@
             </StackPanel>
             <StackPanel x:Name="ImportSection" Visibility="Collapsed">
 
+                <!-- 0.22.1: разбор любого своего матча по ID или ссылке -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Style="{StaticResource H2}" Text="{app:T byid_title}" />
+                        <TextBlock Text="{app:T byid_hint}" Style="{StaticResource MutedText}" Margin="0,0,0,10" TextWrapping="Wrap" />
+                        <DockPanel>
+                            <Button x:Name="ByIdButton" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}" Click="ById_Click" Margin="10,0,0,0" Content="{app:T byid_button}" />
+                            <TextBox x:Name="MatchIdBox" FontFamily="{StaticResource MonoFont}" VerticalContentAlignment="Center" />
+                        </DockPanel>
+                        <TextBlock x:Name="ByIdStatus" Style="{StaticResource MutedText}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Импорт из OpenDota -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>

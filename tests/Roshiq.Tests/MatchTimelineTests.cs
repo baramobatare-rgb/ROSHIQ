@@ -87,7 +87,8 @@ public class MatchTimelineTests
         Assert.Equal(2, swings.Count);
         Assert.Equal(120, swings[0].Time);                // отрезок 2:00–4:00 — время начала
         Assert.Equal(-1, swings[0].Severity);
-        Assert.StartsWith("2:00–4:00: −4", swings[0].Ru);
+        Assert.StartsWith("−4", swings[0].Ru);
+        Assert.Contains("за 2 минуты (до 4:00)", swings[0].Ru);
         Assert.Equal(300, swings[1].Time);                // 5:00–7:00
         Assert.Equal(1, swings[1].Severity);
     }

@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ROSHIQ — разбор матча</title>
+<meta name="description" content="Разбор матча Dota 2 по ID или профилю: ход матча, перевес по золоту, смерти с разменом и без. Бесплатно, данные OpenDota.">
+<meta name="robots" content="noindex">
+<link rel="icon" href="../site/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..800&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--ink:#0B0B0A;--panel:#151413;--panel2:#1D1B19;--line:#2A2724;--text:#F2F0EC;--grey:#A9A6A2;--faint:#6E6A66;--acc:#FF8A3D;--bad:#FF6B57;--good:#7BD88F}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--ink);color:var(--text);font:15px/1.45 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:640px;margin:0 auto;padding:16px 16px 40px}
+header{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+header img{width:28px;height:28px;border-radius:6px}
+header b{font-weight:800;letter-spacing:.02em}
+header span{color:var(--grey);font-size:13px}
+h1{font-size:22px;line-height:1.2;margin:0 0 6px;font-weight:800}
+p.lead{color:var(--grey);margin:0 0 14px;font-size:14px}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:10px}
+.seg button{border:0;background:none;color:var(--grey);font:600 13px Inter,sans-serif;padding:7px 12px;border-radius:7px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--panel2);color:var(--text)}
+form{display:flex;gap:8px}
+input{flex:1;min-width:0;background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:10px;padding:11px 12px;font:15px Inter,sans-serif}
+input:focus{outline:2px solid var(--acc);outline-offset:1px}
+button.go,.btn{background:var(--acc);color:#140a02;border:0;border-radius:10px;padding:0 16px;font:700 14px Inter,sans-serif;cursor:pointer;min-height:44px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.hint{color:var(--faint);font-size:12.5px;margin:6px 0 0}
+.status{color:var(--grey);font-size:14px;margin:14px 0}
+.status.err{color:var(--bad)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+.card h2{font-size:15px;margin:0 0 10px;font-weight:700}
+.rows{display:flex;flex-direction:column;gap:2px}
+.row{display:grid;grid-template-columns:4px 1fr auto;gap:10px;align-items:center;background:none;border:0;border-radius:9px;padding:9px 8px;color:var(--text);text-align:left;font:inherit;cursor:pointer;width:100%}
+.row:hover{background:var(--panel2)}
+.row i{width:4px;height:30px;border-radius:2px;background:var(--faint)}
+.row i.w{background:var(--acc)} .row i.l{background:var(--bad)}
+.row b{font-weight:600} .row small{display:block;color:var(--grey);font-size:12.5px}
+.row em{font-style:normal;color:var(--grey);font-size:13px;font-variant-numeric:tabular-nums}
+.sum{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:6px}
+.sum div small{display:block;color:var(--faint);font-size:12px}
+.sum div b{font-size:17px;font-variant-numeric:tabular-nums}
+.res{font-weight:800}.res.w{color:var(--acc)}.res.l{color:var(--bad)}
+svg{width:100%;height:auto;display:block}
+.legend{color:var(--grey);font-size:12.5px;margin-top:6px}
+.ev{display:grid;grid-template-columns:52px 1fr;gap:8px;padding:5px 0;border-top:1px solid var(--line);font-size:14px}
+.ev:first-child{border-top:0}
+.ev time{font-variant-numeric:tabular-nums;color:var(--grey)}
+.ev.bad time{color:var(--bad)} .ev.good time{color:var(--acc)}
+.more{margin-top:8px}
+.verdict{font-size:15px;margin:0}
+.verdict b{color:var(--bad)}
+.cta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+footer{color:var(--faint);font-size:12px;margin-top:22px}
+footer a{color:var(--grey)}
+@media (prefers-reduced-motion:no-preference){.card{animation:in .25s ease-out}@keyframes in{from{opacity:0;transform:translateY(6px)}}}
+</style>
+</head>
+<body>
+<main>
+  <header><img src="../site/logo-orange.png" alt=""><b>ROSHIQ</b><span>разбор матча Dota 2</span></header>
+  <h1>Где игра пошла не туда</h1>
+  <p class="lead">Вставь ID матча или ссылку на профиль. Покажу перевес по золоту, твои смерти с разменом и без, вышки и Рошана — по записи матча.</p>
+  <div class="seg" role="group" aria-label="Что разбираем">
+    <button type="button" id="modeMatch" aria-pressed="true">Матч</button>
+    <button type="button" id="modeProfile" aria-pressed="false">Профиль</button>
+  </div>
+  <form id="f" autocomplete="off">
+    <input id="q" inputmode="text" placeholder="ID матча или ссылка Dotabuff / OpenDota / STRATZ" aria-label="ID матча или ссылка">
+    <button class="go" type="submit">Разобрать</button>
+  </form>
+  <p class="hint" id="hint">Например 9086076880 или dotabuff.com/matches/9086076880</p>
+  <div id="out" aria-live="polite"></div>
+  <footer>Данные — <a href="https://www.opendota.com" target="_blank" rel="noopener">OpenDota</a>. ROSHIQ — независимый проект, Valve его не проверяла и не одобряла. Мы ничего не сохраняем на сервере: запросы идут из твоего браузера напрямую в OpenDota.</footer>
+</main>
+<script>
+const API='https://api.opendota.com/api';
+const SITE='https://baramobatare-rgb.github.io/ROSHIQ/';
+const tg=window.Telegram&&window.Telegram.WebApp;
+try{if(tg&&tg.initData!==undefined){tg.ready();tg.expand();tg.setHeaderColor&&tg.setHeaderColor('#0B0B0A');tg.setBackgroundColor&&tg.setBackgroundColor('#0B0B0A')}}catch(e){}
+const $=id=>document.getElementById(id), out=$('out');
+let mode='match';
+function setMode(m){mode=m;$('modeMatch').setAttribute('aria-pressed',m==='match');$('modeProfile').setAttribute('aria-pressed',m==='profile');
+  $('q').placeholder=m==='match'?'ID матча или ссылка Dotabuff / OpenDota / STRATZ':'Ссылка на профиль Steam / Dotabuff / OpenDota / STRATZ или Steam ID';
+  $('hint').textContent=m==='match'?'Например 9086076880 или dotabuff.com/matches/9086076880':'Например dotabuff.com/players/123456789 или steamcommunity.com/profiles/7656…  Профиль должен быть открыт для OpenDota.';}
+$('modeMatch').onclick=()=>setMode('match');$('modeProfile').onclick=()=>setMode('profile');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clock=s=>{const n=s<0,a=Math.abs(s);return (n?'-':'')+Math.floor(a/60)+':'+String(a%60).padStart(2,'0')};
+const nf=n=>Math.abs(n).toLocaleString('ru-RU');
+function status(t,err){out.innerHTML=`<p class="status${err?' err':''}">${esc(t)}</p>`}
+
+// --- разбор ввода (как в программе: MatchIds.Parse и SteamIds.ToAccountId)
+function parseMatch(t){t=(t||'').trim();const m=t.match(/match(?:es)?\/(\d{6,})/i);const d=m?m[1]:(/^\d+$/.test(t)?t:null);return d&&d.length>=6&&d.length<=19?d:null}
+function parseAccount(t){t=(t||'').trim();if(/steamcommunity\.com\/id\//i.test(t))return {vanity:true};const d=(t.match(/\d+/g)||[]).join('');if(!d)return null;let id=BigInt(d);const base=76561197960265728n;if(id>=base)id-=base;return id>0n&&id<4294967296n?{id:id.toString()}:null}
+
+// --- данные OpenDota
+async function get(path){const r=await fetch(API+path);if(r.status===429)throw new Error('OpenDota просит подождать минуту — слишком много запросов.');if(!r.ok)throw new Error(r.status===404?'Не найдено в OpenDota.':'OpenDota ответила ошибкой '+r.status+'.');return r.json()}
+let heroes=null;
+async function heroMap(){if(heroes)return heroes;try{const c=JSON.parse(localStorage.getItem('rq-heroes')||'null');if(c&&Date.now()-c.t<7*864e5){heroes=c.h;return heroes}}catch(e){}
+  const list=await get('/constants/heroes');heroes={};for(const k in list){const h=list[k];heroes[h.id]={name:h.localized_name,npc:h.name}}
+  try{localStorage.setItem('rq-heroes',JSON.stringify({t:Date.now(),h:heroes}))}catch(e){}return heroes}
+const heroName=id=>(heroes&&heroes[id]&&heroes[id].name)||'?';
+
+// --- профиль: последние матчи
+async function showProfile(acc){
+  status('Загружаю матчи…');
+  const [h,p,rows]=await Promise.all([heroMap(),get('/players/'+acc).catch(()=>null),get('/players/'+acc+'/recentMatches')]);
+  if(!rows.length){status('Матчей не видно. Скорее всего, профиль скрыт: в Dota 2 включи «Общедоступная история матчей».',true);return}
+  const name=p&&p.profile&&p.profile.personaname?esc(p.profile.personaname):'Игрок '+acc;
+  out.innerHTML=`<div class="card"><h2>${name} — последние матчи</h2><div class="rows">${rows.map(r=>{const rad=r.player_slot<128,won=r.radiant_win==null?null:r.radiant_win===rad;
+    return `<button class="row" data-m="${r.match_id}" data-a="${acc}"><i class="${won===true?'w':won===false?'l':''}"></i><span><b>${esc(heroName(r.hero_id))}</b><small>${new Date(r.start_time*1000).toLocaleDateString('ru-RU')} · ${clock(r.duration)} · ${won===true?'победа':won===false?'поражение':'—'}</small></span><em>${r.kills}/${r.deaths}/${r.assists}</em></button>`}).join('')}</div></div>`;
+  out.querySelectorAll('.row').forEach(b=>b.onclick=()=>run(()=>showMatch(b.dataset.m,b.dataset.a)));
+}
+
+// --- матч
+async function showMatch(id,acc,slot){
+  status('Загружаю матч…');
+  const [h,m]=await Promise.all([heroMap(),get('/matches/'+id)]);
+  let me=null;
+  if(slot!=null)me=m.players.find(p=>p.player_slot==slot);
+  else if(acc)me=m.players.find(p=>String(p.account_id)===String(acc));
+  if(!me){pickPlayer(m);return}
+  render(m,me);
+}
+function pickPlayer(m){
+  const side=(t,list)=>`<h2>${t}</h2><div class="rows">${list.map(p=>`<button class="row" data-s="${p.player_slot}"><i></i><span><b>${esc(heroName(p.hero_id))}</b><small>${p.personaname?esc(p.personaname):'аноним'}</small></span><em>${p.kills}/${p.deaths}/${p.assists}</em></button>`).join('')}</div>`;
+  out.innerHTML=`<div class="card"><p class="verdict" style="margin-bottom:10px">Матч ${m.match_id}, ${clock(m.duration)}. Чей разбор показать?</p>${side('Силы Света'+(m.radiant_win?' — победа':''),m.players.filter(p=>p.player_slot<128))}<div style="height:10px"></div>${side('Силы Тьмы'+(m.radiant_win===false?' — победа':''),m.players.filter(p=>p.player_slot>=128))}</div>`;
+  out.querySelectorAll('.row').forEach(b=>b.onclick=()=>run(()=>showMatch(m.match_id,null,b.dataset.s)));
+}
+
+// --- ход матча: те же правила, что в программе (MatchTimeline)
+const TRADE=20,TRADE_OBJ=30,SWING=3000,KEY=12;
+function timeline(m,me){
+  const rad=me.player_slot<128,sign=rad?1:-1,npc=heroes[me.hero_id]&&heroes[me.hero_id].npc;
+  const gold=(m.radiant_gold_adv||[]).map(x=>x*sign),xp=(m.radiant_xp_adv||[]).map(x=>x*sign);
+  const kills=[],deaths=[];
+  for(const p of m.players){const pr=p.player_slot<128;for(const k of (p.kills_log||[])){if(!/^npc_dota_hero_/.test(k.key))continue;kills.push({t:k.time,ours:pr===rad});if(k.key===npc&&p.player_slot!==me.player_slot&&pr!==rad)deaths.push({t:k.time,by:p.hero_id})}}
+  const objs=[];
+  for(const o of (m.objectives||[])){
+    if(o.type==='CHAT_MESSAGE_ROSHAN_KILL')objs.push({t:o.time,kind:'roshan',ours:(o.team===2)===rad});
+    else if(o.type==='building_kill'&&o.key){const good=o.key.includes('goodguys');if(!good&&!o.key.includes('badguys'))continue;const ours=good===rad;let x;
+      if((x=o.key.match(/tower(\d)_?(top|mid|bot)?/)))objs.push({t:o.time,kind:'tower',ours,tier:+x[1],lane:x[2]||''});
+      else if((x=o.key.match(/(melee|range)_rax_(top|mid|bot)/)))objs.push({t:o.time,kind:x[1]==='melee'?'rax_melee':'rax_range',ours,lane:x[2]});
+      else if(/_fort$/.test(o.key))objs.push({t:o.time,kind:'fort',ours})}}
+  const lane=l=>({top:' (верх)',mid:' (мид)',bot:' (низ)'}[l]||'');
+  const bname=o=>o.kind==='tower'?`вышку T${o.tier}${lane(o.lane)}`:o.kind==='rax_melee'?`барак ближнего боя${lane(o.lane)}`:o.kind==='rax_range'?`барак дальнего боя${lane(o.lane)}`:o.kind==='fort'?'трон':'Рошана';
+  const takenByYou=o=>o.kind==='roshan'?o.ours:!o.ours;
+  const ev=[];
+  for(const d of deaths){const k=kills.filter(x=>x.ours&&Math.abs(x.t-d.t)<=TRADE).length;const ob=objs.find(o=>takenByYou(o)&&Math.abs(o.t-d.t)<=TRADE_OBJ);const who=heroName(d.by);
+    if(k)ev.push({t:d.t,kind:'death',s:0,txt:`Смерть от ${who} — размен: ${k} ${k===1?'убийство':k<5?'убийства':'убийств'}`});
+    else if(ob)ev.push({t:d.t,kind:'death',s:0,txt:`Смерть от ${who} — размен: взяли ${bname(ob)}`});
+    else ev.push({t:d.t,kind:'death',s:-1,txt:`Смерть от ${who} — без размена`})}
+  for(const o of objs){if(o.kind==='roshan')ev.push({t:o.t,kind:'roshan',s:o.ours?1:-1,txt:o.ours?'Твоя команда убила Рошана':'Враги убили Рошана'});
+    else ev.push({t:o.t,kind:o.kind,s:o.ours?-1:1,txt:(o.ours?'Потеряли ':'Снесли ')+bname(o)})}
+  let last=-10;const dl=ev.filter(e=>e.kind==='death');
+  for(let i=2;i<gold.length;i++){const delta=gold[i]-gold[i-2];if(Math.abs(delta)<SWING||i-last<3)continue;last=i;const from=(i-2)*60,to=i*60,why=[];
+    if(delta<0){const u=dl.filter(e=>e.s<0&&e.t>=from&&e.t<to).length;if(u)why.push('твоих смертей без размена: '+u)}
+    for(const o of objs)if(o.t>=from&&o.t<to&&o.kind!=='roshan'&&o.ours===(delta<0))why.push((o.ours?'потеряли ':'снесли ')+bname(o));
+    if(objs.some(o=>o.kind==='roshan'&&o.t>=from&&o.t<to&&o.ours===(delta>0)))why.push(delta>0?'взяли Рошана':'враги взяли Рошана');
+    ev.push({t:from,kind:'swing',s:delta>0?1:-1,txt:`${delta>0?'+':'−'}${nf(delta)} золота${delta>0?' к перевесу':''} за 2 минуты (до ${clock(to)})${why.length?' · '+why.join(', '):''}`})}
+  ev.sort((a,b)=>a.t-b.t||a.s-b.s);
+  const rank=e=>e.kind==='swing'?0:['fort','rax_melee','rax_range','roshan'].includes(e.kind)?1:e.kind==='death'&&e.s<0?2:e.kind==='tower'&&e.s<0?3:9;
+  const key=ev.filter(e=>rank(e)<9).sort((a,b)=>rank(a)-rank(b)||a.t-b.t).slice(0,KEY).sort((a,b)=>a.t-b.t);
+  return {gold,xp,ev,key,deaths:dl};
+}
+function chart(gold,xp,deaths){
+  const W=600,H=200,L=56,B=26,T=10,pw=W-L-8,ph=H-B-T,n=gold.length;
+  let max=Math.max(1000,...gold.map(Math.abs),...xp.map(Math.abs));max=Math.ceil(max/5000)*5000;
+  const X=i=>L+pw*i/Math.max(1,n-1),Y=v=>T+ph/2-v/max*(ph/2);
+  const area=f=>`M${X(0)},${Y(0)} `+gold.map((v,i)=>`L${X(i).toFixed(1)},${Y(f(v)).toFixed(1)}`).join(' ')+` L${X(n-1)},${Y(0)} Z`;
+  const line=a=>a.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ');
+  const k=v=>(v>0?'+':v<0?'−':'')+(Math.abs(v)/1000)+'k';
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Перевес вашей команды по золоту и опыту по минутам">`;
+  s+=`<path d="${area(v=>Math.max(0,v))}" fill="var(--acc)" opacity=".35"/><path d="${area(v=>Math.min(0,v))}" fill="var(--bad)" opacity=".35"/>`;
+  s+=`<line x1="${L}" x2="${W-8}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)"/>`;
+  if(xp.length===n)s+=`<path d="${line(xp)}" fill="none" stroke="var(--grey)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+  s+=`<path d="${line(gold)}" fill="none" stroke="var(--text)" stroke-width="1.8"/>`;
+  const lab=(t,x,y,a)=>`<text x="${x}" y="${y}" fill="var(--faint)" font-size="15" text-anchor="${a||'start'}" dominant-baseline="middle">${t}</text>`;
+  s+=lab(k(max),L-6,Y(max),'end')+lab('0',L-6,Y(0),'end')+lab(k(-max),L-6,Y(-max),'end');
+  for(let m=0;m<n;m+=10)s+=lab(m+':00',X(m),H-7,'middle');
+  for(const d of deaths)s+=`<line x1="${X(d.t/60)}" x2="${X(d.t/60)}" y1="${H-B-12}" y2="${H-B}" stroke="${d.s<0?'var(--bad)':'var(--grey)'}" stroke-width="3"/>`;
+  return s+'</svg>';
+}
+function evHtml(list){return list.map(e=>`<div class="ev ${e.s<0?'bad':e.s>0?'good':''}"><time>${clock(e.t)}</time><span>${esc(e.txt)}</span></div>`).join('')}
+function render(m,me){
+  const rad=me.player_slot<128,won=m.radiant_win==null?null:m.radiant_win===rad,parsed=!!(m.radiant_gold_adv&&m.radiant_gold_adv.length&&m.version);
+  let html=`<div class="card"><h2>${esc(heroName(me.hero_id))}${me.personaname?' · '+esc(me.personaname):''}</h2>
+   <div class="sum"><div><small>Итог</small><b class="res ${won?'w':won===false?'l':''}">${won===true?'Победа':won===false?'Поражение':'—'}</b></div><div><small>У/С/П</small><b>${me.kills}/${me.deaths}/${me.assists}</b></div><div><small>Золото/мин</small><b>${me.gold_per_min??'—'}</b></div><div><small>Опыт/мин</small><b>${me.xp_per_min??'—'}</b></div><div><small>Длительность</small><b>${clock(m.duration)}</b></div></div></div>`;
+  if(!parsed){
+    html+=`<div class="card"><h2>Запись матча ещё не разобрана</h2><p class="verdict">Без разбора не видно перевеса по минутам и смертей. OpenDota разбирает запись бесплатно, обычно за 2–15 минут. Повторы хранятся ограниченное время, у очень старых матчей разбора может не быть.</p><div class="cta"><button class="btn" id="parse">Попросить разбор</button><button class="btn ghost" id="again">Проверить снова</button></div></div>`;
+    out.innerHTML=html+cta();
+    $('parse').onclick=async()=>{$('parse').disabled=true;try{await fetch(API+'/request/'+m.match_id,{method:'POST'});$('parse').textContent='Запрошено — загляни через несколько минут'}catch(e){$('parse').textContent='Не получилось, попробуй позже';$('parse').disabled=false}};
+    $('again').onclick=()=>run(()=>showMatch(m.match_id,null,me.player_slot));
+    return;
+  }
+  const tl=timeline(m,me),untr=tl.deaths.filter(d=>d.s<0).length;
+  html+=`<div class="card"><h2>Ход матча</h2>${chart(tl.gold,tl.xp,tl.deaths)}<p class="legend">Заливка — перевес по золоту (выше нуля — у твоей команды), пунктир — по опыту. Отметки снизу — твои смерти, красные — без размена.</p></div>`;
+  if(tl.deaths.length)html+=`<div class="card"><p class="verdict">Смертей без размена: <b>${untr} из ${tl.deaths.length}</b>. Размен — команда убила врага за 20 секунд до или после или за 30 секунд взяла вышку, барак или Рошана.</p></div>`;
+  html+=`<div class="card"><h2>Ключевые эпизоды</h2><div id="evs">${evHtml(tl.key)||'<p class="verdict">Особых событий в записи нет.</p>'}</div>${tl.ev.length>tl.key.length?`<button class="btn ghost more" id="all">Показать все события (${tl.ev.length})</button>`:''}</div>`;
+  out.innerHTML=html+cta();
+  const all=$('all');if(all)all.onclick=()=>{$('evs').innerHTML=evHtml(tl.ev);all.remove()};
+}
+function cta(){return `<div class="card"><h2>Подсказки прямо во время игры</h2><p class="verdict">ROSHIQ для Windows подсказывает в матче — драфт, сборки, таймеры, Рошан — и сам делает такой разбор после игры. Бесплатно.</p><div class="cta"><a class="btn" href="${SITE}" target="_blank" rel="noopener">ROSHIQ для ПК</a></div></div>`}
+
+async function run(fn){try{await fn()}catch(e){status(e.message||'Что-то пошло не так. Попробуй ещё раз.',true)}}
+$('f').onsubmit=e=>{e.preventDefault();const t=$('q').value;
+  if(mode==='match'){const id=parseMatch(t);if(!id){status('Не похоже на ID матча. Пример: 9086076880.',true);return}run(()=>showMatch(id))}
+  else{const a=parseAccount(t);if(!a){status('Не нашёл Steam ID в ссылке.',true);return}if(a.vanity){status('Ссылка вида steamcommunity.com/id/имя не содержит номера. Открой профиль на Dotabuff или OpenDota и вставь ту ссылку.',true);return}run(()=>showProfile(a.id))}};
+// открытие по ссылке: ?match=…, ?player=… или t.me/бот/app?startapp=m9086076880 / p123456789
+(function(){const q=new URLSearchParams(location.search);let sp=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.start_param)||q.get('startapp')||'';
+  const m=q.get('match')||(sp[0]==='m'?sp.slice(1):null),p=q.get('player')||(sp[0]==='p'?sp.slice(1):null);
+  if(m&&parseMatch(m)){$('q').value=m;run(()=>showMatch(parseMatch(m)))}else if(p&&parseAccount(p)&&parseAccount(p).id){setMode('profile');$('q').value=p;run(()=>showProfile(parseAccount(p).id))}})();
+</script>
+</body>
+</html>

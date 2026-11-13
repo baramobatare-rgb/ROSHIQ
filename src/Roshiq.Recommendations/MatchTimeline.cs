@@ -70,7 +70,6 @@ public static class MatchTimeline
             int from = (i - 2) * 60, to = i * 60;
             string n = Math.Abs(delta).ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("ru-RU"));
             string nEn = Math.Abs(delta).ToString("N0", System.Globalization.CultureInfo.InvariantCulture);
-            string span = $"{Clock(from)}–{Clock(to)}";
             var whyRu = new List<string>();
             var whyEn = new List<string>();
             if (delta < 0)
@@ -89,8 +88,8 @@ public static class MatchTimeline
             string tailRu = whyRu.Count > 0 ? " · " + string.Join(", ", whyRu) : "";
             string tailEn = whyEn.Count > 0 ? " · " + string.Join(", ", whyEn) : "";
             list.Add(delta > 0
-                ? new TimelineEvent(from, "swing", 1, $"{span}: +{n} золота к перевесу{tailRu}", $"{span}: +{nEn} gold lead{tailEn}")
-                : new TimelineEvent(from, "swing", -1, $"{span}: −{n} золота{tailRu}", $"{span}: −{nEn} gold{tailEn}"));
+                ? new TimelineEvent(from, "swing", 1, $"+{n} золота к перевесу за 2 минуты (до {Clock(to)}){tailRu}", $"+{nEn} gold lead in 2 minutes (to {Clock(to)}){tailEn}")
+                : new TimelineEvent(from, "swing", -1, $"−{n} золота за 2 минуты (до {Clock(to)}){tailRu}", $"−{nEn} gold in 2 minutes (to {Clock(to)}){tailEn}"));
         }
 
         return list.OrderBy(e => e.Time).ThenBy(e => e.Severity).Take(MaxEvents).ToList();

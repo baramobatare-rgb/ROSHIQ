@@ -661,6 +661,28 @@ public partial class HistoryView : UserControl, IRefreshable
         App.Host.History.Delete(id);
     }
 
+    private async void ById_Click(object sender, RoutedEventArgs e)
+    {
+        var L = Loc.Instance;
+        if (MatchIds.Parse(MatchIdBox.Text) is not long id) { ByIdStatus.Text = L.Get("byid_invalid"); return; }
+        ByIdButton.IsEnabled = false;
+        ByIdStatus.Text = L.Get("review_loading");
+        try
+        {
+            var (recordId, message) = await App.Host.AnalyzeMatchByIdAsync(id);
+            ByIdStatus.Text = message;
+            if (recordId != null)
+            {
+                // показать матч с разбором во вкладке «Матчи»
+                PendingSelectId = recordId;
+                _listKey = "";
+                TabMatches.IsChecked = true;
+                Refresh();
+            }
+        }
+        finally { ByIdButton.IsEnabled = true; }
+    }
+
     private async void Import_Click(object sender, RoutedEventArgs e)
     {
         var L = Loc.Instance;

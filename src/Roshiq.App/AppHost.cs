@@ -1307,6 +1307,33 @@ public sealed class AppHost : IDisposable
         }
     }
 
+    /// <summary>
+    /// 0.22.1: разобрать любой свой матч по ID или ссылке — даже сыгранный без ROSHIQ или давно.
+    /// Матч добавляется в Историю (как импорт OpenDota) и сразу разбирается. Возвращает id записи истории.
+    /// </summary>
+    public async Task<(string? RecordId, string Message)> AnalyzeMatchByIdAsync(long matchId)
+    {
+        var d = Settings.Current.Data;
+        if (SteamAccount is not long account) return (null, Loc.T("review_need_steam"));
+        if (!d.AllowOnlineStats) return (null, Loc.T("steam_need_network"));
+        try
+        {
+            using var client = new OpenDotaClient(d.OpenDotaApiKey);
+            var row = await client.GetMatchRowAsync(matchId, account, CancellationToken.None);
+            if (row == null) return (null, Loc.T("byid_not_yours"));
+            History.Import(new[] { row });
+            var mid = matchId.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var rec = History.All().FirstOrDefault(m => m.MatchId == mid);
+            var (review, message) = await ReviewMatchAsync(mid, rec?.Position, requestParse: true);
+            return (rec?.Id, review == null ? message ?? Loc.T("review_parsing") : review.Parsed ? Loc.T("byid_done") : Loc.T("review_parsing"));
+        }
+        catch (Exception ex)
+        {
+            Log.Warn($"Разбор матча {matchId} по ID: {ex.Message}");
+            return (null, Loc.T("review_failed") + " " + ex.Message);
+        }
+    }
+
     /// <summary>После матча: попросить разбор записи и ждать его (через 4, 10 и 20 минут). Готово — уведомление.</summary>
     private async Task AutoReviewAsync(string matchId)
     {
