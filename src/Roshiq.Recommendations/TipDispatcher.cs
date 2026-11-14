@@ -32,7 +32,8 @@ public sealed class Tip
 }
 
 /// <summary>Обстановка в момент выбора совета.</summary>
-public readonly record struct TipContext(bool Blocked, bool InGame, bool Paused, bool Stale, bool Dead);
+/// <param name="InFight">0.24: идёт драка (здоровье героя быстро падает) — обычные советы матча ждут, срочные идут.</param>
+public readonly record struct TipContext(bool Blocked, bool InGame, bool Paused, bool Stale, bool Dead, bool InFight = false);
 
 /// <summary>
 /// Единый диспетчер советов. Все источники кладут совет в очередь; диспетчер раз в секунду выбирает один —
@@ -90,6 +91,7 @@ public sealed class TipDispatcher
         var best = _queue
             .Where(t => !t.InGameOnly || (ctx.InGame && !ctx.Paused && !ctx.Stale))
             .Where(t => !ctx.Dead || t.AllowWhenDead || !t.InGameOnly)
+            .Where(t => !ctx.InFight || t.Priority == TipPriority.Urgent || !t.InGameOnly)
             .Where(t => t.Priority != TipPriority.Background || !ctx.InGame)       // служебное — после матча
             .OrderByDescending(t => t.Priority).ThenBy(t => t.CreatedUtc)
             .FirstOrDefault();

@@ -129,6 +129,10 @@ public sealed class OverlaySettings
     public Dictionary<string, RelRect> Layouts { get; set; } = new();
     /// <summary>Прилипание к краям экрана и запретных зон при перетаскивании.</summary>
     public bool SnapToEdges { get; set; } = true;
+    /// <summary>0.24: карточка-совет появляется над виджетом (true) или справа под верхней панелью игры (false).</summary>
+    public bool CardNearWidget { get; set; } = true;
+    /// <summary>0.24: экран откалиброван в мастере настройки (положение виджета выбрано игроком).</summary>
+    public bool Calibrated { get; set; }
 
     public void Normalize()
     {

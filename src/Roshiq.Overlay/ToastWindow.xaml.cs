@@ -45,12 +45,16 @@ public partial class ToastWindow : Window
         if (warning)
         {
             Dot.Fill = WarningBrush;
+            Stripe.Background = WarningBrush;
+            Countdown.Background = WarningBrush;
             IconBox.BorderBrush = WarningBrush;
             HeaderText.Foreground = WarningBrush;
         }
         else
         {
             Dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Accent");
+            Stripe.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Accent");
+            Countdown.SetResourceReference(System.Windows.Controls.Border.BackgroundProperty, "Accent");
             IconBox.BorderBrush = new SolidColorBrush(Color.FromRgb(0x2C, 0x33, 0x2E));
             HeaderText.Foreground = new SolidColorBrush(Color.FromRgb(0x8E, 0x94, 0x8E));
         }
@@ -73,9 +77,37 @@ public partial class ToastWindow : Window
             RootShift.BeginAnimation(TranslateTransform.XProperty, new DoubleAnimation(18, 0, TimeSpan.FromMilliseconds(260)) { EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut } });
         else
             RootShift.BeginAnimation(TranslateTransform.XProperty, null);
+        // полоска оставшегося времени: видно, сколько карточка ещё провисит
+        if (animate && duration > TimeSpan.Zero)
+            CountdownScale.BeginAnimation(ScaleTransform.ScaleXProperty, new DoubleAnimation(1, 0, duration));
+        else
+        {
+            CountdownScale.BeginAnimation(ScaleTransform.ScaleXProperty, null);
+            CountdownScale.ScaleX = 1;
+        }
         _hideTimer.Stop();
         _hideTimer.Interval = duration;
         _hideTimer.Start();
+    }
+
+    /// <summary>
+    /// 0.24: карточка-совет, привязанная к виджету: той же ширины, над ним (или под ним, если сверху мешает верхняя панель игры).
+    /// <paramref name="anchor"/> — видимая часть виджета, <paramref name="host"/> — окно игры (физические пиксели).
+    /// </summary>
+    public void ShowCard(string header, string text, PixelRect anchor, PixelRect host, TimeSpan duration, double opacity,
+        bool warning = false, bool animate = true, double scale = 1.0)
+    {
+        HeaderText.Text = header;
+        Message.Text = text;
+        var dpi = VisualTreeHelper.GetDpi(this);
+        scale = double.IsFinite(scale) ? Math.Clamp(scale, 0.6, 3.0) : 1.0;
+        Root.LayoutTransform = Math.Abs(scale - 1.0) < 0.01 ? Transform.Identity : new ScaleTransform(scale, scale);
+        double widthDip = Math.Max(240 * scale, anchor.Width / dpi.DpiScaleX);
+        Root.Measure(new Size(widthDip, double.PositiveInfinity));
+        int cardH = (int)Math.Ceiling(Root.DesiredSize.Height * dpi.DpiScaleY);
+        int gap = (int)Math.Round(8 * scale * dpi.DpiScaleY);
+        var place = CardPlacement.Place(anchor with { Width = (int)Math.Round(widthDip * dpi.DpiScaleX) }, host, cardH, gap);
+        ShowToast(header, text, place, duration, opacity, warning, animate, scale);
     }
 
     public void HideToast()

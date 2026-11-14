@@ -10,12 +10,12 @@ using AppLanguage = Roshiq.Core.Models.Language;
 namespace Roshiq.App.Views;
 
 /// <summary>
-/// Мастер первого запуска: язык и тема → роль → связь с игрой (GSI) → Steam → интернет и режим подсказок.
+/// Мастер первого запуска: язык и тема → роль → связь с игрой (GSI) → Steam → калибровка экрана → интернет и режим подсказок.
 /// Каждый шаг можно пропустить; всё меняется потом в настройках.
 /// </summary>
 public partial class FirstRunWindow : Window
 {
-    private const int Steps = 5;
+    private const int Steps = 6;
     private int _step;
     private bool _ready;
     private HintPreset _preset = HintPreset.Normal;
@@ -42,12 +42,13 @@ public partial class FirstRunWindow : Window
         var L = Loc.Instance;
         StepLabel.Text = L.Format("fr_step", _step + 1, Steps).ToUpperInvariant();
         StepTitle.Text = L.Get("fr_title_" + _step);
-        var panels = new FrameworkElement[] { Step0, Step1, Step2, Step3, Step4 };
+        var panels = new FrameworkElement[] { Step0, Step1, Step2, Step3, Step4, Step5 };
         for (int i = 0; i < panels.Length; i++) panels[i].Visibility = i == _step ? Visibility.Visible : Visibility.Collapsed;
         BackButton.Visibility = _step == 0 ? Visibility.Hidden : Visibility.Visible;
         NextButton.Content = L.Get(_step == Steps - 1 ? "fr_finish" : "fr_next").ToUpperInvariant();
         ProgressFill.Width = Math.Max(8, (ActualWidth > 0 ? ActualWidth - 56 : 700) * (_step + 1) / Steps);
         if (_step == 2 && string.IsNullOrEmpty(GsiStatus.Text)) UpdateGsiStatus();
+        if (_step == 4) Calibrator.Refresh();
     }
 
     // ------------------------------------------------------------------ шаг 1: язык и тема

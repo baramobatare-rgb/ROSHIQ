@@ -50,6 +50,102 @@ class Program
         toast.Close();
     }
 
+    /// <summary>0.24: виджет «Сейчас / Скоро / золото», карточка-совет над виджетом и калибровка экрана в мастере.</summary>
+    static void WidgetAndCalibrationCheck(AppHost host)
+    {
+        var vm = SampleWidget();
+        var panel = new Roshiq.Overlay.OverlayPanelWindow { DataContext = vm };
+        var content = (FrameworkElement)panel.Content;
+        content.Measure(new Size(360, 400)); content.Arrange(new Rect(0, 0, 360, 400)); content.UpdateLayout();
+        var root = (FrameworkElement)panel.FindName("Root");
+        Check(((FrameworkElement)panel.FindName("GoldBar")).Visibility == Visibility.Visible && vm.HasTimers && vm.Timers.Count == 3,
+            "Widget shows the gold row and three upcoming events");
+        Check(root.ActualHeight > 120 && root.ActualHeight < 380, "Compact widget hugs its content");
+
+        var card = Roshiq.Core.Layout.CardPlacement.Place(new Roshiq.Core.Layout.PixelRect(1500, 500, 360, 220), new Roshiq.Core.Layout.PixelRect(0, 0, 1920, 1080), 110, 8);
+        Check(card.Y + card.Height <= 500 && card.X == 1500 && card.Width == 360, "Advice card sits above the widget at the same width");
+
+        var o = host.Settings.Current.Overlay;
+        var saved = (o.Panel, o.CardNearWidget, o.Scale, o.Calibrated, o.Layouts.ToDictionary(k => k.Key, k => k.Value));
+        var cal = new ScreenCalibrator();
+        cal.Refresh();
+        cal.Measure(new Size(600, 900)); cal.Arrange(new Rect(0, 0, 600, 900)); cal.UpdateLayout();
+        var buttons = new List<Button>(); Walk(cal, buttons);
+        var left = buttons.First(b => (string?)b.Tag == "cal_place_left_map");
+        left.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(o.Panel.X < 0.05 && o.Calibrated && !o.Panel.Intersects(Roshiq.Core.Layout.SafeZone.Minimap), "Calibration quick spot moves the widget and keeps it off the minimap");
+        var right = buttons.First(b => (string?)b.Tag == "cal_place_right_low");
+        right.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Check(o.Panel.Right > 0.95 && Roshiq.Core.Layout.SafeZone.Forbidden.All(z => !o.Panel.Intersects(z)), "Right spot stays clear of the HUD");
+        o.Panel = saved.Panel; o.CardNearWidget = saved.CardNearWidget; o.Scale = saved.Scale; o.Calibrated = saved.Item4;
+        o.Layouts = saved.Item5; host.Settings.Save();
+
+        var wizard = new FirstRunWindow();
+        Check(wizard.FindName("Calibrator") is ScreenCalibrator && wizard.FindName("Step5") is FrameworkElement, "Setup wizard has the screen calibration step");
+        wizard.Close();
+    }
+
+    static Roshiq.Overlay.OverlayViewModel SampleWidget()
+    {
+        var vm = new Roshiq.Overlay.OverlayViewModel
+        {
+            Header = "POS 1 / СБОРКА", SubHeader = "18:42", MainTitle = "Anti-Mage → Battle Fury", MainDetail = "Быстрее фарм на линии и в лесу",
+            GoldTitle = "До Battle Fury", GoldValue = "340", SoonTitle = "СКОРО", HideHint = "F8", DetailsHint = "CTRL+F8", Animate = false
+        };
+        vm.ReplaceTimers(new[]
+        {
+            new Roshiq.Overlay.OverlayTimer("Руны силы", "0:08", Urgent: true),
+            new Roshiq.Overlay.OverlayTimer("Катапульта", "1:18"),
+            new Roshiq.Overlay.OverlayTimer("Глиф врага", "готов", Ready: true)
+        });
+        vm.GoldProgress = 0.78;
+        return vm;
+    }
+
+    static void SavePng(System.Windows.Media.Visual visual, int w, int h, string path, bool background = true)
+    {
+        var dv = new System.Windows.Media.DrawingVisual();
+        using (var dc = dv.RenderOpen())
+        {
+            if (background) dc.DrawRectangle(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x24, 0x2B, 0x27)), null, new Rect(0, 0, w, h));
+            dc.DrawRectangle(new System.Windows.Media.VisualBrush(visual) { Stretch = System.Windows.Media.Stretch.None, AlignmentX = System.Windows.Media.AlignmentX.Left, AlignmentY = System.Windows.Media.AlignmentY.Top },
+                null, new Rect(0, 0, w, h));
+        }
+        var bmp = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        bmp.Render(dv);
+        var enc = new System.Windows.Media.Imaging.PngBitmapEncoder(); enc.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bmp));
+        using var file = File.Create(path); enc.Save(file);
+    }
+
+    /// <summary>0.24: снимки виджета, карточки-совета и калибровки — для проверки оформления без игры.</summary>
+    static void RenderOverlayShots(string dir)
+    {
+        try
+        {
+            var panel = new Roshiq.Overlay.OverlayPanelWindow { DataContext = SampleWidget() };
+            var content = (FrameworkElement)panel.Content;
+            content.Measure(new Size(360, 420)); content.Arrange(new Rect(0, 0, 360, 420)); content.UpdateLayout();
+            var root = (FrameworkElement)panel.FindName("Root");
+            root.BeginAnimation(UIElement.OpacityProperty, null); root.Opacity = 1;
+            SavePng(content, 360, (int)Math.Ceiling(root.ActualHeight) + 2, Path.Combine(dir, "overlay-widget.png"));
+
+            var toast = new Roshiq.Overlay.ToastWindow { Left = -20000, Top = -20000 };
+            toast.ShowToast("ПОСЛЕ ДРАКИ", "Выиграли драку 3:0 — давите вышку", new Roshiq.Core.Layout.PixelRect(-20000, -20000, 360, 90), TimeSpan.FromSeconds(8), 1.0, animate: false);
+            var troot = (FrameworkElement)toast.FindName("Root");
+            troot.BeginAnimation(UIElement.OpacityProperty, null); troot.Opacity = 1; troot.UpdateLayout();
+            SavePng(troot, 360, (int)Math.Ceiling(troot.ActualHeight) + 2, Path.Combine(dir, "overlay-card.png"));
+            toast.Close();
+
+            var cal = new ScreenCalibrator();
+            cal.Refresh();
+            var host = new Border { Background = (System.Windows.Media.Brush)Application.Current.Resources["Bg"], Padding = new Thickness(20), Child = cal, Width = 600 };
+            host.Measure(new Size(600, 1200)); host.Arrange(new Rect(0, 0, 600, host.DesiredSize.Height)); host.UpdateLayout();
+            SavePng(host, 600, (int)Math.Ceiling(host.DesiredSize.Height), Path.Combine(dir, "calibration.png"), background: false);
+            Console.WriteLine("Shot overlay");
+        }
+        catch (Exception ex) { Console.WriteLine("Shot failed overlay: " + ex.Message); }
+    }
+
     /// <summary>0.18.4: «Работа с игрой» разбита на группы, у каждой настройки название и пояснение, переключатели по-прежнему сохраняют свои значения.</summary>
     static void SettingsAutomationCheck(AppHost host)
     {
@@ -82,6 +178,7 @@ class Program
         host.Settings.Current.ReduceMotion = true;
         var root = (FrameworkElement)main.Content;
         var size = new Size(1280, 820);
+        RenderOverlayShots(dir);
         foreach (var key in new[] { "dashboard", "draft", "tierlist", "build", "assistant", "history", "settings" })
         {
             try
@@ -236,6 +333,7 @@ class Program
             MapPolishChecks.Run(args);
             ThemeChecks();
             ToastScaleCheck();
+            WidgetAndCalibrationCheck(host);
             var main = new MainWindow(); app.MainWindow = main;
             foreach (var h in host.Database.Heroes)
             {

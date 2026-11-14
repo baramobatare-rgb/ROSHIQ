@@ -233,7 +233,7 @@ public sealed class AppHost : IDisposable
         var tip = _macro.Observe(clock, ours, theirs, snap.Daytime, snap.HeroAlive ?? true);
         if (tip == null || !Settings.Current.Alerts.Enabled || !Settings.Current.Alerts.MacroTips) return;
         var L = Loc.Instance;
-        ShowEventToast(L.Get("macro_header").ToUpperInvariant(), tip.Text(L.Language), kind: "macro", ttlSec: 14, inGame: true,
+        ShowEventToast(L.Get("macro_header").ToUpperInvariant(), tip.Text(L.Language), kind: "macro", ttlSec: 20, inGame: true,
             allowWhenDead: true, key: "macro_" + tip.Key);
     }
 
@@ -833,7 +833,7 @@ public sealed class AppHost : IDisposable
                     string.Join("; ", r.Positives.Where(x => x.Kind is ReasonKind.Counter or ReasonKind.Stats).Take(2).Select(x => x.Text(L.Language))),
                     L.ConfidenceName(r.Confidence)) { Icon = HeroArt.Portrait(r.Hero.Key) }));
             vm.HeroPortrait = AutoDraftAnalysis?.Top.FirstOrDefault() is HeroRecommendation best ? HeroArt.Portrait(best.Hero.Key) : null;
-            vm.GoldProgress = -1;
+            SetGold(vm, null);
             var notes = AutoEnemies.Select(h => (Hero: h, Note: NoteFor(h))).Where(x => x.Note != null).ToList();
             vm.Section2Title = notes.Count > 0 ? L.Get("notes_overlay") : "";
             var draftRows = notes.Select(x => new OverlayRow(x.Hero.Name, Short(x.Note!, 140))).ToList();
@@ -861,9 +861,8 @@ public sealed class AppHost : IDisposable
                 ? $"{CurrentHero.DisplayName(L.Language)} → {next.Item.DisplayName(L.Language)}"
                 : CurrentHero.DisplayName(L.Language);
             vm.MainDetail = next?.Explain(L.Language) ?? L.Get("ov_build_done");
-            if (next != null && GoldLine(next.Item.Key) is string goldLine) vm.MainDetail = goldLine + " · " + vm.MainDetail;
             vm.HeroPortrait = HeroArt.Portrait(CurrentHero.Key);
-            vm.GoldProgress = next != null ? GoldProgress(next.Item.Key) : -1;
+            SetGold(vm, next?.Item);
 
             var phase = PhaseForClock(LastGsi?.ClockTime);
             vm.Section1Title = L.PhaseName(phase) + (CurrentBuild.EnemyAware ? "" : " · " + L.Get("ov_reference_build"));
@@ -875,7 +874,7 @@ public sealed class AppHost : IDisposable
                 // сборка выключена в настройках: только герой и советы, без предметов
                 vm.MainTitle = CurrentHero.DisplayName(L.Language);
                 vm.MainDetail = L.PositionName(CurrentPosition);
-                vm.GoldProgress = -1;
+                SetGold(vm, null);
                 vm.Section1Title = "";
                 vm.Section1.Clear();
             }
@@ -902,7 +901,7 @@ public sealed class AppHost : IDisposable
             vm.Header = (role + " / " + L.Get("sec_assistant")).ToUpperInvariant();
             vm.MainTitle = L.Get("ov_pick_hero");
             vm.HeroPortrait = null;
-            vm.GoldProgress = -1;
+            SetGold(vm, null);
             vm.MainDetail = L.Get(trainingDraft ? "ov_pick_hero_hint_training" : "ov_pick_hero_hint");
             vm.Section1Title = "";
             vm.Section2Title = "";
@@ -910,7 +909,10 @@ public sealed class AppHost : IDisposable
             vm.Section2.Clear();
         }
 
-        vm.TimersLine = BuildTimersLine();
+        var timers = TimerEntries();
+        vm.TimersLine = string.Join(" · ", timers.Select(t => $"{t.Name} {t.Time}")).ToUpperInvariant();
+        vm.ReplaceTimers(timers.Take(3));
+        vm.SoonTitle = L.Get("timer_header").ToUpperInvariant();
         vm.TimersUrgent = TimersUrgentNow();
         vm.Animate = !s.ReduceMotion;
 
@@ -1473,9 +1475,9 @@ public sealed class AppHost : IDisposable
         var next = CurrentBuild!.NextItem(owned, g.ClockTime);
         vm.Header = (role + " / " + L.Get("dead_header") + (g.RespawnSeconds is int r && r > 0 ? " · " + GameTimers.Clock(r) : "")).ToUpperInvariant();
         vm.MainTitle = next != null ? L.Format("dead_buy", next.Item.DisplayName(L.Language)) : L.Get("ov_build_done");
-        vm.MainDetail = next == null ? "" : GoldLine(next.Item.Key) ?? next.Explain(L.Language);
+        vm.MainDetail = next == null ? "" : next.Explain(L.Language);
         vm.HeroPortrait = (next != null ? HeroArt.ItemIcon(next.Item.Key) : null) ?? HeroArt.Portrait(CurrentHero!.Key);
-        vm.GoldProgress = next != null ? GoldProgress(next.Item.Key) : -1;
+        SetGold(vm, next?.Item);
 
         var rows = new List<OverlayRow>();
         int gold = g.Gold ?? 0;
@@ -1513,7 +1515,7 @@ public sealed class AppHost : IDisposable
         vm.MainTitle = (hero?.DisplayName(L.Language) ?? "") + (hero != null ? " · " : "") + result;
         vm.MainDetail = L.Format("post_line", m.Kills, m.Deaths, m.Assists, m.Gpm, m.LastHits);
         vm.HeroPortrait = hero != null ? HeroArt.Portrait(hero.Key) : null;
-        vm.GoldProgress = -1;
+        SetGold(vm, null);
 
         var rows = new List<OverlayRow>();
         var d = DeathAnalysis.Analyze(m);
@@ -1723,17 +1725,27 @@ public sealed class AppHost : IDisposable
         _deferredEarly.Clear();
     }
 
+    /// <summary>0.24: драка по здоровью своего героя — обычные советы ждут её конца.</summary>
+    private readonly FightDetector _fight = new();
+    private DateTime _fightSampleUtc;
+
     /// <summary>Раз в секунду (и сразу при новом совете): выбрать совет и показать его в оверлее.</summary>
     private void PumpTips()
     {
         var g = LastGsi;
         bool fresh = g != null && DateTime.UtcNow - g.ReceivedUtc < TimeSpan.FromSeconds(5);
+        if (fresh && g!.ReceivedUtc != _fightSampleUtc)
+        {
+            _fightSampleUtc = g.ReceivedUtc;
+            _fight.Observe(g.ReceivedUtc, g.Health, g.MaxHealth, g.HeroAlive);
+        }
         var ctx = new TipContext(
             Blocked: Reminders.Active != null,
             InGame: fresh && g!.IsInProgress,
             Paused: g?.Paused == true,
             Stale: !fresh,
-            Dead: g?.HeroAlive == false);
+            Dead: g?.HeroAlive == false,
+            InFight: fresh && _fight.InFight(DateTime.UtcNow));
         var now = DateTime.UtcNow;
         // окна игры пока нет (загрузка карты, игра свёрнута) — совет ждёт в очереди до своего срока, а не теряется
         if (Overlay.ToastWaitsForGame) return;
@@ -1856,25 +1868,52 @@ public sealed class AppHost : IDisposable
         return Math.Clamp((double)gold / c, 0, 1);
     }
 
-    private string BuildTimersLine()
+    private string BuildTimersLine() =>
+        string.Join(" · ", TimerEntries().Select(t => $"{t.Name} {t.Time}")).ToUpperInvariant();
+
+    /// <summary>
+    /// Ближайшие события матча для виджета и строки таймеров: два ближайших по расписанию, Рошан, глиф врага.
+    /// Частые события (стаки раз в минуту) — только в последние 15 секунд, чтобы не занимали место.
+    /// </summary>
+    private List<OverlayTimer> TimerEntries()
     {
-        if (!Settings.Current.Timers.Enabled || GameClock is not int clock) return "";
+        var list = new List<OverlayTimer>();
+        if (!Settings.Current.Timers.Enabled || GameClock is not int clock) return list;
         var L = Loc.Instance;
-        // частые события (стаки раз в минуту) показываем только в последние 15 секунд, чтобы не занимали строку
-        var parts = GameTimers.Upcoming(Database.Timers, clock, TimerOn, 8)
+        list.AddRange(GameTimers.Upcoming(Database.Timers, clock, TimerOn, 8)
             .Where(e => e.Rule.IntervalSec > 60 || e.Rule.IntervalSec == 0 || e.InSec <= 15)
             .Take(2)
-            .Select(e => $"{TimerName(e.Rule)} {GameTimers.Clock(e.InSec)}").ToList();
+            .Select(e => new OverlayTimer(TimerName(e.Rule), GameTimers.Clock(e.InSec), Urgent: e.InSec <= 10)));
         var r = Roshan.State(clock);
         if (r.Phase == RoshanPhase.Dead)
-            parts.Add(r.AegisLeftSec > 0
-                ? $"{L.Get("rosh_aegis_short")} {GameTimers.Clock(r.AegisLeftSec)}"
-                : $"{L.Get("rosh_short")} {GameTimers.Clock(r.RespawnMinAt - clock)}–{GameTimers.Clock(r.RespawnMaxAt - clock)}");
+            list.Add(r.AegisLeftSec > 0
+                ? new OverlayTimer(L.Get("rosh_aegis_short"), GameTimers.Clock(r.AegisLeftSec))
+                : new OverlayTimer(L.Get("rosh_short"), $"{GameTimers.Clock(r.RespawnMinAt - clock)}–{GameTimers.Clock(r.RespawnMaxAt - clock)}",
+                    Urgent: r.RespawnMinAt - clock is >= 0 and <= 10));
         else if (r.Phase == RoshanPhase.MaybeAlive)
-            parts.Add($"{L.Get("rosh_short")} ≤{GameTimers.Clock(r.RespawnMaxAt - clock)}");
+            list.Add(new OverlayTimer(L.Get("rosh_short"), "≤" + GameTimers.Clock(r.RespawnMaxAt - clock)));
         if (EnemyGlyph.ReadyIn(clock) is int glyphIn)
-            parts.Add(glyphIn > 0 ? $"{L.Get("glyph_short")} {GameTimers.Clock(glyphIn)}" : $"{L.Get("glyph_short")} {L.Get("glyph_ready_short")}");
-        return string.Join(" · ", parts).ToUpperInvariant();
+            list.Add(glyphIn > 0
+                ? new OverlayTimer(L.Get("glyph_short"), GameTimers.Clock(glyphIn))
+                : new OverlayTimer(L.Get("glyph_short"), L.Get("glyph_ready_short"), Ready: true));
+        return list;
+    }
+
+    /// <summary>0.24: строка золота виджета: «До {предмет}» и сколько не хватает (или «хватает»). Без цены или золота из GSI — скрыта.</summary>
+    private void SetGold(OverlayViewModel vm, Item? item)
+    {
+        var g = LastGsi;
+        int? cost = item != null ? Costs.Cost(item.Key) : null;
+        if (item == null || cost is not int c || c <= 0 || g?.Gold is not int gold || !g.IsInProgress || DateTime.UtcNow - g.ReceivedUtc > TimeSpan.FromSeconds(10))
+        {
+            vm.GoldProgress = -1;
+            vm.GoldTitle = vm.GoldValue = "";
+            return;
+        }
+        var L = Loc.Instance;
+        vm.GoldTitle = L.Format("ov_gold_to", item.DisplayName(L.Language));
+        vm.GoldValue = gold >= c ? L.Get("ov_gold_ok") : (c - gold).ToString();
+        vm.GoldProgress = Math.Clamp((double)gold / c, 0, 1);
     }
 
     /// <summary>«Нужно ещё 650 золота» / «Хватает на покупку» — только когда есть цена и золото из GSI.</summary>

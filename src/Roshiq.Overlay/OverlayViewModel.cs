@@ -20,6 +20,9 @@ public sealed class OverlayRow
     public string Badge { get; }
 }
 
+/// <summary>Строка блока «Скоро» в виджете: событие и сколько до него.</summary>
+public sealed record OverlayTimer(string Name, string Time, bool Urgent = false, bool Ready = false);
+
 /// <summary>Данные, которые показывает оверлей. Заполняется приложением, отображается окнами оверлея.</summary>
 public sealed class OverlayViewModel : INotifyPropertyChanged
 {
@@ -70,6 +73,29 @@ public sealed class OverlayViewModel : INotifyPropertyChanged
     public bool TimersUrgent { get => _timersUrgent; set => Set(ref _timersUrgent, value); }
     /// <summary>Анимации разрешены (нет «Уменьшить анимацию»).</summary>
     public bool Animate { get => _animate; set => Set(ref _animate, value); }
+
+    /// <summary>0.24: блок «Скоро» — ближайшие события по строкам (до трёх).</summary>
+    public ObservableCollection<OverlayTimer> Timers { get; } = new();
+    public bool HasTimers { get => _hasTimers; private set => Set(ref _hasTimers, value); }
+    private bool _hasTimers;
+    public string SoonTitle { get => _soonTitle; set => Set(ref _soonTitle, value); }
+    private string _soonTitle = "";
+    /// <summary>0.24: строка золота под главной рекомендацией: «До BKB» … «340».</summary>
+    public string GoldTitle { get => _goldTitle; set => Set(ref _goldTitle, value); }
+    private string _goldTitle = "";
+    public string GoldValue { get => _goldValue; set => Set(ref _goldValue, value); }
+    private string _goldValue = "";
+
+    public void ReplaceTimers(IEnumerable<OverlayTimer> timers)
+    {
+        var list = timers.ToList();
+        if (!list.SequenceEqual(Timers))
+        {
+            Timers.Clear();
+            foreach (var t in list) Timers.Add(t);
+        }
+        HasTimers = Timers.Count > 0;
+    }
 
     public ObservableCollection<OverlayRow> Section1 { get; } = new();
     public ObservableCollection<OverlayRow> Section2 { get; } = new();

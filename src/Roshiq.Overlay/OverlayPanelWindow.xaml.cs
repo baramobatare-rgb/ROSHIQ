@@ -126,6 +126,15 @@ public partial class OverlayPanelWindow : Window
         _editMode = wasEdit;
     }
 
+    /// <summary>0.24: видимая часть виджета (карточка по содержимому) в физических пикселях — к ней привязывается карточка-совет.</summary>
+    public PixelRect CardAnchorPixels()
+    {
+        var dpi = VisualTreeHelper.GetDpi(this);
+        double h = Root.ActualHeight > 1 ? Root.ActualHeight : ActualHeight;
+        return new PixelRect((int)Math.Round(Left * dpi.DpiScaleX), (int)Math.Round(Top * dpi.DpiScaleY),
+            (int)Math.Round(ActualWidth * dpi.DpiScaleX), (int)Math.Round(h * dpi.DpiScaleY));
+    }
+
     public PixelRect GetBoundsPixels()
     {
         var dpi = VisualTreeHelper.GetDpi(this);

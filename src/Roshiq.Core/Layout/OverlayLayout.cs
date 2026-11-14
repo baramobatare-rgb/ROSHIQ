@@ -84,6 +84,26 @@ public static class SafeZone
 }
 
 /// <summary>
+/// 0.24: где показать карточку-совет относительно виджета. Над виджетом той же ширины; если сверху не помещается
+/// (мешает верхняя панель игры) — под видимой частью виджета; если и там нет места — у верхнего края, вне верхней панели.
+/// </summary>
+public static class CardPlacement
+{
+    public static PixelRect Place(PixelRect widget, PixelRect host, int cardHeight, int gap)
+    {
+        cardHeight = Math.Max(1, cardHeight);
+        int width = Math.Max(1, widget.Width);
+        int x = Math.Clamp(widget.X, host.X, Math.Max(host.X, host.X + host.Width - width));
+        int topLimit = host.Y + (int)Math.Round(host.Height * SafeZone.TopBar.Bottom);
+        int above = widget.Y - gap - cardHeight;
+        if (above >= topLimit) return new PixelRect(x, above, width, cardHeight);
+        int below = widget.Y + widget.Height + gap;
+        if (below + cardHeight <= host.Y + host.Height) return new PixelRect(x, below, width, cardHeight);
+        return new PixelRect(x, Math.Max(host.Y, topLimit), width, cardHeight);
+    }
+}
+
+/// <summary>
 /// Автомасштаб оверлея под экран: текст и значки занимают ту же долю высоты, что на 1080p.
 /// Считается по высоте окна игры в логических пикселях, поэтому масштаб Windows (125%, 150%) учитывается и не удваивается:
 /// 3440×1440 при 100% → ×1,35; 2560×1440 при 125% → ×1,05; 3840×2160 при 150% → ×1,35. Меньше 1080 не уменьшаем.
@@ -139,9 +159,9 @@ public static class OverlayVisibility
         var bounds = SafeZone.Clamp(panel).ToPixels(host);
         if (mode == OverlayMode.Minimal)
         {
-            // компактная карточка: та же точка привязки, меньшая высота
-            // +1 строка под таймеры событий матча
-            bounds = bounds with { Height = Math.Max(104, (int)Math.Round(host.Height * 0.108)) };
+            // компактный виджет (0.24): главная строка, золото и до трёх строк «Скоро».
+            // Окно с запасом по высоте, сама карточка — по содержимому (ниже окно прозрачное и не ловит мышь).
+            bounds = bounds with { Height = Math.Min(Math.Max(220, (int)Math.Round(host.Height * 0.24)), Math.Max(104, host.Y + host.Height - bounds.Y)) };
         }
         return new Decision(true, bounds, game.Found ? "overlay_attached" : "overlay_test_mode");
     }

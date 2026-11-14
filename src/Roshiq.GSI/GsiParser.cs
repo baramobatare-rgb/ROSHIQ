@@ -48,6 +48,9 @@ public sealed record GameStateSnapshot
     public string? HeroName { get; init; }
     public int? HeroLevel { get; init; }
     public bool? HeroAlive { get; init; }
+    /// <summary>0.24: здоровье героя — для «тишины в драке».</summary>
+    public int? Health { get; init; }
+    public int? MaxHealth { get; init; }
     public int? BuybackCost { get; init; }
     public int? BuybackCooldown { get; init; }
     /// <summary>Секунд до возрождения (когда герой мёртв).</summary>
@@ -137,6 +140,8 @@ public static class GsiParser
             HeroName = Str(hero, "name"),
             HeroLevel = Int(hero, "level"),
             HeroAlive = Bool(hero, "alive"),
+            Health = Int(hero, "health"),
+            MaxHealth = Int(hero, "max_health"),
             BuybackCost = Int(hero, "buyback_cost"),
             BuybackCooldown = Int(hero, "buyback_cooldown"),
             RespawnSeconds = Int(hero, "respawn_seconds"),

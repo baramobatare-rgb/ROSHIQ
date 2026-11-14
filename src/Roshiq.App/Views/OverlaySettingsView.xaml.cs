@@ -109,14 +109,20 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         AddZone(SafeZone.Minimap, Ui.Res("Panel3"), null, "MAP");
         AddZone(SafeZone.TopBar, Ui.Res("Panel3"), null, "TOP BAR");
         AddZone(SafeZone.BottomHud, Ui.Res("Panel3"), null, "HUD");
-        AddZone(SafeZone.ToastArea, Ui.Res("Panel2"), Ui.Res("LineStrong"), null);
-
         var o = App.Host.Settings.Current.Overlay;
+        if (!o.CardNearWidget) AddZone(SafeZone.ToastArea, Ui.Res("Panel2"), Ui.Res("LineStrong"), null);
         if (o.Mode == OverlayMode.Hidden) return;
         var panel = SafeZone.Clamp(o.Panel);
-        if (o.Mode == OverlayMode.Minimal) panel = panel with { H = Math.Max(84.0 / 1080, 0.09) };
+        // 0.24: компактный виджет ≈ 210 точек на 1080p
+        if (o.Mode == OverlayMode.Minimal) panel = panel with { H = 210.0 / 1080 };
         panel = panel with { W = Math.Min(1 - panel.X, panel.W * o.Scale), H = Math.Min(1 - panel.Y, panel.H * o.Scale) };
-        AddZone(panel, Ui.Res("AccentSoft"), Ui.Res("Accent"), "PULSE");
+        if (o.CardNearWidget)
+        {
+            var host = new PixelRect(0, 0, (int)w, (int)h);
+            var card = CardPlacement.Place(panel.ToPixels(host), host, (int)(h * 0.1), 3);
+            AddZone(RelRect.FromPixels(card, host), Ui.Res("Panel2"), Ui.Res("LineStrong"), null);
+        }
+        AddZone(panel, Ui.Res("AccentSoft"), Ui.Res("Accent"), "ROSHIQ");
     }
 
     private void Mode_Checked(object sender, RoutedEventArgs e)
@@ -180,6 +186,25 @@ public partial class OverlaySettingsView : UserControl, IRefreshable
         var keys = o.Layouts.Keys.OrderBy(k => k).Select(k => LayoutMemory.Pretty(k) + (k == current ? " ✓" : "")).ToList();
         LayoutsText.Text = keys.Count == 0 ? L.Get("ov_layouts_none") : L.Format("ov_layouts", string.Join(", ", keys));
         ResetLayoutsButton.Visibility = o.Layouts.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>0.24: калибровка экрана — то же, что шаг мастера настройки, в отдельном окне.</summary>
+    private void Calibrate_Click(object sender, RoutedEventArgs e)
+    {
+        var w = new Window
+        {
+            Title = Loc.T("ov_calibrate"), Owner = Window.GetWindow(this), WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            SizeToContent = SizeToContent.WidthAndHeight, ResizeMode = ResizeMode.NoResize,
+            Background = Ui.Res("Bg"), Foreground = Ui.Res("Text"), FontFamily = new FontFamily("Segoe UI"), FontSize = 13,
+            Content = new ScrollViewer
+            {
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, MaxHeight = 760,
+                Content = new Border { Padding = new Thickness(24, 20, 24, 20), Child = new ScreenCalibrator() }
+            }
+        };
+        if (Application.Current.TryFindResource("AppIcon") is ImageSource icon) w.Icon = icon;
+        w.ShowDialog();
+        Refresh();
     }
 
     private void Test_Click(object sender, RoutedEventArgs e)

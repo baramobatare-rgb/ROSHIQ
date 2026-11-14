@@ -67,6 +67,17 @@
     </Window.Resources>
 
     <Border x:Name="Root" CornerRadius="12" Background="{StaticResource PanelBg}" BorderThickness="1" BorderBrush="{StaticResource PanelLine}">
+        <!-- 0.24: в компактном режиме карточка по высоте содержимого, ниже окно прозрачное -->
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="VerticalAlignment" Value="Top" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Expanded}" Value="True">
+                        <Setter Property="VerticalAlignment" Value="Stretch" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
         <Grid>
             <Grid x:Name="ContentGrid" Margin="14,11,14,11">
                 <Grid.LayoutTransform>
@@ -89,8 +100,9 @@
                                FontWeight="SemiBold" FontSize="10.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 </DockPanel>
 
-                <!-- Главная рекомендация с акцентным индикатором -->
-                <Grid Grid.Row="1" Margin="0,8,0,0">
+                <!-- Главная рекомендация с акцентным индикатором, ниже — золото и блок «Скоро» (0.24) -->
+                <StackPanel Grid.Row="1">
+                <Grid Margin="0,8,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
@@ -122,33 +134,61 @@
                                    FontWeight="SemiBold" FontSize="15.5" TextWrapping="Wrap" />
                         <TextBlock Text="{Binding MainDetail}" Foreground="{StaticResource TextMuted}" FontSize="11.5" TextWrapping="Wrap"
                                    MaxHeight="46" TextTrimming="WordEllipsis" Margin="0,2,0,0" />
-                        <!-- сколько золота уже есть на следующий предмет -->
-                        <Border x:Name="GoldBar" Height="3" CornerRadius="1.5" Background="#26FFFFFF" Margin="0,6,0,0" Visibility="Collapsed">
-                            <Border x:Name="GoldFill" CornerRadius="1.5" Background="{DynamicResource Accent}" HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
-                                <Border.RenderTransform>
-                                    <ScaleTransform x:Name="GoldScale" ScaleX="0" ScaleY="1" />
-                                </Border.RenderTransform>
-                            </Border>
-                        </Border>
-                        <TextBlock x:Name="TimersText" Text="{Binding TimersLine}" FontFamily="{StaticResource OvMono}"
-                                   FontSize="10.5" Margin="0,5,0,0" TextTrimming="CharacterEllipsis">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="{DynamicResource Accent}" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding TimersLine}" Value="">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding TimersUrgent}" Value="True">
-                                            <Setter Property="Foreground" Value="{StaticResource Urgent}" />
-                                            <Setter Property="FontWeight" Value="Bold" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
                     </StackPanel>
                 </Grid>
+
+                <!-- золото до следующего предмета -->
+                <Grid x:Name="GoldBar" Margin="0,9,0,0" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding GoldValue}" Foreground="{StaticResource TextMain}" FontFamily="{StaticResource OvDisplay}"
+                                   FontWeight="SemiBold" FontSize="12" Margin="8,0,0,0" />
+                        <TextBlock Text="{Binding GoldTitle}" Foreground="{StaticResource TextMuted}" FontSize="11.5" TextTrimming="CharacterEllipsis" />
+                    </DockPanel>
+                    <Border Grid.Row="1" Height="4" CornerRadius="2" Background="#26FFFFFF" Margin="0,5,0,0">
+                        <Border x:Name="GoldFill" CornerRadius="2" Background="{DynamicResource Accent}" HorizontalAlignment="Stretch" RenderTransformOrigin="0,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform x:Name="GoldScale" ScaleX="0" ScaleY="1" />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Border>
+                </Grid>
+
+                <!-- «Скоро»: ближайшие события по строкам -->
+                <StackPanel Margin="0,10,0,0" Visibility="{Binding HasTimers, Converter={StaticResource BoolToVis}}">
+                    <Border Height="1" Background="{StaticResource PanelLine}" Margin="0,0,0,8" />
+                    <StackPanel Orientation="Horizontal" Margin="1,0,0,5">
+                        <TextBlock Text="{Binding SoonTitle}" Foreground="{StaticResource TextMuted}" FontFamily="{StaticResource OvDisplay}"
+                                   FontWeight="SemiBold" FontSize="10.5" VerticalAlignment="Center" />
+                        <Ellipse x:Name="TimersText" Width="6" Height="6" Fill="{StaticResource Urgent}" Margin="7,0,0,0" VerticalAlignment="Center"
+                                 Visibility="{Binding TimersUrgent, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{Binding Timers}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <DockPanel Margin="1,0,0,3">
+                                    <TextBlock x:Name="Time" DockPanel.Dock="Right" Text="{Binding Time}" FontFamily="{StaticResource OvDisplay}" FontWeight="SemiBold"
+                                               FontSize="12.5" Foreground="{StaticResource TextMuted}" Margin="10,0,0,0" />
+                                    <TextBlock x:Name="Name" Text="{Binding Name}" Foreground="{StaticResource TextMain}" FontWeight="SemiBold" FontSize="12.5"
+                                               TextTrimming="CharacterEllipsis" />
+                                </DockPanel>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Ready}" Value="True">
+                                        <Setter TargetName="Time" Property="Foreground" Value="{DynamicResource Accent}" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Urgent}" Value="True">
+                                        <Setter TargetName="Time" Property="Foreground" Value="{StaticResource Urgent}" />
+                                        <Setter TargetName="Name" Property="Foreground" Value="{StaticResource Urgent}" />
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                </StackPanel>
 
                 <!-- Подробности (Expanded) -->
                 <ScrollViewer Grid.Row="2" Margin="0,4,0,0" VerticalScrollBarVisibility="Hidden"

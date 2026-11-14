@@ -153,8 +153,13 @@ public sealed class OverlayController : IDisposable
         var host = HostRect();
         if (host == null) return false;
         var n = _settings.Current.Notifications;
-        _toast.ShowToast(header, text, SafeZone.ToastArea.ToPixels(host.Value), TimeSpan.FromSeconds(n.DisplaySec), _settings.Current.Overlay.Opacity,
-            warning, !_settings.Current.ReduceMotion, EffectiveScale);
+        var o = _settings.Current.Overlay;
+        var duration = TimeSpan.FromSeconds(n.DisplaySec);
+        // 0.24: карточка над виджетом той же ширины; если виджет скрыт или выбран режим «у верхней панели» — справа сверху, как раньше
+        if (o.CardNearWidget && _panel != null && _panel.IsShownOrShowing && _lastDecision?.Visible == true && !EditMode)
+            _toast.ShowCard(header, text, _panel.CardAnchorPixels(), host.Value, duration, o.Opacity, warning, !_settings.Current.ReduceMotion, EffectiveScale);
+        else
+            _toast.ShowToast(header, text, SafeZone.ToastArea.ToPixels(host.Value), duration, o.Opacity, warning, !_settings.Current.ReduceMotion, EffectiveScale);
         return true;
     }
 

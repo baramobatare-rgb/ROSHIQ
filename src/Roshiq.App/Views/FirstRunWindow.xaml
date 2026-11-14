@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:app="clr-namespace:Roshiq.App"
-        Title="ROSHIQ" Icon="{DynamicResource AppIcon}" Width="760" Height="600" MinWidth="640" MinHeight="520"
+        xmlns:v="clr-namespace:Roshiq.App.Views"
+        Title="ROSHIQ" Icon="{DynamicResource AppIcon}" Width="760" Height="680" MinWidth="640" MinHeight="560"
         WindowStartupLocation="CenterScreen" Background="{DynamicResource Bg}" Foreground="{DynamicResource Text}"
         FontFamily="Segoe UI" FontSize="13" UseLayoutRounding="True">
     <Grid Margin="28,24,28,20">
@@ -64,8 +65,13 @@
                     <TextBlock Text="{app:T fr_steam_later}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" />
                 </StackPanel>
 
-                <!-- 5. Интернет и режим подсказок -->
+                <!-- 5. Калибровка экрана (0.24): где виджет и карточка-совет -->
                 <StackPanel x:Name="Step4" Visibility="Collapsed">
+                    <v:ScreenCalibrator x:Name="Calibrator" />
+                </StackPanel>
+
+                <!-- 6. Интернет и режим подсказок -->
+                <StackPanel x:Name="Step5" Visibility="Collapsed">
                     <CheckBox x:Name="OnlineBox" Content="{app:T fr_online}" />
                     <TextBlock Text="{app:T fr_online_hint}" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="28,2,0,14" />
                     <TextBlock Text="{app:T preset_title}" Style="{StaticResource Eyebrow}" Margin="0,4,0,6" />
